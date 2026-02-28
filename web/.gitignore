@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+
+# Next.js
+.next/
+out/
+
+# Database (runtime, not committed)
+db/thingfactory.db
+db/thingfactory.db-shm
+db/thingfactory.db-wal
+
+# Generated files
+lib/db.types.ts
+
+# Playwright
+playwright-report/
+test-results/
+
+# Environment
+.env.local

@@ -1,0 +1,143 @@
+#!/usr/bin/env -S deno run --allow-run --allow-read --allow-write --allow-env
+
+import { parse } from "https://deno.land/std@0.208.0/flags/mod.ts";
+
+const args = parse(Deno.args, {
+  positional: ["iterations"],
+});
+
+const iterations = parseInt(args.iterations?.[0] || args._?.[0] || "10", 10);
+
+if (!iterations || isNaN(iterations) || iterations < 1) {
+  console.error("Usage: deno run ralph.mts <iterations>");
+  Deno.exit(1);
+}
+
+console.log(`Starting ralph loop for ${iterations} iterations...`);
+
+let shouldStop = false;
+
+// Handle Ctrl+C gracefully
+Deno.addSignalListener("SIGINT", () => {
+  console.error("\n[$(date)] Interrupted");
+  shouldStop = true;
+});
+
+const prompt = `@specification.md @progress.md
+1. Read the specification.md and progress file.
+2. Find the next highest leverage incomplete task and implement it.
+3. Commit your changes.
+4. Update progress.md with what you did.
+ONLY DO ONE TASK AT A TIME.
+If the specification fully completed, revisit each claim ONE BY ONE in progress
+file CHALLENGE if the INTENT of the work is done, not if the claims are literally done.
+If the intent is done, mark the claim VERIFIED and proceed. Every referenced
+document or module should be verified, and not trusted to exist. If the work is not
+verified, remove claims in progress.md and re-visit the work.
+
+Once all claims are verified, output <promise>COMPLETE</promise>."`;
+
+const TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes
+
+async function runIteration(iterationNum: number): Promise<boolean> {
+  console.log(`[${new Date().toISOString()}] Starting iteration ${iterationNum}...`);
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+  try {
+    let output = "";
+    let isComplete = false;
+
+    const process = new Deno.Command("claude", {
+      args: ["--dangerously-skip-permissions", "-p", prompt],
+      stdout: "piped",
+      stderr: "piped",
+      signal: controller.signal,
+    });
+
+    const child = process.spawn();
+
+    // Stream stdout and stderr concurrently
+    const [status] = await Promise.all([
+      child.status,
+      (async () => {
+        try {
+          for await (const chunk of child.stdout) {
+            const text = new TextDecoder().decode(chunk);
+            Deno.stdout.writeSync(new TextEncoder().encode(text));
+            output += text;
+            if (text.includes("<promise>COMPLETE</promise>")) {
+              isComplete = true;
+            }
+          }
+        } catch {
+          // Stream closed or cancelled
+        }
+      })(),
+      (async () => {
+        try {
+          for await (const chunk of child.stderr) {
+            const text = new TextDecoder().decode(chunk);
+            Deno.stderr.writeSync(new TextEncoder().encode(text));
+            output += text;
+          }
+        } catch {
+          // Stream closed or cancelled
+        }
+      })(),
+    ]);
+
+    clearTimeout(timeoutId);
+
+    if (status.code !== 0) {
+      console.log(`[${new Date().toISOString()}] ERROR: iteration ${iterationNum} failed with exit code ${status.code}`);
+      return false;
+    }
+
+    if (isComplete || output.includes("<promise>COMPLETE</promise>")) {
+      console.log(`[${new Date().toISOString()}] specification complete after ${iterationNum} iterations.`);
+      return true;
+    }
+
+    console.log(`[${new Date().toISOString()}] Iteration ${iterationNum} complete.`);
+    return null; // Continue to next iteration
+  } catch (error) {
+    clearTimeout(timeoutId);
+
+    if (error instanceof DOMException && error.name === "AbortError") {
+      console.error(`[${new Date().toISOString()}] TIMEOUT: iteration ${iterationNum} exceeded 15 minutes`);
+      console.error("specification did not complete - timeout after " + iterationNum + " iterations.");
+      return false;
+    }
+
+    if (shouldStop) {
+      throw error;
+    }
+
+    throw error;
+  }
+}
+
+async function main() {
+  for (let i = 1; i <= iterations; i++) {
+    if (shouldStop) {
+      console.error("Exiting due to signal");
+      Deno.exit(130);
+    }
+
+    const result = await runIteration(i);
+
+    if (result === true) {
+      Deno.exit(0);
+    }
+  }
+
+  console.log(`[${new Date().toISOString()}] All ${iterations} iterations completed without completion marker.`);
+  Deno.exit(1);
+}
+
+main().catch((error) => {
+  console.error("Fatal error:", error);
+  Deno.exit(1);
+});

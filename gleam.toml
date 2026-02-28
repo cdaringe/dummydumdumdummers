@@ -1,0 +1,13 @@
+name = "thingfactory"
+version = "1.0.0"
+description = "A best-in-class task runner with Gleam-native pipeline definition"
+licences = ["Apache-2.0"]
+gleam = ">= 1.13.0"
+
+[dependencies]
+gleam_stdlib = ">= 0.44.0 and < 0.68.0"
+argv = ">= 1.0.0 and < 2.0.0"
+clip = ">= 1.2.0 and < 2.0.0"
+
+[dev-dependencies]
+gleeunit = ">= 1.0.0 and < 2.0.0"
