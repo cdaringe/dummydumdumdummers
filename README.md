@@ -1,294 +1,136 @@
-# Thingfactory - A Gleam-Native Pipeline Definition System
+# Thingfactory
 
-A best-in-class task runner for CI/CD with type-safe, testable pipeline definitions in Gleam.
+A best-in-class task runner for CI/CD with type-safe pipeline definitions in [Gleam](https://gleam.run).
 
-## Objectives
+**CLI** | **Web GUI** | **Pipeline Runner & Orchestrator**
 
-- **Type-Safe Pipelines**: Define pipelines in Gleam with compile-time type checking
-- **Testable**: Easily test pipelines with mocked steps
-- **Observable**: Comprehensive execution traces for monitoring and debugging
-- **Extensible**: Bring your own computation logic
-- **First-Class Feature Support**: Artifacts, dependencies, versioning, and more
+## What It Does
+
+- Define pipelines in Gleam with compile-time type safety
+- Run pipelines locally via CLI, exactly as they run in production
+- Visualize pipeline DAGs, view logs, download artifacts, and track statistics in the web GUI
+- Execute steps sequentially or in parallel (DAG-aware)
+- Schedule pipelines, trigger via webhooks, manage secrets
+- Test pipelines with mock steps
 
 ## Quick Start
 
-### Basic Pipeline
+### Install
+
+```bash
+git clone <repo-url> thingfactory
+cd thingfactory
+gleam build
+```
+
+### Run a Pipeline
+
+```bash
+gleam run -m thingfactory/cli -- list              # see available pipelines
+gleam run -m thingfactory/cli -- run basic          # run one
+gleam run -m thingfactory/cli -- run parallel -c    # compact output
+gleam run -m thingfactory/cli -- run artifacts -i   # interactive mode
+```
+
+### Define a Pipeline
 
 ```gleam
+import gleam/dynamic
 import thingfactory/pipeline
 import thingfactory/executor
 import thingfactory/types
-import gleam/dynamic
 
-let p = pipeline.new("my_pipeline", "1.0.0")
+pub fn my_pipeline() {
+  pipeline.new("my_pipeline", "1.0.0")
   |> pipeline.add_step("fetch", fn(_ctx, _input) {
     Ok(dynamic.string("data"))
   })
   |> pipeline.add_step("transform", fn(_ctx, data) {
     Ok(data)
   })
-
-let config = types.default_config()
-let result = executor.execute(p, dynamic.nil(), config)
-
-case result.result {
-  Ok(output) -> Nil  // Success
-  Error(err) -> Nil  // Handle error
 }
+
+// Run it
+let result = executor.execute(my_pipeline(), dynamic.nil(), types.default_config())
 ```
 
-### Pipeline with Dependencies
-
-Inject external dependencies into pipeline steps:
+### Parallel Steps
 
 ```gleam
-let bindings = [
-  types.Binding(name: "database_url", value: dynamic.string("postgres://...")),
-  types.Binding(name: "api_key", value: dynamic.string("secret")),
-]
-
-let config = types.ExecutionConfig(
-  default_step_timeout_ms: 30_000,
-  dependency_bindings: bindings,
-)
-
-// In your step function:
-fn(ctx, input) {
-  case types.get_dep(ctx, "database_url") {
-    Ok(url) -> process(url)
-    Error(_) -> Error(types.StepFailure(message: "Missing database_url"))
-  }
-}
+pipeline.new("parallel_demo", "1.0.0")
+|> pipeline.add_step_with_deps("clone", clone_fn, [])
+|> pipeline.add_step_with_deps("lint", lint_fn, ["clone"])
+|> pipeline.add_step_with_deps("test", test_fn, ["clone"])     // parallel with lint
+|> pipeline.add_step_with_deps("build", build_fn, ["lint", "test"])
 ```
 
-### Testing with Mocks
-
-Unit test your pipelines without running actual steps:
+### Test with Mocks
 
 ```gleam
-import thingfactory/test_helpers
-
-let p = pipeline.new("test_pipeline", "1.0.0")
-  |> pipeline.add_step("fetch", fn(_ctx, _input) {
-    // This won't actually run in tests
-    Ok(dynamic.string("real_data"))
-  })
-
 let mocks = [
   test_helpers.mock_step_success("fetch", dynamic.string("test_data")),
 ]
-
-let result = test_helpers.run_with_mocks(p, mocks, dynamic.nil())
+let result = test_helpers.run_with_mocks(my_pipeline(), mocks, dynamic.nil())
 ```
 
-## Core Concepts
+### Run with Docker
 
-### Pipelines
-
-A pipeline is a sequence of named steps that execute sequentially. Pipelines are:
-- **Versioned** by name and semantic version
-- **Type-safe** with Gleam's type system
-- **Testable** with mock step support
-- **Observable** with execution traces
-
-### Steps
-
-Steps are the fundamental unit of work. Each step:
-- Receives a `Context` containing the artifact store and injected dependencies
-- Receives the previous step's output (or initial input for the first step)
-- Returns `Result(output, error)`
-
-Steps execute sequentially - if a step fails, subsequent steps are skipped.
-
-### Context
-
-The `Context` provides steps with:
-- **Artifact Store**: Dict for sharing data between steps
-- **Dependencies**: Pre-injected external services or configuration
-
-### Error Handling
-
-Errors are explicit and typed:
-- `StepFailure`: Step-level errors with messages
-- `StepTimeout`: Step exceeded timeout
-- `ArtifactNotFound`: Referenced artifact doesn't exist
-- `StepError`: Step error propagated to pipeline level
-- `PipelineError`: Higher-level pipeline errors
-
-### Execution Traces
-
-Every execution produces comprehensive traces including:
-- Step name, status (Ok/Failed/Skipped), and duration
-- Full error information for failed steps
-- Skipped steps when pipeline fails
-
-## API Overview
-
-### Pipeline Builder
-
-```gleam
-// Create a new pipeline
-pipeline.new(name: String, version: String) -> Pipeline(Nil)
-
-// Add a step
-pipeline.add_step(
-  pipeline: Pipeline(a),
-  name: String,
-  run: fn(Context, Dynamic) -> Result(Dynamic, StepError),
-) -> Pipeline(Dynamic)
-
-// Set default timeout
-pipeline.with_timeout(pipeline: Pipeline(a), timeout_ms: Int) -> Pipeline(a)
-
-// Get pipeline metadata
-pipeline.id(p: Pipeline(a)) -> PipelineId
-pipeline.steps(p: Pipeline(a)) -> List(Step)
-pipeline.default_timeout(p: Pipeline(a)) -> Int
+```bash
+docker build -t thingfactory .
+docker run --rm thingfactory run basic
 ```
 
-### Executor
+## Features
 
-```gleam
-// Execute a pipeline with configuration
-executor.execute(
-  pipeline: Pipeline(Dynamic),
-  initial_input: Dynamic,
-  config: ExecutionConfig,
-) -> ExecutionResult(Dynamic)
+- **Sequential & parallel execution** -- DAG-aware topological sort for parallel steps
+- **Loops** -- `FixedCount`, `RetryOnFailure`, `UntilSuccess`
+- **Scheduling** -- `Daily`, `Weekly`, `Monthly`, `Interval`, `Cron`
+- **Webhook triggers** -- GitHub, GitLab, custom events
+- **Secrets management** -- built-in secret store with access control
+- **Inter-step messaging** -- pub-sub message bus between steps
+- **Artifact sharing** -- read/write artifacts through the execution context
+- **CLI** -- compact, verbose, and interactive output modes with artifact extraction
+- **Web GUI** -- Next.js 15 + React Flow with DAG visualization, Gantt timeline, statistics dashboard
+- **Kubernetes runner** -- execute pipeline steps as K8s Jobs
+- **Docker isolation** -- pipeline steps run in containers by default
+- **Dogfooding** -- thingfactory builds itself with its own pipeline engine
 
-// Execute with pre-built context (testing)
-executor.execute_with_context(
-  pipeline: Pipeline(Dynamic),
-  initial_input: Dynamic,
-  context: Context,
-) -> ExecutionResult(Dynamic)
-```
+## Documentation
 
-### Test Helpers
-
-```gleam
-// Create mocks
-test_helpers.mock_step_success(name: String, output: Dynamic) -> Mock
-test_helpers.mock_step_error(name: String, error: StepError) -> Mock
-test_helpers.mock_step_fn(
-  name: String,
-  step_fn: fn(Context, Dynamic) -> Result(Dynamic, StepError),
-) -> Mock
-
-// Execute with mocks
-test_helpers.run_with_mocks(
-  pipeline: Pipeline(Dynamic),
-  mocks: List(Mock),
-  initial_input: Dynamic,
-) -> ExecutionResult(Dynamic)
-```
-
-### Registry & Loader
-
-```gleam
-// Manage pipeline versions
-registry.new() -> Registry
-registry.register(reg: Registry, id: PipelineId, artifact: Artifact) -> Result(Registry, RegistryError)
-registry.resolve(reg: Registry, id: PipelineId) -> Result(PipelineArtifact, RegistryError)
-registry.has_pipeline(reg: Registry, id: PipelineId) -> Bool
-
-// Load pipelines
-loader.load(reg: Registry, id: PipelineId) -> Result(Dynamic, PipelineError)
-loader.load_pipeline(reg: Registry, id: PipelineId) -> Result(Dynamic, PipelineError)
-```
+| Guide | Description |
+|---|---|
+| [User Guide](docs/USER_GUIDE.md) | Overview and architecture |
+| [Getting Started](docs/GETTING_STARTED.md) | Install and run your first pipeline |
+| [Running Pipelines](docs/RUNNING_PIPELINES.md) | CLI output modes, artifact extraction, Docker |
+| [Web GUI Guide](docs/WEB_GUI_GUIDE.md) | Dashboard, DAG visualization, Gantt timeline, stats |
+| [Hosting the Service](docs/HOSTING_SERVICE.md) | Docker deployment, configuration, production |
+| [Troubleshooting](docs/TROUBLESHOOTING.md) | Common issues and solutions |
 
 ## Examples
 
-See `src/thingfactory/examples.gleam` for complete working examples:
+26 example pipelines in `src/thingfactory/examples.gleam`:
 
-1. **Basic Sequential Pipeline** - Simple 3-step pipeline
-2. **Error Handling** - Demonstrates error propagation
-3. **Testing with Mocks** - Unit testing patterns
-4. **Dependency Injection** - Using injected configuration
-5. **Artifact Sharing** - Inter-step communication
-
-Run the example tests:
+- Basic sequential, error handling, mock testing, dependency injection
+- Real build pipelines: TypeScript, Rust, Go, Gleam, full-stack
+- Parallel DAG and multi-target parallel builds
+- Loops: retry, fixed count, until success
+- Messaging: pub-sub, multi-topic coordination, event-driven
+- Scheduling: daily, weekly, monthly, interval, cron
+- Kubernetes runner, custom runner factory, dogfooding
 
 ```bash
-gleam test  # Runs all tests including examples
+gleam run -m thingfactory/cli -- list   # see all 14 runnable pipelines
+gleam test                               # run all tests including examples
 ```
-
-## Architecture
-
-### Type Safety
-
-Gleam's type system ensures:
-- Step input/output types are validated at compile time
-- Error cases are explicit and cannot be ignored
-- Configuration is type-safe
-
-### Linear Execution
-
-The MVP enforces:
-- Sequential step execution (no branching)
-- No loops within pipelines
-- Deterministic behavior
-
-### Isolation
-
-Each execution has:
-- Fresh artifact store
-- Isolated dependencies
-- No state leakage between runs
-
-## Requirements Met
-
-✅ FR-1: Pipeline Definition in Gleam
-✅ FR-2: Sequential step execution
-✅ FR-3: Error propagation
-✅ FR-4: Artifact store with read/write
-✅ FR-5: Timeout enforcement infrastructure
-✅ FR-6: Registry with version conflict detection
-✅ FR-7: Testing with mocks
-✅ FR-8: Loader integration
-✅ FR-9: Dependency injection
-✅ QR-2: All error cases explicit/typed
-✅ QR-3: Execution isolation
-✅ QR-4: Linear execution only
-
-## Future Enhancements
-
-- Real timing implementation for duration_ms
-- YAML pipeline support (parallel to Gleam)
-- Conditional logic and branching
-- Loop support
-- External event triggering
-- Scheduling support
-- Web GUI (Next.js + React Flow)
-- Persistent state management
 
 ## Development
 
-### Building
-
 ```bash
-gleam build      # Compile the project
-gleam test       # Run all tests
-gleam format     # Format code
-```
-
-### Project Structure
-
-```
-src/thingfactory/
-  ├── pipeline.gleam           # Pipeline builder API
-  ├── executor.gleam           # Step execution engine
-  ├── types.gleam              # Core types and errors
-  ├── test_helpers.gleam       # Mock/testing utilities
-  ├── artifact_store.gleam     # Inter-step communication
-  ├── dependency_injector.gleam # Dependency management
-  ├── registry.gleam           # Pipeline versioning
-  ├── loader.gleam             # Pipeline loading
-  └── examples.gleam           # Example patterns
-
-test/
-  ├── *_test.gleam             # Comprehensive test suite
-  └── examples_test.gleam      # Example verification
+gleam build                  # compile
+gleam test                   # run tests
+gleam format                 # format code
+cd web && npm run dev        # start web GUI
+cd web && npx playwright test  # run E2E tests
 ```
 
 ## License
