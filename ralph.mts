@@ -39,20 +39,35 @@ file CRITIQUE if the INTENT of the work is done.
 
 Once all claims are VERIFIED, output <promise>COMPLETE</promise>."`;
 
-const TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes
+const TIMEOUT_MS = 60 * 60 * 1000; // 60 minutes
+const FAST_MODEL = "sonnet";
+const STRONG_MODEL = "opus";
+const REWORK_THRESHOLD = 1;
+
+async function pickModel(): Promise<string> {
+  try {
+    const content = await Deno.readTextFile("progress.md");
+    const reworkCount = (content.match(/NEEDS_REWORK/g) || []).length;
+    const model = reworkCount > REWORK_THRESHOLD ? STRONG_MODEL : FAST_MODEL;
+    console.log(`[model] ${reworkCount} NEEDS_REWORK entries → using ${model}`);
+    return model;
+  } catch {
+    return FAST_MODEL;
+  }
+}
 
 async function runIteration(iterationNum: number): Promise<boolean> {
-  console.log(`[${new Date().toISOString()}] Starting iteration ${iterationNum}...`);
+  const model = await pickModel();
+  console.log(`[${new Date().toISOString()}] Starting iteration ${iterationNum} (${model})...`);
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
   try {
-    let output = "";
     let isComplete = false;
 
     const process = new Deno.Command("claude", {
-      args: ["--dangerously-skip-permissions", "-p", prompt],
+      args: ["--dangerously-skip-permissions", "--model", model, "-p", prompt],
       stdout: "piped",
       stderr: "piped",
       signal: controller.signal,
@@ -67,8 +82,7 @@ async function runIteration(iterationNum: number): Promise<boolean> {
         try {
           for await (const chunk of child.stdout) {
             const text = new TextDecoder().decode(chunk);
-            Deno.stdout.writeSync(new TextEncoder().encode(text));
-            output += text;
+            await Deno.stdout.write(new TextEncoder().encode(text));
             if (text.includes("<promise>COMPLETE</promise>")) {
               isComplete = true;
             }
@@ -81,8 +95,7 @@ async function runIteration(iterationNum: number): Promise<boolean> {
         try {
           for await (const chunk of child.stderr) {
             const text = new TextDecoder().decode(chunk);
-            Deno.stderr.writeSync(new TextEncoder().encode(text));
-            output += text;
+            await Deno.stderr.write(new TextEncoder().encode(text));
           }
         } catch {
           // Stream closed or cancelled
@@ -97,13 +110,13 @@ async function runIteration(iterationNum: number): Promise<boolean> {
       return false;
     }
 
-    if (isComplete || output.includes("<promise>COMPLETE</promise>")) {
+    if (isComplete) {
       console.log(`[${new Date().toISOString()}] specification complete after ${iterationNum} iterations.`);
       return true;
     }
 
     console.log(`[${new Date().toISOString()}] Iteration ${iterationNum} complete.`);
-    return null; // Continue to next iteration
+    return false;
   } catch (error) {
     clearTimeout(timeoutId);
 
@@ -131,12 +144,11 @@ async function main() {
     const result = await runIteration(i);
 
     if (result === true) {
-      Deno.exit(0);
+      return
     }
   }
 
   console.log(`[${new Date().toISOString()}] All ${iterations} iterations completed without completion marker.`);
-  Deno.exit(1);
 }
 
 main().catch((error) => {
