@@ -34,14 +34,8 @@ pub type CliCommand {
     isolator: Result(String, Nil),
     docker_image: Result(String, Nil),
   )
-  Inspect(
-    pipeline_selector: String,
-    source_file: Result(String, Nil),
-  )
-  Results(
-    pipeline_selector: String,
-    source_file: Result(String, Nil),
-  )
+  Inspect(pipeline_selector: String, source_file: Result(String, Nil))
+  Results(pipeline_selector: String, source_file: Result(String, Nil))
   Artifacts(
     pipeline_selector: String,
     source_file: Result(String, Nil),
@@ -138,10 +132,7 @@ fn inspect_command() -> clip.Command(CliCommand) {
   clip.command({
     use source_file <- clip.parameter
     use pipeline_selector <- clip.parameter
-    Inspect(
-      pipeline_selector: pipeline_selector,
-      source_file: source_file,
-    )
+    Inspect(pipeline_selector: pipeline_selector, source_file: source_file)
   })
   |> clip.opt(
     opt.new("file")
@@ -166,10 +157,7 @@ fn results_command() -> clip.Command(CliCommand) {
   clip.command({
     use source_file <- clip.parameter
     use pipeline_selector <- clip.parameter
-    Results(
-      pipeline_selector: pipeline_selector,
-      source_file: source_file,
-    )
+    Results(pipeline_selector: pipeline_selector, source_file: source_file)
   })
   |> clip.opt(
     opt.new("file")
@@ -587,7 +575,10 @@ fn list_pipelines() -> Result(String, String) {
   ))
 }
 
-fn pipeline_label(source_file: Result(String, Nil), pipeline_selector: String) -> String {
+fn pipeline_label(
+  source_file: Result(String, Nil),
+  pipeline_selector: String,
+) -> String {
   case source_file {
     Ok(file_path) -> file_path <> ":" <> pipeline_selector
     Error(Nil) -> pipeline_selector
@@ -600,7 +591,8 @@ fn execute_pipeline_selector(
   mode: OutputMode,
 ) -> Result(ExecutionResult(Dynamic), String) {
   case source_file {
-    Ok(file_path) -> execute_pipeline_from_file(file_path, pipeline_selector, mode)
+    Ok(file_path) ->
+      execute_pipeline_from_file(file_path, pipeline_selector, mode)
     Error(Nil) -> execute_pipeline(pipeline_selector, mode)
   }
 }
@@ -722,7 +714,9 @@ pub fn main() {
     }
     Ok(Inspect(pipeline_selector, source_file)) -> {
       let label = pipeline_label(source_file, pipeline_selector)
-      case execute_pipeline_selector(source_file, pipeline_selector, Interactive) {
+      case
+        execute_pipeline_selector(source_file, pipeline_selector, Interactive)
+      {
         Ok(exec_result) -> {
           let _ = format_summary(label, exec_result, Interactive)
           Nil
@@ -771,20 +765,26 @@ fn resolve_isolation_mode(
       }
       let image = case docker_image {
         Ok(value) -> string.trim(value)
-        Error(Nil) -> "ghcr.io/gleam-lang/gleam:latest"
+        Error(Nil) -> "ghcr.io/gleam-lang/gleam:v1.13.0-erlang"
       }
       case selected {
         "docker" -> Ok(DockerIsolation(image: image))
         "local" -> Ok(LocalIsolation)
-        _ -> Error(
-          "Invalid isolator: " <> selected <> ". Expected 'docker' or 'local'.",
-        )
+        _ ->
+          Error(
+            "Invalid isolator: "
+            <> selected
+            <> ". Expected 'docker' or 'local'.",
+          )
       }
     }
   }
 }
 
-fn execute_run_in_docker(args: List(String), image: String) -> Result(String, String) {
+fn execute_run_in_docker(
+  args: List(String),
+  image: String,
+) -> Result(String, String) {
   case get_cwd() {
     Error(err) -> Error("Failed to determine current directory: " <> err)
     Ok(cwd) -> {
@@ -828,7 +828,8 @@ fn rewrite_run_args_for_local_isolation(args: List(String)) -> List(String) {
   case args {
     ["run", ..rest] -> {
       let without_isolator = strip_opt_with_value(rest, "--isolator")
-      let without_image = strip_opt_with_value(without_isolator, "--docker-image")
+      let without_image =
+        strip_opt_with_value(without_isolator, "--docker-image")
       let run_args = list.append(without_image, ["--isolator", "local"])
       ["run", ..run_args]
     }
@@ -842,8 +843,7 @@ fn strip_opt_with_value(args: List(String), opt_name: String) -> List(String) {
     [first] -> [first]
     [first, _second, ..rest] if first == opt_name ->
       strip_opt_with_value(rest, opt_name)
-    [first, ..rest] ->
-      [first, ..strip_opt_with_value(rest, opt_name)]
+    [first, ..rest] -> [first, ..strip_opt_with_value(rest, opt_name)]
   }
 }
 

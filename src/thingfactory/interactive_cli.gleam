@@ -256,7 +256,7 @@ fn format_artifacts(result: ExecutionResult(Dynamic)) -> String {
 }
 
 /// Show interactive mode prompt and instructions
-pub fn show_welcome(state: InteractiveState) -> Nil {
+pub fn show_welcome(_state: InteractiveState) -> Nil {
   io.println("")
   io.println("🔍 Interactive Mode")
   io.println("Type 'help' for available commands, 'exit' to quit")

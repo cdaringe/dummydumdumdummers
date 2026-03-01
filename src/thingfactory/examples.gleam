@@ -179,7 +179,7 @@ pub fn rust_build_pipeline() -> pipeline.Pipeline(Dynamic) {
     // In production: cargo check
     Ok(dynamic.string("validation=passed"))
   })
-  |> pipeline.add_step("run_tests", fn(_ctx, validation) {
+  |> pipeline.add_step("run_tests", fn(_ctx, _validation) {
     // In production: cargo test --all
     Ok(dynamic.string("test_count=156"))
   })
@@ -191,7 +191,7 @@ pub fn rust_build_pipeline() -> pipeline.Pipeline(Dynamic) {
     // In production: cargo doc --no-deps
     Ok(dynamic.string("docs_path=target/doc/mylib"))
   })
-  |> pipeline.add_step("publish_artifacts", fn(_ctx, docs_path) {
+  |> pipeline.add_step("publish_artifacts", fn(_ctx, _docs_path) {
     // In production: upload to artifactory or cargo registry
     Ok(dynamic.string("published=true"))
   })
@@ -677,13 +677,15 @@ pub fn distributed_accumulation_pipeline() -> pipeline.Pipeline(Dynamic) {
   )
   |> pipeline.add_step("node_b_append", fn(ctx, input) {
     case node_b_step(ctx, dynamic.nil()) {
-      Ok(value) -> Ok(dynamic.string(string.inspect(input) <> string.inspect(value)))
+      Ok(value) ->
+        Ok(dynamic.string(string.inspect(input) <> string.inspect(value)))
       Error(err) -> Error(err)
     }
   })
   |> pipeline.add_step("node_c_append", fn(ctx, input) {
     case node_c_step(ctx, dynamic.nil()) {
-      Ok(value) -> Ok(dynamic.string(string.inspect(input) <> string.inspect(value)))
+      Ok(value) ->
+        Ok(dynamic.string(string.inspect(input) <> string.inspect(value)))
       Error(err) -> Error(err)
     }
   })

@@ -3,10 +3,8 @@
 /// This module provides functions to work with pipeline schedules, including
 /// checking whether a schedule matches the current time. Integration with
 /// external schedulers (cron, cloud schedulers, etc.) is done by the caller.
-import gleam/dict.{type Dict}
 import gleam/int
 import gleam/list
-import gleam/result
 import gleam/string
 import thingfactory/types.{
   type Schedule, Cron, Daily, Interval, Monthly, NoSchedule, Weekly,
@@ -64,14 +62,14 @@ pub fn description(schedule: Schedule) -> String {
 // Internal helpers
 // ---------------------------------------------------------------------------
 
-fn matches_daily(timestamp_ms: Int, hour: Int, minute: Int) -> Bool {
+fn matches_daily(_timestamp_ms: Int, hour: Int, minute: Int) -> Bool {
   let hour_ok = hour >= 0 && hour < 24
   let minute_ok = minute >= 0 && minute < 60
   hour_ok && minute_ok
 }
 
 fn matches_weekly(
-  timestamp_ms: Int,
+  _timestamp_ms: Int,
   day_of_week: Int,
   hour: Int,
   minute: Int,
@@ -83,7 +81,7 @@ fn matches_weekly(
 }
 
 fn matches_monthly(
-  timestamp_ms: Int,
+  _timestamp_ms: Int,
   days: List(Int),
   hour: Int,
   minute: Int,
@@ -94,7 +92,7 @@ fn matches_monthly(
   days_ok && hour_ok && minute_ok
 }
 
-fn matches_cron(timestamp_ms: Int, expr: String) -> Bool {
+fn matches_cron(_timestamp_ms: Int, expr: String) -> Bool {
   // Basic cron validation — full parsing is complex
   // This validates the format "minute hour day month day_of_week"
   let parts = string.split(expr, " ")

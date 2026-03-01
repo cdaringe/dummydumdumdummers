@@ -100,7 +100,8 @@ pub fn parallel_multi_target_pipeline_test() {
 pub fn distributed_parallel_pipeline_structure_test() {
   // Structure-only: this example runs Kubernetes jobs, so we validate DAG shape.
   let p = examples.distributed_parallel_pipeline()
-  pipeline.id(p) |> should.equal(types.PipelineId("distributed_parallel", "1.0.0"))
+  pipeline.id(p)
+  |> should.equal(types.PipelineId("distributed_parallel", "1.0.0"))
 
   let steps = pipeline.steps(p)
   list.length(steps) |> should.equal(4)
@@ -223,10 +224,12 @@ pub fn dogfood_pipeline_test() {
 }
 
 fn deps_for_step(steps: List(pipeline.Step), target: String) -> List(String) {
-  case list.find(steps, fn(step) {
-    let pipeline.Step(name, _, _, _, _) = step
-    name == target
-  }) {
+  case
+    list.find(steps, fn(step) {
+      let pipeline.Step(name, _, _, _, _) = step
+      name == target
+    })
+  {
     Ok(found) -> {
       let pipeline.Step(_, _, _, depends_on, _) = found
       depends_on

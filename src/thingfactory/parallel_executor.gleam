@@ -17,8 +17,8 @@ import thingfactory/pipeline.{type Pipeline, type Step}
 import thingfactory/timing
 import thingfactory/types.{
   type Context, type ExecutionConfig, type ExecutionResult, type StepEvent,
-  type StepTrace, Context, ExecutionResult, StepError, StepFailed, StepFinished,
-  StepOk, StepSkipped, StepStarting, StepTrace,
+  Context, ExecutionResult, StepError, StepFailed, StepFinished, StepOk,
+  StepSkipped, StepStarting, StepTrace,
 }
 
 // ---------------------------------------------------------------------------
@@ -57,7 +57,7 @@ pub fn execute_parallel(
       )
     Ok(Nil) -> {
       // Execute with parallel support
-      let result = execute_with_deps(steps, initial_input, ctx, dict.new(), [])
+      let result = execute_with_deps(steps, initial_input, ctx, dict.new())
       result
     }
   }
@@ -98,7 +98,6 @@ pub fn execute_parallel_with_progress(
         initial_input,
         ctx,
         dict.new(),
-        [],
         on_progress,
         1,
         total,
@@ -112,8 +111,6 @@ pub fn execute_parallel_with_progress(
 
 /// Step status during execution
 type StepStatus {
-  Pending
-  Running
   Completed(result: Result(Dynamic, types.StepError), duration_ms: Int)
   Failed(error: types.StepError, duration_ms: Int)
 }
@@ -123,7 +120,6 @@ fn execute_with_deps(
   initial_input: Dynamic,
   ctx: Context,
   step_status: Dict(String, StepStatus),
-  traces: List(StepTrace),
 ) -> ExecutionResult(Dynamic) {
   // Check if all steps are either completed or failed
   let all_done =
@@ -215,13 +211,7 @@ fn execute_with_deps(
                   step.name,
                   Failed(types.StepFailure("dependency failed"), 0),
                 )
-              execute_with_deps(
-                steps,
-                initial_input,
-                ctx,
-                updated_status,
-                traces,
-              )
+              execute_with_deps(steps, initial_input, ctx, updated_status)
             }
             False -> {
               // Execute the step
@@ -239,13 +229,7 @@ fn execute_with_deps(
                   dict.insert(step_status, step.name, Failed(err, duration_ms))
               }
 
-              execute_with_deps(
-                steps,
-                initial_input,
-                ctx,
-                updated_status,
-                traces,
-              )
+              execute_with_deps(steps, initial_input, ctx, updated_status)
             }
           }
         }
@@ -268,7 +252,6 @@ fn execute_with_deps_progress(
   initial_input: Dynamic,
   ctx: Context,
   step_status: Dict(String, StepStatus),
-  traces: List(StepTrace),
   on_progress: fn(StepEvent) -> Nil,
   current_index: Int,
   total: Int,
@@ -375,7 +358,6 @@ fn execute_with_deps_progress(
                 initial_input,
                 ctx,
                 updated_status,
-                traces,
                 on_progress,
                 current_index + 1,
                 total,
@@ -390,7 +372,9 @@ fn execute_with_deps_progress(
               let #(duration_ms, step_result) =
                 timing.measure(fn() { step.run(ctx, initial_input) })
 
-              let #(updated_status, step_status_event, step_output) = case step_result {
+              let #(updated_status, step_status_event, step_output) = case
+                step_result
+              {
                 Ok(#(output, _updated_ctx)) -> #(
                   dict.insert(
                     step_status,
@@ -421,7 +405,6 @@ fn execute_with_deps_progress(
                 initial_input,
                 ctx,
                 updated_status,
-                traces,
                 on_progress,
                 current_index + 1,
                 total,

@@ -92,7 +92,8 @@ pub fn parse_inspect_command_test() {
 }
 
 pub fn parse_results_command_test() {
-  let parsed = cli.parse_args(["results", "thingfactory@examples:basic_pipeline"])
+  let parsed =
+    cli.parse_args(["results", "thingfactory@examples:basic_pipeline"])
   let assert Ok(command) = parsed
   case command {
     cli.Results(pipeline_selector, source_file) -> {
@@ -126,7 +127,8 @@ pub fn parse_artifacts_command_test() {
 }
 
 pub fn parse_artifacts_requires_output_dir_test() {
-  let parsed = cli.parse_args(["artifacts", "thingfactory@examples:basic_pipeline"])
+  let parsed =
+    cli.parse_args(["artifacts", "thingfactory@examples:basic_pipeline"])
   let err = should.be_error(parsed)
   should.be_true(string.contains(err, "output-dir"))
 }

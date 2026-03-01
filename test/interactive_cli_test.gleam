@@ -1,6 +1,5 @@
 import gleam/dict
 import gleam/dynamic
-import gleam/list
 import gleam/string
 import gleeunit/should
 import thingfactory/interactive_cli.{type InteractiveState, InteractiveState}

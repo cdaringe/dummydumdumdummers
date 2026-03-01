@@ -13,7 +13,7 @@ import thingfactory/types
 pub fn full_pipeline_execution_test() {
   let p =
     pipeline.new("integration", "1.0.0")
-    |> pipeline.add_step("step1", fn(_, input) {
+    |> pipeline.add_step("step1", fn(_, _input) {
       Ok(dynamic.string("processed"))
     })
     |> pipeline.add_step("step2", fn(_, input) { Ok(input) })

@@ -2,9 +2,9 @@
 ///
 /// Implements FR-6 (Pipeline Registry & Versioning).
 /// Uses in-process dict per [q2] decision — no persistence across restarts.
-import gleam/dict.{type Dict}
+import gleam/dict
 import thingfactory/types.{
-  type PipelineId, type RegistryError, NotFound, PipelineId, VersionConflict,
+  type PipelineId, type RegistryError, NotFound, VersionConflict,
 }
 
 /// A compiled pipeline artifact with metadata.
@@ -14,7 +14,7 @@ pub type CompiledArtifact(pipeline) {
 
 /// The registry is a dict mapping PipelineId to CompiledArtifact.
 pub type Registry(pipeline) =
-  Dict(PipelineId, CompiledArtifact(pipeline))
+  dict.Dict(PipelineId, CompiledArtifact(pipeline))
 
 /// Create a new empty registry.
 pub fn new() -> Registry(pipeline) {

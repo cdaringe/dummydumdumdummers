@@ -9,8 +9,12 @@ import thingfactory/types.{type StepEvent}
 pub fn sequential_execution_test() {
   let p =
     pipeline.new("test", "1.0.0")
-    |> pipeline.add_step("step1", fn(ctx, input) { Ok(dynamic.string("step1")) })
-    |> pipeline.add_step("step2", fn(ctx, input) { Ok(dynamic.string("step2")) })
+    |> pipeline.add_step("step1", fn(_ctx, _input) {
+      Ok(dynamic.string("step1"))
+    })
+    |> pipeline.add_step("step2", fn(_ctx, _input) {
+      Ok(dynamic.string("step2"))
+    })
 
   let config = types.default_config()
   let result = executor.execute(p, dynamic.string("input"), config)
@@ -23,11 +27,11 @@ pub fn sequential_execution_test() {
 pub fn error_propagation_test() {
   let p =
     pipeline.new("test", "1.0.0")
-    |> pipeline.add_step("step1", fn(ctx, input) { Ok(input) })
-    |> pipeline.add_step("step2", fn(ctx, input) {
+    |> pipeline.add_step("step1", fn(_ctx, input) { Ok(input) })
+    |> pipeline.add_step("step2", fn(_ctx, _input) {
       Error(types.StepFailure(message: "fail"))
     })
-    |> pipeline.add_step("step3", fn(ctx, input) { Ok(input) })
+    |> pipeline.add_step("step3", fn(_ctx, input) { Ok(input) })
 
   let config = types.default_config()
   let result = executor.execute(p, dynamic.string("input"), config)
@@ -40,9 +44,9 @@ pub fn error_propagation_test() {
 pub fn linear_execution_order_test() {
   let p =
     pipeline.new("test", "1.0.0")
-    |> pipeline.add_step("a", fn(ctx, input) { Ok(input) })
-    |> pipeline.add_step("b", fn(ctx, input) { Ok(input) })
-    |> pipeline.add_step("c", fn(ctx, input) { Ok(input) })
+    |> pipeline.add_step("a", fn(_ctx, input) { Ok(input) })
+    |> pipeline.add_step("b", fn(_ctx, input) { Ok(input) })
+    |> pipeline.add_step("c", fn(_ctx, input) { Ok(input) })
 
   let config = types.default_config()
   let result = executor.execute(p, dynamic.nil(), config)

@@ -7,7 +7,7 @@ import gleam/dynamic.{type Dynamic}
 import gleam/list
 import thingfactory/executor
 import thingfactory/message_store
-import thingfactory/pipeline.{type Pipeline, type Step, Pipeline, Step}
+import thingfactory/pipeline.{type Pipeline, Pipeline, Step}
 import thingfactory/secret_manager
 import thingfactory/types.{
   type Context, type ExecutionResult, type StepError, Context,

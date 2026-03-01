@@ -60,7 +60,9 @@ pub fn step_in_dir(
 /// Run a single shell command string via `sh -c`, trimming all boilerplate
 /// down to the command itself. Useful for quick program invocations or
 /// one-off scripts in pipelines.
-pub fn sh(command: String) -> fn(types.Context, Dynamic) -> types.StepResult(Dynamic) {
+pub fn sh(
+  command: String,
+) -> fn(types.Context, Dynamic) -> types.StepResult(Dynamic) {
   build_step("sh -c " <> command, fn() { run("sh", ["-c", command]) })
 }
 

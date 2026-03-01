@@ -1,7 +1,6 @@
 /// Tests for message_store module
 import gleam/dynamic
 import gleam/list
-import gleeunit
 import gleeunit/should
 import thingfactory/message_store
 

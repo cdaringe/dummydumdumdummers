@@ -2,7 +2,7 @@ import gleeunit/should
 import thingfactory/timing
 
 pub fn timing_measure_returns_tuple_test() {
-  let #(duration_ms, result) = timing.measure(fn() { "done" })
+  let #(_duration_ms, result) = timing.measure(fn() { "done" })
 
   // Just verify structure - duration is captured and result is preserved
   result |> should.equal("done")
