@@ -12,4 +12,5 @@ Fill in the table as you progess
 
 | scenario | status | documentation | rework notes |
 |---|---|---|---|
+| 4 | WORK_COMPLETE | docs/scenarios/4.md | |
 | 47 | WORK_COMPLETE | docs/scenarios/47.md | |
