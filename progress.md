@@ -42,7 +42,7 @@ END_DEMO
 | 25 | VERIFIED | docs/scenarios/25.md | runner_host.new() calls get_cpu_count() FFI, min 1 worker. |
 | 26 | VERIFIED | docs/scenarios/26.md | kubernetes_runner.gleam with Job YAML generation, kubectl integration. |
 | 27 | VERIFIED | docs/scenarios/27.md | secret_manager.gleam with opaque types, masking, CRUD, validation. |
-| 28 | NEEDS_REWORK | docs/scenarios/28.md | `pipeline.add_step_with_deps` uses `depends_on: List(String)` to reference other steps by name string — stringly typed step referencing. Spec says "SHALL NOT be stringly typed or referenced." |
+| 28 | WORK_COMPLETE | docs/scenarios/28.md | |
 | 29 | VERIFIED | docs/scenarios/29.md | StepLogViewer.tsx + SSE streaming endpoint + RunDetailClient.tsx. |
 | 30 | VERIFIED | docs/scenarios/30.md | CLI uses same executor/parallel_executor as production. |
 | 31 | VERIFIED | docs/scenarios/31.md | 15 CLI-runnable pipelines, seed.ts populates GUI database. |
