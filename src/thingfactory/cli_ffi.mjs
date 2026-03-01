@@ -2,7 +2,7 @@
 // This function returns a proper Gleam list
 
 // Import Gleam's list constructors from prelude
-import { Empty as $EmptyClass, toList, Ok, Error } from "../gleam.mjs";
+import { Empty as $EmptyClass, Error, Ok, toList } from "../gleam.mjs";
 import * as readline from "readline";
 import * as fs from "fs";
 import * as path from "path";
@@ -20,7 +20,7 @@ export function load_pipeline_from_file(file_path, function_name) {
 }
 
 export function get_argv() {
-  const args = typeof process !== 'undefined' ? process.argv.slice(2) : [];
+  const args = typeof process !== "undefined" ? process.argv.slice(2) : [];
 
   // Use Gleam's toList function to create a proper Gleam list from the array
   return toList(args);
@@ -36,11 +36,11 @@ function getReadlineInterface() {
     rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout,
-      terminal: true
+      terminal: true,
     });
 
     // Collect lines as they come in
-    rl.on('line', (line) => {
+    rl.on("line", (line) => {
       lineQueue.push(line);
     });
   }
@@ -78,10 +78,10 @@ export async function read_line_sync() {
     } else {
       // Set up a one-time listener for the next line
       const onLine = (line) => {
-        rl.removeListener('line', onLine);
+        rl.removeListener("line", onLine);
         resolve(new Ok(line));
       };
-      rl.on('line', onLine);
+      rl.on("line", onLine);
     }
   });
 }

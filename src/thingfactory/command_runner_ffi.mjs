@@ -1,7 +1,7 @@
 // JavaScript FFI for command runner
 // Uses Node.js child_process.spawnSync for synchronous command execution
 
-import { Ok, Error } from "../gleam.mjs";
+import { Error, Ok } from "../gleam.mjs";
 import { spawnSync } from "child_process";
 
 export function run_command(program, args) {

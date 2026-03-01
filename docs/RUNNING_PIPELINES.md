@@ -1,6 +1,7 @@
 # Running Pipelines
 
-How to run pipelines with the CLI, including output modes, artifact extraction, and Docker.
+How to run pipelines with the CLI, including output modes, artifact extraction,
+and Docker.
 
 ## Table of Contents
 
@@ -15,7 +16,8 @@ How to run pipelines with the CLI, including output modes, artifact extraction, 
 
 ## CLI Overview
 
-The CLI uses the [clip](https://hexdocs.pm/clip/) library for argument parsing with auto-generated help.
+The CLI uses the [clip](https://hexdocs.pm/clip/) library for argument parsing
+with auto-generated help.
 
 ```
 thingfactory <command>
@@ -92,15 +94,15 @@ gleam run -m thingfactory/cli -- inspect -f src/thingfactory/examples.gleam arti
 
 Available interactive commands:
 
-| Command | Description |
-|---|---|
-| `help` | Show available commands |
-| `list` | List all steps with status |
-| `step <N>` | Show detail for step by index (0-based) |
-| `step <name>` | Show detail for step by name |
-| `stats` | Show pipeline execution statistics |
-| `artifacts` | List produced artifacts and values |
-| `exit` | Exit interactive mode |
+| Command       | Description                             |
+| ------------- | --------------------------------------- |
+| `help`        | Show available commands                 |
+| `list`        | List all steps with status              |
+| `step <N>`    | Show detail for step by index (0-based) |
+| `step <name>` | Show detail for step by name            |
+| `stats`       | Show pipeline execution statistics      |
+| `artifacts`   | List produced artifacts and values      |
+| `exit`        | Exit interactive mode                   |
 
 ## Artifact Extraction
 
@@ -134,13 +136,15 @@ docker run --rm thingfactory run thingfactory@examples:typescript_build_pipeline
 docker run --rm thingfactory list
 ```
 
-The Dockerfile uses a multi-stage build with `node:22-alpine`, compiling Gleam to JavaScript.
+The Dockerfile uses a multi-stage build with `node:22-alpine`, compiling Gleam
+to JavaScript.
 
 ## Pipeline Resolution
 
 The CLI resolves pipelines at runtime:
 
-- `run <module:function>` loads a compiled function (for example, `thingfactory@examples:basic_pipeline`).
+- `run <module:function>` loads a compiled function (for example,
+  `thingfactory@examples:basic_pipeline`).
 - `run -f <file.gleam> <function>` loads from a source file by function name.
 - `list` prints valid usage patterns and examples.
 

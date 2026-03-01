@@ -22,7 +22,8 @@ Install Thingfactory and run your first pipeline.
 
 - [Gleam](https://gleam.run/getting-started/installing/) >= 1.13.0
 - [Node.js](https://nodejs.org/) >= 22 (for JavaScript target)
-- [Docker](https://docs.docker.com/get-docker/) (optional, for containerized execution)
+- [Docker](https://docs.docker.com/get-docker/) (optional, for containerized
+  execution)
 
 ## Installation
 
@@ -74,7 +75,8 @@ gleam run -m thingfactory/cli -- inspect -f src/thingfactory/examples.gleam arti
 gleam run -m thingfactory/cli -- list
 ```
 
-`list` prints usage patterns for runtime loading (`module:function` or `-f <file> <function>`), not embedded pipeline names.
+`list` prints usage patterns for runtime loading (`module:function` or
+`-f <file> <function>`), not embedded pipeline names.
 
 ## Define Your Own Pipeline
 
@@ -178,7 +180,8 @@ gleam test
 
 ## Next Steps
 
-- [Running Pipelines](RUNNING_PIPELINES.md) -- CLI output modes, artifact extraction, Docker
+- [Running Pipelines](RUNNING_PIPELINES.md) -- CLI output modes, artifact
+  extraction, Docker
 - [Web GUI Guide](WEB_GUI_GUIDE.md) -- visualize and monitor pipelines
 - [Hosting the Service](HOSTING_SERVICE.md) -- deploy the web service
 - See `src/thingfactory/examples.gleam` for 26 working pipeline examples

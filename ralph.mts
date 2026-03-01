@@ -10,7 +10,9 @@ import { parseArgs } from "jsr:@std/cli@1/parse-args";
 
 type Agent = (typeof VALID_AGENTS)[number];
 type LogLevel = "info" | "error" | "debug";
-type Logger = (opts: { tags: [LogLevel, ...string[]]; message: string }) => void;
+type Logger = (
+  opts: { tags: [LogLevel, ...string[]]; message: string },
+) => void;
 type Result<T, E> = { ok: true; value: T } | { ok: false; error: E };
 
 const ok = <T,>(value: T): Result<T, never> => ({ ok: true, value });
@@ -42,7 +44,8 @@ type CommandSpec = {
 const VALID_AGENTS = ["claude", "codex"] as const;
 const TIMEOUT_MS = 60 * 60 * 1000;
 const REWORK_THRESHOLD = 1;
-const USAGE = "Usage: deno run ralph.mts --iterations <n> [--agent claude|codex]";
+const USAGE =
+  "Usage: deno run ralph.mts --iterations <n> [--agent claude|codex]";
 const COMPLETION_MARKER = "<promise>COMPLETE</promise>";
 const VALIDATE_SCRIPT = "specification.validate.sh";
 const VALIDATE_OUTPUT_DIR = ".ralph/validation";
@@ -89,7 +92,9 @@ const createLogger = (): Logger => {
 
 // --- Pure Functions ---
 
-const parseCliArgs = (rawArgs: string[]): Result<{ agent: Agent; iterations: number }, string> => {
+const parseCliArgs = (
+  rawArgs: string[],
+): Result<{ agent: Agent; iterations: number }, string> => {
   const args = parseArgs(rawArgs, {
     string: ["agent", "iterations"],
     alias: { a: "agent", i: "iterations" },
@@ -99,12 +104,15 @@ const parseCliArgs = (rawArgs: string[]): Result<{ agent: Agent; iterations: num
   const agent = String(args.agent).toLowerCase();
   const iterations = parseInt(String(args.iterations ?? ""), 10);
 
-  return !VALID_AGENTS.includes(agent as Agent) || !iterations || isNaN(iterations) || iterations < 1
+  return !VALID_AGENTS.includes(agent as Agent) || !iterations ||
+      isNaN(iterations) || iterations < 1
     ? err(USAGE)
     : ok({ agent: agent as Agent, iterations });
 };
 
-const detectScenarioFromProgress = (content: string): Result<number | undefined, string> => {
+const detectScenarioFromProgress = (
+  content: string,
+): Result<number | undefined, string> => {
   const lines = content.split("\n");
   const endDemoIndex = lines.findIndex((line) => line.includes("END_DEMO"));
 
@@ -128,15 +136,18 @@ const detectScenarioFromProgress = (content: string): Result<number | undefined,
 const getModelDefaults = (agent: Agent): { fast: string; strong: string } =>
   agent === "claude"
     ? {
-        fast: Deno.env.get("CLAUDE_FAST_MODEL") ?? "sonnet",
-        strong: Deno.env.get("CLAUDE_STRONG_MODEL") ?? "opus",
-      }
+      fast: Deno.env.get("CLAUDE_FAST_MODEL") ?? "sonnet",
+      strong: Deno.env.get("CLAUDE_STRONG_MODEL") ?? "opus",
+    }
     : {
-        fast: Deno.env.get("CODEX_FAST_MODEL") ?? "gpt-5.1-codex-max",
-        strong: Deno.env.get("CODEX_STRONG_MODEL") ?? "gpt-5.3-codex",
-      };
+      fast: Deno.env.get("CODEX_FAST_MODEL") ?? "gpt-5.1-codex-max",
+      strong: Deno.env.get("CODEX_STRONG_MODEL") ?? "gpt-5.3-codex",
+    };
 
-const computeModelSelection = (content: string, agent: Agent): Result<ModelSelection, string> => {
+const computeModelSelection = (
+  content: string,
+  agent: Agent,
+): Result<ModelSelection, string> => {
   const reworkCount = (content.match(/NEEDS_REWORK/g) ?? []).length;
   const scenarioResult = detectScenarioFromProgress(content);
 
@@ -152,11 +163,13 @@ const computeModelSelection = (content: string, agent: Agent): Result<ModelSelec
   });
 };
 
-const buildPrompt = ({ targetScenario, useStrongModel, validationFailurePath }: {
-  targetScenario: number | undefined;
-  useStrongModel: boolean;
-  validationFailurePath: string | undefined;
-}): string => {
+const buildPrompt = (
+  { targetScenario, useStrongModel, validationFailurePath }: {
+    targetScenario: number | undefined;
+    useStrongModel: boolean;
+    validationFailurePath: string | undefined;
+  },
+): string => {
   const base = !useStrongModel || targetScenario === undefined
     ? BASE_PROMPT
     : `${BASE_PROMPT}
@@ -165,9 +178,7 @@ ACTUALLY:
 - You must work ONLY on scenario ${targetScenario}.
 - Do not work on any other scenario in this iteration.`;
 
-  return validationFailurePath === undefined
-    ? base
-    : `${base}
+  return validationFailurePath === undefined ? base : `${base}
 
 VALIDATION FAILED on previous iteration. Review the failure output at: ${validationFailurePath}
 Fix the issues identified in the validation output before proceeding with other work.`;
@@ -180,15 +191,25 @@ const buildCommandSpec = ({ agent, model, prompt }: {
 }): CommandSpec =>
   agent === "claude"
     ? {
-        command: "claude",
-        args: ["--dangerously-skip-permissions", "--model", model,
-          //  "-p",
-           prompt],
-      }
+      command: "claude",
+      args: [
+        "--dangerously-skip-permissions",
+        "--model",
+        model,
+        //  "-p",
+        prompt,
+      ],
+    }
     : {
-        command: "codex",
-        args: ["exec", "--dangerously-bypass-approvals-and-sandbox", "--model", model, prompt],
-      };
+      command: "codex",
+      args: [
+        "exec",
+        "--dangerously-bypass-approvals-and-sandbox",
+        "--model",
+        model,
+        prompt,
+      ],
+    };
 
 // --- IO Functions ---
 
@@ -212,7 +233,10 @@ const pipeStream = async ({ stream, output, marker }: {
   return found;
 };
 
-const resolveModelSelection = async (agent: Agent, log: Logger): Promise<ModelSelection> => {
+const resolveModelSelection = async (
+  agent: Agent,
+  log: Logger,
+): Promise<ModelSelection> => {
   const defaults: ModelSelection = {
     model: getModelDefaults(agent).fast,
     useStrongModel: false,
@@ -230,23 +254,37 @@ const resolveModelSelection = async (agent: Agent, log: Logger): Promise<ModelSe
 
   const { model, useStrongModel, targetScenario } = result.value;
   const reworkCount = (content.match(/NEEDS_REWORK/g) ?? []).length;
-  log({ tags: ["info", "model"], message: `${reworkCount} NEEDS_REWORK entries → using ${model}` });
+  log({
+    tags: ["info", "model"],
+    message: `${reworkCount} NEEDS_REWORK entries → using ${model}`,
+  });
 
   if (useStrongModel && targetScenario !== undefined) {
-    log({ tags: ["info", "scenario"], message: `strong-model pass scoped to scenario ${targetScenario}` });
+    log({
+      tags: ["info", "scenario"],
+      message: `strong-model pass scoped to scenario ${targetScenario}`,
+    });
   }
 
   return result.value;
 };
 
-const ensureValidationHook = async (log: Logger): Promise<Result<void, string>> => {
+const ensureValidationHook = async (
+  log: Logger,
+): Promise<Result<void, string>> => {
   const exists = await Deno.stat(VALIDATE_SCRIPT).then(() => true, () => false);
   if (exists) return ok(undefined);
 
   await Deno.writeTextFile(VALIDATE_SCRIPT, VALIDATE_TEMPLATE);
   await Deno.chmod(VALIDATE_SCRIPT, 0o755);
-  log({ tags: ["info", "hook"], message: `Created ${VALIDATE_SCRIPT}. Fill in your validation logic and re-run.` });
-  return err(`${VALIDATE_SCRIPT} created — fill in validation logic before re-running.`);
+  log({
+    tags: ["info", "hook"],
+    message:
+      `Created ${VALIDATE_SCRIPT}. Fill in your validation logic and re-run.`,
+  });
+  return err(
+    `${VALIDATE_SCRIPT} created — fill in validation logic before re-running.`,
+  );
 };
 
 const runValidation = async ({ iterationNum, log }: {
@@ -273,26 +311,48 @@ const runValidation = async ({ iterationNum, log }: {
   await Deno.writeTextFile(outputPath, content);
 
   return output.code === 0
-    ? (log({ tags: ["info", "validate"], message: `Validation passed (iteration ${iterationNum})` }),
-       { status: "passed" })
-    : (log({ tags: ["error", "validate"], message: `Validation failed (iteration ${iterationNum}), see ${outputPath}` }),
-       { status: "failed", outputPath });
+    ? (log({
+      tags: ["info", "validate"],
+      message: `Validation passed (iteration ${iterationNum})`,
+    }),
+      { status: "passed" })
+    : (log({
+      tags: ["error", "validate"],
+      message:
+        `Validation failed (iteration ${iterationNum}), see ${outputPath}`,
+    }),
+      { status: "failed", outputPath });
 };
 
-const runIteration = async ({ iterationNum, agent, signal, log, validationFailurePath }: {
-  iterationNum: number;
-  agent: Agent;
-  signal: AbortSignal;
-  log: Logger;
-  validationFailurePath: string | undefined;
-}): Promise<IterationResult> => {
-  const { model, useStrongModel, targetScenario } = await resolveModelSelection(agent, log);
-  const prompt = buildPrompt({ targetScenario, useStrongModel, validationFailurePath });
+const runIteration = async (
+  { iterationNum, agent, signal, log, validationFailurePath }: {
+    iterationNum: number;
+    agent: Agent;
+    signal: AbortSignal;
+    log: Logger;
+    validationFailurePath: string | undefined;
+  },
+): Promise<IterationResult> => {
+  const { model, useStrongModel, targetScenario } = await resolveModelSelection(
+    agent,
+    log,
+  );
+  const prompt = buildPrompt({
+    targetScenario,
+    useStrongModel,
+    validationFailurePath,
+  });
   const spec = buildCommandSpec({ agent, model, prompt });
 
-  log({ tags: ["info"], message: `Starting iteration ${iterationNum} (${model})...` });
+  log({
+    tags: ["info"],
+    message: `Starting iteration ${iterationNum} (${model})...`,
+  });
 
-  const combinedSignal = AbortSignal.any([signal, AbortSignal.timeout(TIMEOUT_MS)]);
+  const combinedSignal = AbortSignal.any([
+    signal,
+    AbortSignal.timeout(TIMEOUT_MS),
+  ]);
 
   try {
     const child = new Deno.Command(spec.command, {
@@ -305,21 +365,38 @@ const runIteration = async ({ iterationNum, agent, signal, log, validationFailur
 
     const [status, foundComplete] = await Promise.all([
       child.status,
-      pipeStream({ stream: child.stdout, output: Deno.stdout, marker: COMPLETION_MARKER }),
+      pipeStream({
+        stream: child.stdout,
+        output: Deno.stdout,
+        marker: COMPLETION_MARKER,
+      }),
       pipeStream({ stream: child.stderr, output: Deno.stderr }),
     ]);
 
     return status.code !== 0
-      ? (log({ tags: ["error"], message: `iteration ${iterationNum} failed with exit code ${status.code}` }),
-         { status: "failed", code: status.code })
+      ? (log({
+        tags: ["error"],
+        message:
+          `iteration ${iterationNum} failed with exit code ${status.code}`,
+      }),
+        { status: "failed", code: status.code })
       : foundComplete
-        ? (log({ tags: ["info"], message: `specification complete after ${iterationNum} iterations.` }),
-           { status: "complete" })
-        : (log({ tags: ["info"], message: `Iteration ${iterationNum} complete.` }),
-           { status: "continue" });
+      ? (log({
+        tags: ["info"],
+        message: `specification complete after ${iterationNum} iterations.`,
+      }),
+        { status: "complete" })
+      : (log({
+        tags: ["info"],
+        message: `Iteration ${iterationNum} complete.`,
+      }),
+        { status: "continue" });
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") {
-      log({ tags: ["error"], message: `TIMEOUT: iteration ${iterationNum} exceeded 60 minutes` });
+      log({
+        tags: ["error"],
+        message: `TIMEOUT: iteration ${iterationNum} exceeded 60 minutes`,
+      });
       return { status: "timeout" };
     }
 
@@ -339,14 +416,21 @@ const main = async (): Promise<void> => {
   }
 
   const { agent, iterations } = parsed.value;
-  log({ tags: ["info"], message: `Starting ralph loop for ${iterations} iterations with ${agent}...` });
+  log({
+    tags: ["info"],
+    message:
+      `Starting ralph loop for ${iterations} iterations with ${agent}...`,
+  });
 
   const shutdownController = new AbortController();
   let interrupted = false;
   Deno.addSignalListener("SIGINT", () => {
     if (interrupted) Deno.exit(130);
     interrupted = true;
-    log({ tags: ["error"], message: "Interrupted (ctrl+c again to force exit)" });
+    log({
+      tags: ["error"],
+      message: "Interrupted (ctrl+c again to force exit)",
+    });
     shutdownController.abort();
     setTimeout(() => Deno.exit(130), 3_000);
   });
@@ -389,7 +473,11 @@ const main = async (): Promise<void> => {
     if (result.status === "complete" && validation.status === "passed") return;
   }
 
-  log({ tags: ["info"], message: `All ${iterations} iterations completed without completion marker.` });
+  log({
+    tags: ["info"],
+    message:
+      `All ${iterations} iterations completed without completion marker.`,
+  });
 };
 
 main().catch((error) => {

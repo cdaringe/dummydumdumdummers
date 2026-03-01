@@ -14,7 +14,10 @@ export interface DagGraph {
   edges: Edge[];
 }
 
-export type TraceData = Record<string, { status: string; duration_ms?: number }>;
+export type TraceData = Record<
+  string,
+  { status: string; duration_ms?: number }
+>;
 
 export function buildDagGraph(
   steps: StepDefinition[],

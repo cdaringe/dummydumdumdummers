@@ -1,6 +1,7 @@
 # Thingfactory User Guide
 
-A best-in-class task runner for CI/CD with type-safe pipeline definitions in [Gleam](https://gleam.run).
+A best-in-class task runner for CI/CD with type-safe pipeline definitions in
+[Gleam](https://gleam.run).
 
 ## Table of Contents
 
@@ -14,24 +15,27 @@ A best-in-class task runner for CI/CD with type-safe pipeline definitions in [Gl
 Thingfactory is a pipeline runner and orchestrator offering:
 
 - **CLI** -- run pipelines locally, exactly as they run in production
-- **Web GUI** -- visualize pipeline DAGs, view logs, download artifacts, track statistics
-- **Pipeline Engine** -- type-safe definitions in Gleam with parallel execution, scheduling, secrets, and messaging
+- **Web GUI** -- visualize pipeline DAGs, view logs, download artifacts, track
+  statistics
+- **Pipeline Engine** -- type-safe definitions in Gleam with parallel execution,
+  scheduling, secrets, and messaging
 
 ## Guides
 
-| Guide | Description |
-|---|---|
-| [Getting Started](GETTING_STARTED.md) | Install, build, and run your first pipeline |
-| [Running Pipelines](RUNNING_PIPELINES.md) | CLI usage, output modes, artifact extraction |
-| [Web GUI Guide](WEB_GUI_GUIDE.md) | Dashboard, DAG visualization, Gantt timeline, statistics |
-| [Hosting the Service](HOSTING_SERVICE.md) | Docker deployment, configuration, production setup |
-| [Troubleshooting](TROUBLESHOOTING.md) | Common issues and solutions |
+| Guide                                     | Description                                              |
+| ----------------------------------------- | -------------------------------------------------------- |
+| [Getting Started](GETTING_STARTED.md)     | Install, build, and run your first pipeline              |
+| [Running Pipelines](RUNNING_PIPELINES.md) | CLI usage, output modes, artifact extraction             |
+| [Web GUI Guide](WEB_GUI_GUIDE.md)         | Dashboard, DAG visualization, Gantt timeline, statistics |
+| [Hosting the Service](HOSTING_SERVICE.md) | Docker deployment, configuration, production setup       |
+| [Troubleshooting](TROUBLESHOOTING.md)     | Common issues and solutions                              |
 
 ## Key Concepts
 
 ### Pipelines
 
-A pipeline is a named, versioned sequence of steps. Pipelines are defined in Gleam code and are:
+A pipeline is a named, versioned sequence of steps. Pipelines are defined in
+Gleam code and are:
 
 - **Type-safe** -- the compiler checks step function signatures
 - **Testable** -- swap in mock steps for unit testing
@@ -39,26 +43,33 @@ A pipeline is a named, versioned sequence of steps. Pipelines are defined in Gle
 
 ### Steps
 
-Steps are the unit of work. Each step receives a `Context` (artifact store, dependencies, secrets, messages) and the previous step's output, returning `Result(output, error)`.
+Steps are the unit of work. Each step receives a `Context` (artifact store,
+dependencies, secrets, messages) and the previous step's output, returning
+`Result(output, error)`.
 
 Steps support:
 
-- **Dependencies** -- run after specific other steps complete (enables parallelism)
+- **Dependencies** -- run after specific other steps complete (enables
+  parallelism)
 - **Loops** -- `FixedCount`, `RetryOnFailure`, `UntilSuccess`
-- **Context updates** -- publish messages or write artifacts for downstream steps
+- **Context updates** -- publish messages or write artifacts for downstream
+  steps
 
 ### Execution Modes
 
 - **Sequential** -- steps run in order; failure stops the pipeline
-- **Parallel (DAG)** -- steps with explicit dependencies run concurrently via topological sort
+- **Parallel (DAG)** -- steps with explicit dependencies run concurrently via
+  topological sort
 
 ### Scheduling & Triggers
 
-Pipelines can run on schedules (`Daily`, `Weekly`, `Monthly`, `Interval`, `Cron`) or be triggered by webhooks (GitHub, GitLab, custom).
+Pipelines can run on schedules (`Daily`, `Weekly`, `Monthly`, `Interval`,
+`Cron`) or be triggered by webhooks (GitHub, GitLab, custom).
 
 ### Secrets
 
-Pipelines have a built-in secret store. Secrets are injected into the execution context and accessible by steps at runtime.
+Pipelines have a built-in secret store. Secrets are injected into the execution
+context and accessible by steps at runtime.
 
 ## Architecture Overview
 

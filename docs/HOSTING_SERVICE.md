@@ -39,7 +39,9 @@ docker build -t thingfactory .
 ```
 
 The Dockerfile uses a multi-stage build:
-- **Build stage**: `node:22-alpine` with Gleam 1.13.0, compiles Gleam to JavaScript
+
+- **Build stage**: `node:22-alpine` with Gleam 1.13.0, compiles Gleam to
+  JavaScript
 - **Runtime stage**: `node:22-alpine` with only compiled output
 
 ### Run the Container
@@ -71,7 +73,8 @@ docker run -p 3000:3000 \
 
 ### Docker-in-Docker
 
-For running pipeline steps in isolated containers (the default isolation mode), mount the Docker socket:
+For running pipeline steps in isolated containers (the default isolation mode),
+mount the Docker socket:
 
 ```bash
 docker run -p 3000:3000 \
@@ -103,29 +106,33 @@ NODE_ENV=production npm start
 
 ## Configuration
 
-All service-specific configuration uses the `THINGFACTORY_` prefix. Standard platform variables (`NODE_ENV`, `PORT`) are also supported.
+All service-specific configuration uses the `THINGFACTORY_` prefix. Standard
+platform variables (`NODE_ENV`, `PORT`) are also supported.
 
-| Variable | Default | Description |
-|---|---|---|
-| `THINGFACTORY_DATABASE_PATH` | `./db/thingfactory.db` | SQLite database file path |
-| `THINGFACTORY_PORT` | `3000` | Web server port (also read from `PORT`) |
-| `NODE_ENV` | `development` | Node environment (`production` for deployed) |
+| Variable                     | Default                | Description                                  |
+| ---------------------------- | ---------------------- | -------------------------------------------- |
+| `THINGFACTORY_DATABASE_PATH` | `./db/thingfactory.db` | SQLite database file path                    |
+| `THINGFACTORY_PORT`          | `3000`                 | Web server port (also read from `PORT`)      |
+| `NODE_ENV`                   | `development`          | Node environment (`production` for deployed) |
 
-These variables map directly to the `ServiceConfig` typed datamodel in `web/lib/config.ts`:
+These variables map directly to the `ServiceConfig` typed datamodel in
+`web/lib/config.ts`:
 
 ```typescript
 interface ServiceConfig {
-  databasePath: string;   // THINGFACTORY_DATABASE_PATH
-  port: number;           // THINGFACTORY_PORT or PORT
-  nodeEnv: "development" | "production" | "test";  // NODE_ENV
+  databasePath: string; // THINGFACTORY_DATABASE_PATH
+  port: number; // THINGFACTORY_PORT or PORT
+  nodeEnv: "development" | "production" | "test"; // NODE_ENV
 }
 ```
 
 ## Database
 
-Thingfactory uses SQLite by default. The database is created automatically on first run. Migrations in `web/db/migrations/` are applied at startup.
+Thingfactory uses SQLite by default. The database is created automatically on
+first run. Migrations in `web/db/migrations/` are applied at startup.
 
-For production, ensure the database file is on persistent storage (not ephemeral container filesystem).
+For production, ensure the database file is on persistent storage (not ephemeral
+container filesystem).
 
 ### Backup
 
@@ -157,7 +164,8 @@ The `Upgrade` and `Connection` headers are needed for SSE log streaming.
 
 ## Kubernetes
 
-Thingfactory supports Kubernetes as a runner backend. Pipeline steps can execute as Kubernetes Jobs:
+Thingfactory supports Kubernetes as a runner backend. Pipeline steps can execute
+as Kubernetes Jobs:
 
 ```gleam
 let k8s_config =
@@ -175,13 +183,19 @@ pipeline.new("k8s_build", "1.0.0")
 ```
 
 Requirements:
+
 - `kubectl` configured with cluster access
 - RBAC permissions to create/read/delete Jobs in the target namespace
 
 ## Self-Hosting Tips
 
-- **Single machine**: Run a single container with Docker-in-Docker. This is the simplest setup and suitable for small teams and hobbyists.
-- **Workers**: The runner host initializes one worker per available CPU core by default.
-- **Isolation**: Pipeline steps run in Docker containers by default. The isolation mechanism is pluggable.
-- **Secrets**: Use `pipeline.add_secret()` to inject secrets. Secrets are stored in the pipeline's secret store and injected into the execution context.
-- **Monitoring**: Use the Statistics page (`/stats`) to track pipeline health and performance trends.
+- **Single machine**: Run a single container with Docker-in-Docker. This is the
+  simplest setup and suitable for small teams and hobbyists.
+- **Workers**: The runner host initializes one worker per available CPU core by
+  default.
+- **Isolation**: Pipeline steps run in Docker containers by default. The
+  isolation mechanism is pluggable.
+- **Secrets**: Use `pipeline.add_secret()` to inject secrets. Secrets are stored
+  in the pipeline's secret store and injected into the execution context.
+- **Monitoring**: Use the Statistics page (`/stats`) to track pipeline health
+  and performance trends.

@@ -51,7 +51,8 @@ On macOS, you may need Xcode command line tools: `xcode-select --install`.
 
 **Problem**: Pipeline name not recognized.
 
-**Solution**: Runtime pipeline loading now expects either `module:function` or `-f <file> <function>`.
+**Solution**: Runtime pipeline loading now expects either `module:function` or
+`-f <file> <function>`.
 
 ```bash
 gleam run -m thingfactory/cli -- list
@@ -63,13 +64,16 @@ gleam run -m thingfactory/cli -- run -f src/thingfactory/examples.gleam basic_pi
 
 **Problem**: Compact mode (`-c`) only shows output on step completion.
 
-**Solution**: This is expected. Compact mode shows `[N/M] step_name status duration` per step, with a summary at the end. Use verbose mode (default) for more detail.
+**Solution**: This is expected. Compact mode shows
+`[N/M] step_name status duration` per step, with a summary at the end. Use
+verbose mode (default) for more detail.
 
 ### Interactive mode hangs
 
 **Problem**: Interactive mode (`-i`) waiting for input.
 
-**Solution**: Type `help` to see commands, `exit` to quit. Interactive mode is a REPL that runs after pipeline execution completes.
+**Solution**: Type `help` to see commands, `exit` to quit. Interactive mode is a
+REPL that runs after pipeline execution completes.
 
 ## Web GUI Issues
 
@@ -142,7 +146,9 @@ executor.execute(pipeline, dynamic.nil(), config)
 
 **Problem**: Steps expected to run in parallel are running one at a time.
 
-**Solution**: Ensure you're using `parallel_executor.execute_parallel()` (not `executor.execute()`) and that steps have explicit dependencies via `add_step_with_deps`:
+**Solution**: Ensure you're using `parallel_executor.execute_parallel()` (not
+`executor.execute()`) and that steps have explicit dependencies via
+`add_step_with_deps`:
 
 ```gleam
 // These two steps will run in parallel (both depend only on "setup")
@@ -154,7 +160,8 @@ executor.execute(pipeline, dynamic.nil(), config)
 
 **Problem**: Step can't read messages published by earlier steps.
 
-**Solution**: The publishing step must use `add_step_with_ctx` and return the updated context:
+**Solution**: The publishing step must use `add_step_with_ctx` and return the
+updated context:
 
 ```gleam
 |> pipeline.add_step_with_ctx("publisher", fn(ctx, _input) {
@@ -179,7 +186,9 @@ docker run -v /var/run/docker.sock:/var/run/docker.sock thingfactory-web
 
 **Problem**: Network issue downloading Gleam in Docker.
 
-**Solution**: The Dockerfile installs Gleam via npm (`npm install -g gleam@1.13.0`). Check your network connectivity and npm registry access.
+**Solution**: The Dockerfile installs Gleam via npm
+(`npm install -g gleam@1.13.0`). Check your network connectivity and npm
+registry access.
 
 ## Database Issues
 
@@ -187,17 +196,23 @@ docker run -v /var/run/docker.sock:/var/run/docker.sock thingfactory-web
 
 **Problem**: Multiple processes writing to SQLite simultaneously.
 
-**Solution**: SQLite handles concurrent reads but serializes writes. Ensure only one server process accesses the database file. WAL mode is enabled by default for better concurrency.
+**Solution**: SQLite handles concurrent reads but serializes writes. Ensure only
+one server process accesses the database file. WAL mode is enabled by default
+for better concurrency.
 
 ### Migration failures
 
 **Problem**: Schema out of date.
 
-**Solution**: Migrations run automatically. If they fail, check `web/db/migrations/` for the latest migration files and ensure the database file is writable.
+**Solution**: Migrations run automatically. If they fail, check
+`web/db/migrations/` for the latest migration files and ensure the database file
+is writable.
 
 ## Getting Help
 
 - Check the [User Guide](USER_GUIDE.md) for an overview of all features
 - See `src/thingfactory/examples.gleam` for 26 working pipeline examples
-- Run `gleam run -m thingfactory/cli -- inspect -f src/thingfactory/examples.gleam artifact_sharing_pipeline` to interactively explore execution results
+- Run
+  `gleam run -m thingfactory/cli -- inspect -f src/thingfactory/examples.gleam artifact_sharing_pipeline`
+  to interactively explore execution results
 - File issues at the project repository

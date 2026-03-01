@@ -1,6 +1,7 @@
 # Thingfactory
 
-A best-in-class task runner for CI/CD with type-safe pipeline definitions in [Gleam](https://gleam.run).
+A best-in-class task runner for CI/CD with type-safe pipeline definitions in
+[Gleam](https://gleam.run).
 
 **CLI** | **Web GUI** | **Pipeline Runner & Orchestrator**
 
@@ -8,7 +9,8 @@ A best-in-class task runner for CI/CD with type-safe pipeline definitions in [Gl
 
 - Define pipelines in Gleam with compile-time type safety
 - Run pipelines locally via CLI, exactly as they run in production
-- Visualize pipeline DAGs, view logs, download artifacts, and track statistics in the web GUI
+- Visualize pipeline DAGs, view logs, download artifacts, and track statistics
+  in the web GUI
 - Execute steps sequentially or in parallel (DAG-aware)
 - Schedule pipelines, trigger via webhooks, manage secrets
 - Test pipelines with mock steps
@@ -84,7 +86,8 @@ docker run --rm thingfactory run thingfactory@examples:basic_pipeline --isolator
 
 ## Features
 
-- **Sequential & parallel execution** -- DAG-aware topological sort for parallel steps
+- **Sequential & parallel execution** -- DAG-aware topological sort for parallel
+  steps
 - **Loops** -- `FixedCount`, `RetryOnFailure`, `UntilSuccess`
 - **Scheduling** -- `Daily`, `Weekly`, `Monthly`, `Interval`, `Cron`
 - **Webhook triggers** -- GitHub, GitLab, custom events
@@ -92,21 +95,22 @@ docker run --rm thingfactory run thingfactory@examples:basic_pipeline --isolator
 - **Inter-step messaging** -- pub-sub message bus between steps
 - **Artifact sharing** -- read/write artifacts through the execution context
 - **CLI** -- command-parser subcommands for run/list/results/inspect/artifacts
-- **Web GUI** -- Next.js 15 + React Flow with DAG visualization, Gantt timeline, statistics dashboard
+- **Web GUI** -- Next.js 15 + React Flow with DAG visualization, Gantt timeline,
+  statistics dashboard
 - **Kubernetes runner** -- execute pipeline steps as K8s Jobs
 - **Docker isolation** -- pipeline steps run in containers by default
 - **Dogfooding** -- thingfactory builds itself with its own pipeline engine
 
 ## Documentation
 
-| Guide | Description |
-|---|---|
-| [User Guide](docs/USER_GUIDE.md) | Overview and architecture |
-| [Getting Started](docs/GETTING_STARTED.md) | Install and run your first pipeline |
-| [Running Pipelines](docs/RUNNING_PIPELINES.md) | CLI output modes, artifact extraction, Docker |
-| [Web GUI Guide](docs/WEB_GUI_GUIDE.md) | Dashboard, DAG visualization, Gantt timeline, stats |
-| [Hosting the Service](docs/HOSTING_SERVICE.md) | Docker deployment, configuration, production |
-| [Troubleshooting](docs/TROUBLESHOOTING.md) | Common issues and solutions |
+| Guide                                          | Description                                         |
+| ---------------------------------------------- | --------------------------------------------------- |
+| [User Guide](docs/USER_GUIDE.md)               | Overview and architecture                           |
+| [Getting Started](docs/GETTING_STARTED.md)     | Install and run your first pipeline                 |
+| [Running Pipelines](docs/RUNNING_PIPELINES.md) | CLI output modes, artifact extraction, Docker       |
+| [Web GUI Guide](docs/WEB_GUI_GUIDE.md)         | Dashboard, DAG visualization, Gantt timeline, stats |
+| [Hosting the Service](docs/HOSTING_SERVICE.md) | Docker deployment, configuration, production        |
+| [Troubleshooting](docs/TROUBLESHOOTING.md)     | Common issues and solutions                         |
 
 ## Examples
 

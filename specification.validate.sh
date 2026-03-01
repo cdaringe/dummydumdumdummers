@@ -9,6 +9,6 @@ set -euo pipefail
 rm -rf build
 gleam build --target erlang --warnings-as-errors
 gleam test
-deno fmt
+deno fmt .
 npm --prefix web run test:e2e
 npm --prefix web run lint

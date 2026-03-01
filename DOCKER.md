@@ -1,6 +1,7 @@
 # Docker Guide
 
-Thingfactory ships with Docker support for both the CLI pipeline runner and the web GUI.
+Thingfactory ships with Docker support for both the CLI pipeline runner and the
+web GUI.
 
 ## Table of Contents
 
@@ -79,10 +80,10 @@ docker run -p 3000:3000 thingfactory-web
 
 The `docker-compose.yml` defines two services:
 
-| Service | Description | Port |
-|---|---|---|
-| `web` | Next.js web GUI | 3000 |
-| `cli` | Pipeline CLI runner | — |
+| Service | Description         | Port |
+| ------- | ------------------- | ---- |
+| `web`   | Next.js web GUI     | 3000 |
+| `cli`   | Pipeline CLI runner | —    |
 
 ```bash
 # Start web GUI
@@ -97,11 +98,11 @@ docker-compose run --rm cli run thingfactory@examples:typescript_build_pipeline 
 
 ## Configuration
 
-| Environment Variable | Default | Description |
-|---|---|---|
-| `THINGFACTORY_DATABASE_PATH` | `./db/thingfactory.db` | SQLite database path |
-| `THINGFACTORY_PORT` | `3000` | Web GUI port (also read from `PORT`) |
-| `NODE_ENV` | `production` | Node environment |
+| Environment Variable         | Default                | Description                          |
+| ---------------------------- | ---------------------- | ------------------------------------ |
+| `THINGFACTORY_DATABASE_PATH` | `./db/thingfactory.db` | SQLite database path                 |
+| `THINGFACTORY_PORT`          | `3000`                 | Web GUI port (also read from `PORT`) |
+| `NODE_ENV`                   | `production`           | Node environment                     |
 
 ### Persistent Database
 
@@ -123,7 +124,9 @@ docker-compose up -d web
 
 This starts the web GUI with a persistent SQLite database on port 3000.
 
-To run pipelines with Docker isolation from inside the container (Docker-socket approach), the CLI service mounts the host Docker socket. No privileged DinD daemon is required — pipeline containers are spawned via the host daemon:
+To run pipelines with Docker isolation from inside the container (Docker-socket
+approach), the CLI service mounts the host Docker socket. No privileged DinD
+daemon is required — pipeline containers are spawned via the host daemon:
 
 ```bash
 # Run a pipeline inside a Gleam Docker container (uses host Docker daemon)
@@ -133,7 +136,9 @@ docker-compose run --rm cli run --isolator docker thingfactory@examples:basic_pi
 docker-compose run --rm cli run --isolator local thingfactory@examples:basic_pipeline
 ```
 
-The `docker-compose.yml` CLI service mounts `/var/run/docker.sock` automatically. Ensure the host Docker daemon is running and the socket is accessible.
+The `docker-compose.yml` CLI service mounts `/var/run/docker.sock`
+automatically. Ensure the host Docker daemon is running and the socket is
+accessible.
 
 ### Requirements for Docker Isolation Inside Container
 
@@ -141,4 +146,5 @@ The `docker-compose.yml` CLI service mounts `/var/run/docker.sock` automatically
 - `/var/run/docker.sock` must be accessible (default on Linux/macOS)
 - Docker socket is mounted read-write by default in `docker-compose.yml`
 
-See [docs/HOSTING_SERVICE.md](docs/HOSTING_SERVICE.md) for production deployment.
+See [docs/HOSTING_SERVICE.md](docs/HOSTING_SERVICE.md) for production
+deployment.

@@ -93,8 +93,18 @@ const pipelines: PipelineFixture[] = [
     description: "Simple 3-step pipeline demonstrating basic sequential flow",
     steps: seqSteps(["fetch", "transform", "output"], 1_800_000),
     runs: [
-      { status: "success", trigger_type: "manual", duration_ms: 1200, daysAgo: 0 },
-      { status: "success", trigger_type: "manual", duration_ms: 1100, daysAgo: 2 },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 1200,
+        daysAgo: 0,
+      },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 1100,
+        daysAgo: 2,
+      },
     ],
   },
 
@@ -105,8 +115,18 @@ const pipelines: PipelineFixture[] = [
     description: "Pipeline demonstrating error handling and step skipping",
     steps: seqSteps(["step1", "step2_fails", "step3_skipped"], 1_800_000),
     runs: [
-      { status: "failed", trigger_type: "manual", duration_ms: 800, daysAgo: 0 },
-      { status: "failed", trigger_type: "manual", duration_ms: 750, daysAgo: 3 },
+      {
+        status: "failed",
+        trigger_type: "manual",
+        duration_ms: 800,
+        daysAgo: 0,
+      },
+      {
+        status: "failed",
+        trigger_type: "manual",
+        duration_ms: 750,
+        daysAgo: 3,
+      },
     ],
   },
 
@@ -117,7 +137,12 @@ const pipelines: PipelineFixture[] = [
     description: "Pipeline demonstrating testability with mocked steps",
     steps: seqSteps(["fetch_from_db", "process"], 1_800_000),
     runs: [
-      { status: "success", trigger_type: "manual", duration_ms: 900, daysAgo: 0 },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 900,
+        daysAgo: 0,
+      },
     ],
   },
 
@@ -128,7 +153,12 @@ const pipelines: PipelineFixture[] = [
     description: "Pipeline using injected dependencies for configuration",
     steps: seqSteps(["use_config", "use_credentials"], 1_800_000),
     runs: [
-      { status: "success", trigger_type: "manual", duration_ms: 600, daysAgo: 1 },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 600,
+        daysAgo: 1,
+      },
     ],
   },
 
@@ -139,11 +169,36 @@ const pipelines: PipelineFixture[] = [
     description: "Build and test a TypeScript library with npm",
     steps: seqSteps(["install_deps", "lint", "build", "test"], 120_000),
     runs: [
-      { status: "success", trigger_type: "manual", duration_ms: 12500, daysAgo: 0 },
-      { status: "success", trigger_type: "manual", duration_ms: 13200, daysAgo: 1 },
-      { status: "failed", trigger_type: "manual", duration_ms: 8400, daysAgo: 2 },
-      { status: "success", trigger_type: "manual", duration_ms: 11800, daysAgo: 3 },
-      { status: "success", trigger_type: "manual", duration_ms: 12100, daysAgo: 5 },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 12500,
+        daysAgo: 0,
+      },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 13200,
+        daysAgo: 1,
+      },
+      {
+        status: "failed",
+        trigger_type: "manual",
+        duration_ms: 8400,
+        daysAgo: 2,
+      },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 11800,
+        daysAgo: 3,
+      },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 12100,
+        daysAgo: 5,
+      },
     ],
     artifacts: [
       { name: "dist.tar.gz", content: "typescript build output" },
@@ -157,13 +212,34 @@ const pipelines: PipelineFixture[] = [
     version: "1.0.0",
     description: "Build and test a Rust library with cargo",
     steps: seqSteps(
-      ["validate_source", "run_tests", "build_release", "generate_docs", "publish_artifacts"],
+      [
+        "validate_source",
+        "run_tests",
+        "build_release",
+        "generate_docs",
+        "publish_artifacts",
+      ],
       180_000,
     ),
     runs: [
-      { status: "success", trigger_type: "manual", duration_ms: 45000, daysAgo: 0 },
-      { status: "success", trigger_type: "manual", duration_ms: 47500, daysAgo: 1 },
-      { status: "success", trigger_type: "manual", duration_ms: 43200, daysAgo: 4 },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 45000,
+        daysAgo: 0,
+      },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 47500,
+        daysAgo: 1,
+      },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 43200,
+        daysAgo: 4,
+      },
     ],
     artifacts: [
       { name: "librust.so", content: "rust binary output" },
@@ -174,14 +250,31 @@ const pipelines: PipelineFixture[] = [
   {
     name: "full_stack_deployment",
     version: "1.0.0",
-    description: "Complete application deployment with API, frontend, and E2E tests",
+    description:
+      "Complete application deployment with API, frontend, and E2E tests",
     steps: seqSteps(
-      ["build_api", "build_frontend", "integration_tests", "e2e_tests", "deploy_staging"],
+      [
+        "build_api",
+        "build_frontend",
+        "integration_tests",
+        "e2e_tests",
+        "deploy_staging",
+      ],
       300_000,
     ),
     runs: [
-      { status: "success", trigger_type: "manual", duration_ms: 220000, daysAgo: 0 },
-      { status: "success", trigger_type: "manual", duration_ms: 215000, daysAgo: 1 },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 220000,
+        daysAgo: 0,
+      },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 215000,
+        daysAgo: 1,
+      },
     ],
   },
 
@@ -189,15 +282,38 @@ const pipelines: PipelineFixture[] = [
   {
     name: "gleam_build",
     version: "1.0.0",
-    description: "Build and test a Gleam project for both JS and Erlang targets",
+    description:
+      "Build and test a Gleam project for both JS and Erlang targets",
     steps: seqSteps(
-      ["validate", "unit_tests", "format_check", "build_javascript", "build_erlang", "publish_docs"],
+      [
+        "validate",
+        "unit_tests",
+        "format_check",
+        "build_javascript",
+        "build_erlang",
+        "publish_docs",
+      ],
       150_000,
     ),
     runs: [
-      { status: "success", trigger_type: "manual", duration_ms: 35000, daysAgo: 0 },
-      { status: "success", trigger_type: "manual", duration_ms: 38000, daysAgo: 1 },
-      { status: "failed", trigger_type: "manual", duration_ms: 18000, daysAgo: 3 },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 35000,
+        daysAgo: 0,
+      },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 38000,
+        daysAgo: 1,
+      },
+      {
+        status: "failed",
+        trigger_type: "manual",
+        duration_ms: 18000,
+        daysAgo: 3,
+      },
     ],
   },
 
@@ -207,12 +323,27 @@ const pipelines: PipelineFixture[] = [
     version: "1.0.0",
     description: "Pipeline demonstrating artifact sharing across steps",
     steps: seqSteps(
-      ["generate_config", "generate_secrets", "build_with_artifacts", "verify_artifacts"],
+      [
+        "generate_config",
+        "generate_secrets",
+        "build_with_artifacts",
+        "verify_artifacts",
+      ],
       1_800_000,
     ),
     runs: [
-      { status: "success", trigger_type: "manual", duration_ms: 5000, daysAgo: 0 },
-      { status: "success", trigger_type: "manual", duration_ms: 4800, daysAgo: 2 },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 5000,
+        daysAgo: 0,
+      },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 4800,
+        daysAgo: 2,
+      },
     ],
   },
 
@@ -226,10 +357,30 @@ const pipelines: PipelineFixture[] = [
       120_000,
     ),
     runs: [
-      { status: "success", trigger_type: "manual", duration_ms: 8200, daysAgo: 0 },
-      { status: "failed", trigger_type: "manual", duration_ms: 5100, daysAgo: 1 },
-      { status: "success", trigger_type: "manual", duration_ms: 7800, daysAgo: 2 },
-      { status: "success", trigger_type: "manual", duration_ms: 8500, daysAgo: 3 },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 8200,
+        daysAgo: 0,
+      },
+      {
+        status: "failed",
+        trigger_type: "manual",
+        duration_ms: 5100,
+        daysAgo: 1,
+      },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 7800,
+        daysAgo: 2,
+      },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 8500,
+        daysAgo: 3,
+      },
     ],
     artifacts: [
       { name: "go-binary", content: "go build output" },
@@ -246,8 +397,18 @@ const pipelines: PipelineFixture[] = [
       180_000,
     ),
     runs: [
-      { status: "success", trigger_type: "manual", duration_ms: 15000, daysAgo: 0 },
-      { status: "success", trigger_type: "manual", duration_ms: 14500, daysAgo: 1 },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 15000,
+        daysAgo: 0,
+      },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 14500,
+        daysAgo: 1,
+      },
     ],
   },
 
@@ -264,8 +425,18 @@ const pipelines: PipelineFixture[] = [
       { name: "package", timeout_ms: 600_000, depends_on: ["build"] },
     ],
     runs: [
-      { status: "success", trigger_type: "manual", duration_ms: 220000, daysAgo: 0 },
-      { status: "success", trigger_type: "manual", duration_ms: 215000, daysAgo: 1 },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 220000,
+        daysAgo: 0,
+      },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 215000,
+        daysAgo: 1,
+      },
     ],
   },
 
@@ -280,12 +451,26 @@ const pipelines: PipelineFixture[] = [
       { name: "compile_b", timeout_ms: 900_000, depends_on: ["setup"] },
       { name: "test_a", timeout_ms: 900_000, depends_on: ["compile_a"] },
       { name: "test_b", timeout_ms: 900_000, depends_on: ["compile_b"] },
-      { name: "integration", timeout_ms: 900_000, depends_on: ["test_a", "test_b"] },
+      {
+        name: "integration",
+        timeout_ms: 900_000,
+        depends_on: ["test_a", "test_b"],
+      },
       { name: "deploy", timeout_ms: 900_000, depends_on: ["integration"] },
     ],
     runs: [
-      { status: "success", trigger_type: "manual", duration_ms: 340000, daysAgo: 0 },
-      { status: "success", trigger_type: "manual", duration_ms: 360000, daysAgo: 2 },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 340000,
+        daysAgo: 0,
+      },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 360000,
+        daysAgo: 2,
+      },
     ],
   },
 
@@ -298,11 +483,25 @@ const pipelines: PipelineFixture[] = [
       { name: "seed", timeout_ms: 600_000, depends_on: [] },
       { name: "async_left", timeout_ms: 600_000, depends_on: ["seed"] },
       { name: "async_right", timeout_ms: 600_000, depends_on: ["seed"] },
-      { name: "merge", timeout_ms: 600_000, depends_on: ["async_left", "async_right"] },
+      {
+        name: "merge",
+        timeout_ms: 600_000,
+        depends_on: ["async_left", "async_right"],
+      },
     ],
     runs: [
-      { status: "success", trigger_type: "manual", duration_ms: 95000, daysAgo: 0 },
-      { status: "success", trigger_type: "manual", duration_ms: 88000, daysAgo: 3 },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 95000,
+        daysAgo: 0,
+      },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 88000,
+        daysAgo: 3,
+      },
     ],
   },
 
@@ -316,8 +515,18 @@ const pipelines: PipelineFixture[] = [
       600_000,
     ),
     runs: [
-      { status: "success", trigger_type: "manual", duration_ms: 120000, daysAgo: 0 },
-      { status: "failed", trigger_type: "manual", duration_ms: 65000, daysAgo: 2 },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 120000,
+        daysAgo: 0,
+      },
+      {
+        status: "failed",
+        trigger_type: "manual",
+        duration_ms: 65000,
+        daysAgo: 2,
+      },
     ],
   },
 
@@ -336,8 +545,18 @@ const pipelines: PipelineFixture[] = [
       },
     ],
     runs: [
-      { status: "success", trigger_type: "manual", duration_ms: 3500, daysAgo: 0 },
-      { status: "success", trigger_type: "manual", duration_ms: 4200, daysAgo: 1 },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 3500,
+        daysAgo: 0,
+      },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 4200,
+        daysAgo: 1,
+      },
     ],
   },
 
@@ -356,7 +575,12 @@ const pipelines: PipelineFixture[] = [
       },
     ],
     runs: [
-      { status: "success", trigger_type: "manual", duration_ms: 2800, daysAgo: 0 },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 2800,
+        daysAgo: 0,
+      },
     ],
   },
 
@@ -375,8 +599,18 @@ const pipelines: PipelineFixture[] = [
       },
     ],
     runs: [
-      { status: "success", trigger_type: "manual", duration_ms: 5200, daysAgo: 0 },
-      { status: "failed", trigger_type: "manual", duration_ms: 12000, daysAgo: 1 },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 5200,
+        daysAgo: 0,
+      },
+      {
+        status: "failed",
+        trigger_type: "manual",
+        duration_ms: 12000,
+        daysAgo: 1,
+      },
     ],
   },
 
@@ -387,7 +621,12 @@ const pipelines: PipelineFixture[] = [
     description: "Simple pub-sub messaging between pipeline steps",
     steps: seqSteps(["publisher", "subscriber"], 1_800_000),
     runs: [
-      { status: "success", trigger_type: "manual", duration_ms: 1500, daysAgo: 0 },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 1500,
+        daysAgo: 0,
+      },
     ],
   },
 
@@ -398,8 +637,18 @@ const pipelines: PipelineFixture[] = [
     description: "Multi-topic message coordination between steps",
     steps: seqSteps(["task_a", "task_b", "coordinator"], 1_800_000),
     runs: [
-      { status: "success", trigger_type: "manual", duration_ms: 2200, daysAgo: 0 },
-      { status: "success", trigger_type: "manual", duration_ms: 2100, daysAgo: 2 },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 2200,
+        daysAgo: 0,
+      },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 2100,
+        daysAgo: 2,
+      },
     ],
   },
 
@@ -413,7 +662,12 @@ const pipelines: PipelineFixture[] = [
       1_800_000,
     ),
     runs: [
-      { status: "success", trigger_type: "manual", duration_ms: 3000, daysAgo: 0 },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 3000,
+        daysAgo: 0,
+      },
     ],
   },
 
@@ -425,16 +679,43 @@ const pipelines: PipelineFixture[] = [
     steps: [
       { name: "gleam_check", timeout_ms: 300_000, depends_on: [] },
       { name: "gleam_format", timeout_ms: 300_000, depends_on: [] },
-      { name: "gleam_build_js", timeout_ms: 300_000, depends_on: ["gleam_check", "gleam_format"] },
-      { name: "gleam_build_erl", timeout_ms: 300_000, depends_on: ["gleam_check", "gleam_format"] },
+      {
+        name: "gleam_build_js",
+        timeout_ms: 300_000,
+        depends_on: ["gleam_check", "gleam_format"],
+      },
+      {
+        name: "gleam_build_erl",
+        timeout_ms: 300_000,
+        depends_on: ["gleam_check", "gleam_format"],
+      },
       { name: "web_install", timeout_ms: 300_000, depends_on: [] },
       { name: "web_build", timeout_ms: 300_000, depends_on: ["web_install"] },
-      { name: "verify", timeout_ms: 300_000, depends_on: ["gleam_build_js", "gleam_build_erl", "web_build"] },
+      {
+        name: "verify",
+        timeout_ms: 300_000,
+        depends_on: ["gleam_build_js", "gleam_build_erl", "web_build"],
+      },
     ],
     runs: [
-      { status: "success", trigger_type: "manual", duration_ms: 185000, daysAgo: 0 },
-      { status: "success", trigger_type: "manual", duration_ms: 190000, daysAgo: 1 },
-      { status: "failed", trigger_type: "manual", duration_ms: 78000, daysAgo: 3 },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 185000,
+        daysAgo: 0,
+      },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 190000,
+        daysAgo: 1,
+      },
+      {
+        status: "failed",
+        trigger_type: "manual",
+        duration_ms: 78000,
+        daysAgo: 3,
+      },
     ],
   },
 
@@ -450,8 +731,18 @@ const pipelines: PipelineFixture[] = [
       { name: "build", timeout_ms: 600_000, depends_on: ["lint", "test"] },
     ],
     runs: [
-      { status: "success", trigger_type: "manual", duration_ms: 320000, daysAgo: 0 },
-      { status: "failed", trigger_type: "manual", duration_ms: 180000, daysAgo: 2 },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 320000,
+        daysAgo: 0,
+      },
+      {
+        status: "failed",
+        trigger_type: "manual",
+        duration_ms: 180000,
+        daysAgo: 2,
+      },
     ],
   },
 
@@ -466,9 +757,24 @@ const pipelines: PipelineFixture[] = [
     ),
     schedule: { Daily: { hour: 9, minute: 0 } },
     runs: [
-      { status: "success", trigger_type: "schedule", duration_ms: 4500, daysAgo: 0 },
-      { status: "success", trigger_type: "schedule", duration_ms: 4200, daysAgo: 1 },
-      { status: "success", trigger_type: "schedule", duration_ms: 4800, daysAgo: 2 },
+      {
+        status: "success",
+        trigger_type: "schedule",
+        duration_ms: 4500,
+        daysAgo: 0,
+      },
+      {
+        status: "success",
+        trigger_type: "schedule",
+        duration_ms: 4200,
+        daysAgo: 1,
+      },
+      {
+        status: "success",
+        trigger_type: "schedule",
+        duration_ms: 4800,
+        daysAgo: 2,
+      },
     ],
   },
 
@@ -483,8 +789,18 @@ const pipelines: PipelineFixture[] = [
     ),
     schedule: { Weekly: { day: 4, hour: 2, minute: 0 } },
     runs: [
-      { status: "success", trigger_type: "schedule", duration_ms: 95000, daysAgo: 0 },
-      { status: "success", trigger_type: "schedule", duration_ms: 88000, daysAgo: 7 },
+      {
+        status: "success",
+        trigger_type: "schedule",
+        duration_ms: 95000,
+        daysAgo: 0,
+      },
+      {
+        status: "success",
+        trigger_type: "schedule",
+        duration_ms: 88000,
+        daysAgo: 7,
+      },
     ],
   },
 
@@ -499,8 +815,18 @@ const pipelines: PipelineFixture[] = [
     ),
     schedule: { Monthly: { days: [1, 15], hour: 8, minute: 0 } },
     runs: [
-      { status: "success", trigger_type: "schedule", duration_ms: 245000, daysAgo: 0 },
-      { status: "success", trigger_type: "schedule", duration_ms: 232000, daysAgo: 15 },
+      {
+        status: "success",
+        trigger_type: "schedule",
+        duration_ms: 245000,
+        daysAgo: 0,
+      },
+      {
+        status: "success",
+        trigger_type: "schedule",
+        duration_ms: 232000,
+        daysAgo: 15,
+      },
     ],
   },
 
@@ -512,8 +838,18 @@ const pipelines: PipelineFixture[] = [
     steps: seqSteps(["ping_service", "record_metrics"], 1_800_000),
     schedule: { Interval: { interval_ms: 300_000 } },
     runs: [
-      { status: "success", trigger_type: "schedule", duration_ms: 1200, daysAgo: 0 },
-      { status: "success", trigger_type: "schedule", duration_ms: 1100, daysAgo: 0 },
+      {
+        status: "success",
+        trigger_type: "schedule",
+        duration_ms: 1200,
+        daysAgo: 0,
+      },
+      {
+        status: "success",
+        trigger_type: "schedule",
+        duration_ms: 1100,
+        daysAgo: 0,
+      },
     ],
   },
 
@@ -528,9 +864,24 @@ const pipelines: PipelineFixture[] = [
     ),
     schedule: { Cron: { expression: "0 23 * * 1-5" } },
     runs: [
-      { status: "success", trigger_type: "schedule", duration_ms: 520000, daysAgo: 0 },
-      { status: "failed", trigger_type: "schedule", duration_ms: 410000, daysAgo: 1 },
-      { status: "success", trigger_type: "schedule", duration_ms: 510000, daysAgo: 2 },
+      {
+        status: "success",
+        trigger_type: "schedule",
+        duration_ms: 520000,
+        daysAgo: 0,
+      },
+      {
+        status: "failed",
+        trigger_type: "schedule",
+        duration_ms: 410000,
+        daysAgo: 1,
+      },
+      {
+        status: "success",
+        trigger_type: "schedule",
+        duration_ms: 510000,
+        daysAgo: 2,
+      },
     ],
   },
 
@@ -541,8 +892,18 @@ const pipelines: PipelineFixture[] = [
     description: "Queue-based PULL model worker pipeline",
     steps: seqSteps(["produce_work", "worker", "summarize"], 1_800_000),
     runs: [
-      { status: "success", trigger_type: "manual", duration_ms: 3800, daysAgo: 0 },
-      { status: "success", trigger_type: "manual", duration_ms: 3500, daysAgo: 1 },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 3800,
+        daysAgo: 0,
+      },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 3500,
+        daysAgo: 1,
+      },
     ],
   },
 ];
