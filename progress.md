@@ -42,7 +42,7 @@ END_DEMO
 | 25 | VERIFIED | docs/scenarios/25.md | runner_host.new() calls get_cpu_count() FFI, min 1 worker. |
 | 26 | VERIFIED | docs/scenarios/26.md | kubernetes_runner.gleam with Job YAML generation, kubectl integration. |
 | 27 | VERIFIED | docs/scenarios/27.md | secret_manager.gleam with opaque types, masking, CRUD, validation. |
-| 28 | VERIFIED | docs/scenarios/28.md | All structural types use sum types. No stringly-typed references. |
+| 28 | NEEDS_REWORK | docs/scenarios/28.md | `pipeline.add_step_with_deps` uses `depends_on: List(String)` to reference other steps by name string — stringly typed step referencing. Spec says "SHALL NOT be stringly typed or referenced." |
 | 29 | VERIFIED | docs/scenarios/29.md | StepLogViewer.tsx + SSE streaming endpoint + RunDetailClient.tsx. |
 | 30 | VERIFIED | docs/scenarios/30.md | CLI uses same executor/parallel_executor as production. |
 | 31 | VERIFIED | docs/scenarios/31.md | 15 CLI-runnable pipelines, seed.ts populates GUI database. |
@@ -57,7 +57,7 @@ END_DEMO
 | 40 | VERIFIED | docs/scenarios/40.md | dogfood_pipeline() runs real gleam/npm commands to build itself. |
 | 41 | VERIFIED | docs/scenarios/41.md | Added distributed scenario-41 examples: `distributed_parallel_pipeline()` (async fan-out/fan-in) and `distributed_accumulation_pipeline()` (value accumulation pass-through), each step executed via distinct Kubernetes jobs/nodes; structure tests added in `test/examples_test.gleam`. |
 | 42 | VERIFIED | docs/scenarios/42.md | gleam_build_pipeline and dogfood_pipeline run real multi-step builds. |
-| 43 | VERIFIED | docs/scenarios/43.md | Dockerfile (CLI), web/Dockerfile (GUI), docker-compose.yml (one-command deploy), DOCKER.md (docs). |
+| 43 | NEEDS_REWORK | docs/scenarios/43.md | docker-compose.yml has no Docker socket mount or DinD setup; running `--isolator docker` from inside the deployed container fails because no Docker daemon/client is available inside the container. Hobbyist single-container DinD use case (SHOULD) is unimplemented. |
 | 44 | VERIFIED | docs/scenarios/44.md | ArtifactsList.tsx, API endpoints, 0004_artifacts.sql migration. |
 | 45 | VERIFIED | docs/scenarios/45.md | Stats page, API endpoint, E2E test for statistics dashboard. |
 | 46 | VERIFIED | docs/scenarios/46.md | Green palette (#059669, #10b981), tonal grays, flat style, SVG textures, compact/standard modes. |
