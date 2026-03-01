@@ -120,6 +120,7 @@ pub fn execute_pipeline(
     "12" | "parallel" -> Ok(exec_parallel_build(mode))
     "13" | "parallel_multi" -> Ok(exec_parallel_multi_target(mode))
     "14" | "dogfood" -> Ok(exec_dogfood(mode))
+    "15" | "queue" -> Ok(exec_queue_worker(mode))
     _ ->
       Error(
         "Unknown pipeline: "
@@ -448,6 +449,16 @@ fn exec_dogfood(mode: OutputMode) -> ExecutionResult(Dynamic) {
   )
 }
 
+fn exec_queue_worker(mode: OutputMode) -> ExecutionResult(Dynamic) {
+  print_header("queue_worker_pipeline", mode)
+  executor.execute_with_progress(
+    examples.queue_worker_pipeline(),
+    dynamic.nil(),
+    types.default_config(),
+    progress_fn(mode),
+  )
+}
+
 // ---------------------------------------------------------------------------
 // Artifact extraction
 // ---------------------------------------------------------------------------
@@ -521,6 +532,7 @@ fn list_pipelines() -> Result(String, String) {
     "12 | parallel               - Parallel build pipeline",
     "13 | parallel_multi         - Parallel multi-target pipeline",
     "14 | dogfood                - Build thingfactory itself (dogfood)",
+    "15 | queue                  - Queue-based worker pattern (PULL model)",
   ]
 
   let output = ["Available Pipelines:", "", ..pipelines]

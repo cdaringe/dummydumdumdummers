@@ -844,7 +844,6 @@ pub fn dogfood_pipeline() -> pipeline.Pipeline(Dynamic) {
     command_runner.step("gleam", ["build", "--target", "erlang"]),
     ["gleam_check", "gleam_format"],
   )
-  |> pipeline.add_step_with_deps("exit", command_runner.step("exit", ["1"]), [])
   // Web GUI build (independent from gleam until verify)
   |> pipeline.add_step_with_deps(
     "web_install",
@@ -1036,8 +1035,59 @@ pub fn run_cron_cleanup() -> types.ExecutionResult(Dynamic) {
 }
 
 // ---------------------------------------------------------------------------
+// Example 22: Queue-Based Worker Pipeline (PULL Model)
+// ---------------------------------------------------------------------------
+
+/// Pipeline demonstrating the PULL model where workers pull work items
+/// from a shared queue, complementing the default PUSH model.
+///
+/// In the PUSH model (all other examples), step output flows automatically
+/// to the next step's input. In the PULL model, a producer enqueues work
+/// items to a named queue, and downstream workers pull items to process.
+///
+/// Structure:
+/// - produce_work: enqueues 3 compilation tasks to "tasks" queue
+/// - worker: pulls all items from queue and processes them
+/// - summarize: reports how many items were processed
+///
+/// Fulfills: "Pipelines SHALL be easy to express work in both an imperative
+/// (PUSH model) as well as workers in the pipeline PULLing work from a
+/// queue (PULL model)."
+pub fn queue_worker_pipeline() -> pipeline.Pipeline(Dynamic) {
+  pipeline.new("queue_worker", "1.0.0")
+  |> pipeline.add_step_with_ctx("produce_work", fn(ctx, _input) {
+    let ctx =
+      work_queue.enqueue(ctx, "tasks", dynamic.string("compile_module_a"))
+    let ctx =
+      work_queue.enqueue(ctx, "tasks", dynamic.string("compile_module_b"))
+    let ctx =
+      work_queue.enqueue(ctx, "tasks", dynamic.string("compile_module_c"))
+    Ok(#(dynamic.string("3 work items enqueued"), ctx))
+  })
+  |> pipeline.add_step("worker", fn(ctx, _input) {
+    let items = work_queue.pull_all(ctx, "tasks")
+    let count = list.length(items)
+    case count > 0 {
+      True ->
+        Ok(dynamic.string(
+          "Processed " <> int.to_string(count) <> " items from queue",
+        ))
+      False -> Error(types.StepFailure(message: "No work items in queue"))
+    }
+  })
+  |> pipeline.add_step("summarize", fn(_ctx, result) { Ok(result) })
+}
+
+/// Execute the queue-based worker pipeline
+pub fn run_queue_worker() -> types.ExecutionResult(Dynamic) {
+  let config = types.default_config()
+  executor.execute(queue_worker_pipeline(), dynamic.nil(), config)
+}
+
+// ---------------------------------------------------------------------------
 // Internal imports for examples
 // ---------------------------------------------------------------------------
 
 import gleam/int
 import gleam/list
+import thingfactory/work_queue

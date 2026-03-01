@@ -169,6 +169,13 @@ pub fn cron_cleanup_example_test() {
   list.length(result.trace) |> should.equal(3)
 }
 
+pub fn queue_worker_example_test() {
+  let result = examples.run_queue_worker()
+  result.result |> should.be_ok()
+  // Should have 3 steps: produce_work, worker, summarize
+  list.length(result.trace) |> should.equal(3)
+}
+
 pub fn dogfood_pipeline_test() {
   // Structure-only test: the dogfood pipeline uses real command_runner.step()
   // calls (gleam check, gleam build, npm install/build), so executing it here
