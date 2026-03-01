@@ -61,4 +61,4 @@ END_DEMO
 | 45 | VERIFIED | docs/scenarios/45.md | Stats page, API endpoint, E2E test for statistics dashboard. |
 | 46 | VERIFIED | docs/scenarios/46.md | Green palette (#059669, #10b981), tonal grays, flat style, SVG textures, compact/standard modes. |
 | 47 | VERIFIED | docs/scenarios/47.md | work_queue.gleam with enqueue/pull_all, push via step args, pull via queue. |
-| 48 | WORK_COMPLETE | docs/scenarios/48.md | `command_runner.sh/1` + `sh_in_dir/2` provide single-string external calls with shared error handling; tests added. |
+| 48 | VERIFIED | docs/scenarios/48.md | `command_runner.sh/1` + `sh_in_dir/2` provide single-string external calls with shared error handling; tests added. |
