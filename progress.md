@@ -65,3 +65,4 @@ END_DEMO
 | 48 | VERIFIED | docs/scenarios/48.md | `command_runner.sh/1` + `sh_in_dir/2` provide single-string external calls with shared error handling; tests added. |
 | 49 | VERIFIED | docs/scenarios/49.md | |
 | 50 | VERIFIED | docs/scenarios/50.md | |
+| 51 | VERIFIED | docs/scenarios/51.md | Deployment guide in docs/HOSTING_SERVICE.md (Docker, K8s, manual, nginx) and DOCKER.md. |
