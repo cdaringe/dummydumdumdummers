@@ -8,6 +8,7 @@ import gleam/int
 import gleam/io
 import gleam/list
 import gleam/string
+import gleam_community/ansi
 import thingfactory/types.{type ExecutionResult, type StepTrace}
 
 /// Interactive mode state
@@ -89,14 +90,22 @@ pub fn execute_command(
 fn format_help() -> String {
   string.join(
     [
-      "Interactive Mode Commands:",
-      "  help              - Show this help message",
-      "  list              - List all steps with their status",
-      "  step <N>          - Show details for step number N (0-indexed)",
-      "  step <name>       - Show details for step with name <name>",
-      "  stats             - Show pipeline statistics",
-      "  artifacts         - List produced artifacts and their values",
-      "  exit              - Exit interactive mode",
+      ansi.bold("Interactive Mode Commands:"),
+      "  " <> ansi.cyan("help") <> "              - Show this help message",
+      "  "
+        <> ansi.cyan("list")
+        <> "              - List all steps with their status",
+      "  "
+        <> ansi.cyan("step <N>")
+        <> "          - Show details for step number N (0-indexed)",
+      "  "
+        <> ansi.cyan("step <name>")
+        <> "       - Show details for step with name <name>",
+      "  " <> ansi.cyan("stats") <> "             - Show pipeline statistics",
+      "  "
+        <> ansi.cyan("artifacts")
+        <> "         - List produced artifacts and their values",
+      "  " <> ansi.cyan("exit") <> "              - Exit interactive mode",
     ],
     "\n",
   )
@@ -112,23 +121,21 @@ fn format_step_error(error: types.StepError) -> String {
 }
 
 fn format_step_list(steps: List(StepTrace)) -> String {
-  let header = "Available Steps:"
+  let header = ansi.bold("Available Steps:")
   let step_lines =
     list.index_map(steps, fn(trace, idx) {
       let status_icon = case trace.status {
-        types.StepOk -> "✓"
-        types.StepFailed(_) -> "✗"
-        types.StepSkipped -> "-"
+        types.StepOk -> ansi.green("✓")
+        types.StepFailed(_) -> ansi.red("✗")
+        types.StepSkipped -> ansi.yellow("-")
       }
-      "  ["
-      <> int.to_string(idx)
-      <> "] "
+      ansi.dim("  [" <> int.to_string(idx) <> "]")
+      <> " "
       <> status_icon
       <> " "
-      <> trace.step_name
-      <> " ("
-      <> format_duration_ms(trace.duration_ms)
-      <> ")"
+      <> ansi.cyan(trace.step_name)
+      <> " "
+      <> ansi.dim("(" <> format_duration_ms(trace.duration_ms) <> ")")
     })
 
   [header, ..step_lines]
@@ -137,18 +144,21 @@ fn format_step_list(steps: List(StepTrace)) -> String {
 
 fn format_step_detail(index: Int, trace: StepTrace) -> String {
   let status_str = case trace.status {
-    types.StepOk -> "OK"
-    types.StepFailed(error) -> "FAILED: " <> format_step_error(error)
-    types.StepSkipped -> "SKIPPED"
+    types.StepOk -> ansi.green("OK")
+    types.StepFailed(error) -> ansi.red("FAILED: " <> format_step_error(error))
+    types.StepSkipped -> ansi.yellow("SKIPPED")
   }
 
   string.join(
     [
-      "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
-      "Step [" <> int.to_string(index) <> "]: " <> trace.step_name,
-      "Status:   " <> status_str,
-      "Duration: " <> format_duration_ms(trace.duration_ms),
-      "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+      ansi.dim("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"),
+      ansi.bold("Step ")
+        <> ansi.dim("[" <> int.to_string(index) <> "]")
+        <> ansi.bold(": ")
+        <> ansi.cyan(trace.step_name),
+      ansi.bold("Status:   ") <> status_str,
+      ansi.bold("Duration: ") <> format_duration_ms(trace.duration_ms),
+      ansi.dim("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"),
     ],
     "\n",
   )
@@ -159,8 +169,8 @@ fn format_stats(
   steps: List(StepTrace),
 ) -> String {
   let status = case result.result {
-    Ok(_) -> "SUCCESS"
-    Error(_) -> "FAILED"
+    Ok(_) -> ansi.bold(ansi.green("SUCCESS"))
+    Error(_) -> ansi.bold(ansi.red("FAILED"))
   }
 
   let total_duration =
@@ -189,13 +199,15 @@ fn format_stats(
 
   string.join(
     [
-      "Pipeline Statistics:",
-      "  Status:     " <> status,
-      "  Total Steps: " <> int.to_string(list.length(steps)),
-      "  Successful: " <> int.to_string(successful),
-      "  Failed:     " <> int.to_string(failed),
-      "  Skipped:    " <> int.to_string(skipped),
-      "  Total Time: " <> format_duration_ms(total_duration),
+      ansi.bold("Pipeline Statistics:"),
+      "  " <> ansi.bold("Status:      ") <> status,
+      "  " <> ansi.bold("Total Steps: ") <> int.to_string(list.length(steps)),
+      "  "
+        <> ansi.bold("Successful:  ")
+        <> ansi.green(int.to_string(successful)),
+      "  " <> ansi.bold("Failed:      ") <> ansi.red(int.to_string(failed)),
+      "  " <> ansi.bold("Skipped:     ") <> ansi.yellow(int.to_string(skipped)),
+      "  " <> ansi.bold("Total Time:  ") <> format_duration_ms(total_duration),
     ],
     "\n",
   )
@@ -224,29 +236,43 @@ fn format_artifacts(result: ExecutionResult(Dynamic)) -> String {
     0 ->
       string.join(
         [
-          "No artifacts produced by this pipeline.",
+          ansi.dim("No artifacts produced by this pipeline."),
           "",
-          "To produce artifacts, use add_step_with_ctx and write to the artifact store:",
-          "  artifact_store.write(ctx.artifact_store, \"key\", value)",
+          "To produce artifacts, use "
+            <> ansi.cyan("add_step_with_ctx")
+            <> " and write to the artifact store:",
+          "  "
+            <> ansi.cyan(
+            "artifact_store.write(ctx.artifact_store, \"key\", value)",
+          ),
           "",
-          "To extract artifacts to disk, re-run with --output-dir:",
-          "  thingfactory run <pipeline> --output-dir ./artifacts",
+          "To extract artifacts to disk, re-run with "
+            <> ansi.cyan("--output-dir")
+            <> ":",
+          "  "
+            <> ansi.cyan("thingfactory run <pipeline> --output-dir ./artifacts"),
         ],
         "\n",
       )
     _ -> {
-      let header = "Artifacts (" <> int.to_string(count) <> " produced):"
+      let header =
+        ansi.bold("Artifacts (" <> int.to_string(count) <> " produced):")
       let artifact_lines =
         list.map(keys, fn(key) {
           case dict.get(result.artifacts, key) {
-            Ok(value) -> "  " <> key <> " = " <> string.inspect(value)
-            Error(Nil) -> "  " <> key <> " = <error>"
+            Ok(value) ->
+              "  " <> ansi.cyan(key) <> ansi.dim(" = ") <> string.inspect(value)
+            Error(Nil) ->
+              "  " <> ansi.cyan(key) <> ansi.dim(" = ") <> ansi.red("<error>")
           }
         })
       let footer = [
         "",
-        "To extract artifacts to disk, re-run with --output-dir:",
-        "  thingfactory run <pipeline> --output-dir ./artifacts",
+        "To extract artifacts to disk, re-run with "
+          <> ansi.cyan("--output-dir")
+          <> ":",
+        "  "
+          <> ansi.cyan("thingfactory run <pipeline> --output-dir ./artifacts"),
       ]
 
       [header, ..list.append(artifact_lines, footer)]
@@ -258,14 +284,20 @@ fn format_artifacts(result: ExecutionResult(Dynamic)) -> String {
 /// Show interactive mode prompt and instructions
 pub fn show_welcome(_state: InteractiveState) -> Nil {
   io.println("")
-  io.println("🔍 Interactive Mode")
-  io.println("Type 'help' for available commands, 'exit' to quit")
+  io.println(ansi.bold(ansi.cyan("Interactive Mode")))
+  io.println(
+    ansi.dim("Type '")
+    <> ansi.cyan("help")
+    <> ansi.dim("' for available commands, '")
+    <> ansi.cyan("exit")
+    <> ansi.dim("' to quit"),
+  )
   io.println("")
   Nil
 }
 
 /// Show the interactive mode prompt
 pub fn show_prompt() -> Nil {
-  io.print("> ")
+  io.print(ansi.bold(ansi.cyan("> ")))
   Nil
 }

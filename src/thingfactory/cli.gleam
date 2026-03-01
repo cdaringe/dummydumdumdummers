@@ -16,6 +16,7 @@ import gleam/int
 import gleam/io
 import gleam/list
 import gleam/string
+import gleam_community/ansi
 import simplifile
 import thingfactory/command_runner
 import thingfactory/executor
@@ -42,7 +43,10 @@ pub type CliCommand {
     source_file: Result(String, Nil),
     output_dir: String,
   )
-  ListPipelines(source_file: Result(String, Nil))
+  ListPipelines(
+    source_file: Result(String, Nil),
+    module_selector: Result(String, Nil),
+  )
 }
 
 /// Output verbosity level for CLI
@@ -127,7 +131,8 @@ fn run_command() -> clip.Command(CliCommand) {
 fn list_command() -> clip.Command(CliCommand) {
   clip.command({
     use source_file <- clip.parameter
-    ListPipelines(source_file: source_file)
+    use module_selector <- clip.parameter
+    ListPipelines(source_file: source_file, module_selector: module_selector)
   })
   |> clip.opt(
     opt.new("file")
@@ -135,9 +140,16 @@ fn list_command() -> clip.Command(CliCommand) {
     |> opt.help("Gleam file to discover pipeline functions from")
     |> opt.optional(),
   )
+  |> clip.arg(
+    arg.new("module")
+    |> arg.help(
+      "Module reference to discover pipelines from (e.g. thingfactory@examples)",
+    )
+    |> arg.optional(),
+  )
   |> clip.help(help.simple(
     "thingfactory list",
-    "List available pipelines (use -f to discover from a source file)",
+    "List available pipelines (-f <file> or <module> reference)",
   ))
 }
 
@@ -370,22 +382,21 @@ fn compact_progress(event: StepEvent) -> Nil {
   case event {
     types.StepStarting(_, _, _) -> Nil
     types.StepFinished(name, index, total, status, duration_ms, _output) -> {
-      let icon = case status {
-        types.StepOk -> "✓"
-        types.StepFailed(_) -> "✗"
-        types.StepSkipped -> "-"
+      let #(icon, style) = case status {
+        types.StepOk -> #("✓", ansi.green)
+        types.StepFailed(_) -> #("✗", ansi.red)
+        types.StepSkipped -> #("-", ansi.yellow)
       }
       io.println(
-        "  ["
-        <> int.to_string(index)
-        <> "/"
-        <> int.to_string(total)
-        <> "] "
-        <> name
+        ansi.dim(
+          "  [" <> int.to_string(index) <> "/" <> int.to_string(total) <> "]",
+        )
         <> " "
-        <> icon
+        <> ansi.cyan(name)
         <> " "
-        <> format_duration_ms(duration_ms),
+        <> style(icon)
+        <> " "
+        <> ansi.dim(format_duration_ms(duration_ms)),
       )
     }
   }
@@ -396,25 +407,28 @@ fn verbose_progress(event: StepEvent) -> Nil {
   case event {
     types.StepStarting(name, index, total) ->
       io.println(
-        ">> ["
-        <> int.to_string(index)
-        <> "/"
-        <> int.to_string(total)
-        <> "] "
-        <> name,
+        ansi.bold(ansi.cyan(">> "))
+        <> ansi.dim(
+          "[" <> int.to_string(index) <> "/" <> int.to_string(total) <> "]",
+        )
+        <> " "
+        <> ansi.cyan(name),
       )
     types.StepFinished(_, _, _, status, duration_ms, output) -> {
       let status_str = case status {
-        types.StepOk -> "✓ OK"
-        types.StepFailed(_) -> "✗ FAILED"
-        types.StepSkipped -> "- SKIPPED"
+        types.StepOk -> ansi.green("✓ OK")
+        types.StepFailed(_) -> ansi.red("✗ FAILED")
+        types.StepSkipped -> ansi.yellow("- SKIPPED")
       }
       io.println(
-        "   " <> status_str <> " (" <> format_duration_ms(duration_ms) <> ")",
+        "   "
+        <> status_str
+        <> " "
+        <> ansi.dim("(" <> format_duration_ms(duration_ms) <> ")"),
       )
       case string.trim(output) {
         "" -> Nil
-        trimmed -> io.println(trimmed)
+        trimmed -> io.println(ansi.dim(trimmed))
       }
       io.println("")
     }
@@ -426,9 +440,9 @@ fn print_header(name: String, mode: OutputMode) -> Nil {
   case mode {
     Compact -> Nil
     Verbose | Interactive -> {
-      io.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-      io.println("Pipeline: " <> name)
-      io.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+      io.println(ansi.dim("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"))
+      io.println(ansi.bold("Pipeline: ") <> ansi.cyan(name))
+      io.println(ansi.dim("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"))
       io.println("")
       Nil
     }
@@ -448,49 +462,58 @@ fn format_summary(
   case mode {
     Compact -> {
       let status = case result.result {
-        Ok(_) -> "✓"
-        Error(_) -> "✗"
+        Ok(_) -> ansi.green("✓")
+        Error(_) -> ansi.red("✗")
       }
       Ok(
-        "── "
+        ansi.dim("── ")
         <> status
         <> " "
-        <> name
-        <> " ("
-        <> int.to_string(step_count)
-        <> " steps, "
-        <> format_duration_ms(total_duration)
-        <> ")",
+        <> ansi.bold(name)
+        <> " "
+        <> ansi.dim(
+          "("
+          <> int.to_string(step_count)
+          <> " steps, "
+          <> format_duration_ms(total_duration)
+          <> ")",
+        ),
       )
     }
     Verbose -> {
       let status = case result.result {
-        Ok(_) -> "SUCCESS"
-        Error(_) -> "FAILED"
+        Ok(_) -> ansi.bold(ansi.green("SUCCESS"))
+        Error(_) -> ansi.bold(ansi.red("FAILED"))
       }
       Ok(
-        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-        <> "Result: "
+        ansi.dim("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        <> "\n"
+        <> ansi.bold("Result: ")
         <> status
-        <> " | "
-        <> int.to_string(step_count)
-        <> " steps | "
-        <> format_duration_ms(total_duration),
+        <> ansi.dim(
+          " | "
+          <> int.to_string(step_count)
+          <> " steps | "
+          <> format_duration_ms(total_duration),
+        ),
       )
     }
     Interactive -> {
       let status = case result.result {
-        Ok(_) -> "SUCCESS"
-        Error(_) -> "FAILED"
+        Ok(_) -> ansi.bold(ansi.green("SUCCESS"))
+        Error(_) -> ansi.bold(ansi.red("FAILED"))
       }
       io.println(
-        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-        <> "Result: "
+        ansi.dim("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        <> "\n"
+        <> ansi.bold("Result: ")
         <> status
-        <> " | "
-        <> int.to_string(step_count)
-        <> " steps | "
-        <> format_duration_ms(total_duration),
+        <> ansi.dim(
+          " | "
+          <> int.to_string(step_count)
+          <> " steps | "
+          <> format_duration_ms(total_duration),
+        ),
       )
       let state =
         interactive_cli.InteractiveState(
@@ -520,24 +543,26 @@ fn extract_artifacts(
 
   case count {
     0 -> {
-      io.println("No artifacts to extract.")
+      io.println(ansi.dim("No artifacts to extract."))
       Ok(0)
     }
     _ -> {
       io.println(
-        "Extracting "
-        <> int.to_string(count)
-        <> " artifact(s) to "
-        <> output_dir
-        <> "/",
+        ansi.bold("Extracting ")
+        <> ansi.cyan(int.to_string(count))
+        <> ansi.bold(" artifact(s) to ")
+        <> ansi.cyan(output_dir <> "/"),
       )
       list.each(keys, fn(key) {
         case dict.get(result.artifacts, key) {
           Ok(value) -> {
             let content = string.inspect(value)
             case write_file(output_dir, key, content) {
-              Ok(path) -> io.println("  ✓ " <> path)
-              Error(err) -> io.println("  ✗ " <> key <> ": " <> err)
+              Ok(path) -> io.println("  " <> ansi.green("✓") <> " " <> path)
+              Error(err) ->
+                io.println(
+                  "  " <> ansi.red("✗") <> " " <> key <> ": " <> ansi.red(err),
+                )
             }
           }
           Error(Nil) -> Nil
@@ -562,61 +587,92 @@ fn format_duration_ms(ms: Int) -> String {
   }
 }
 
-fn list_pipelines(source_file: Result(String, Nil)) -> Result(String, String) {
-  case source_file {
-    Error(Nil) ->
+fn list_pipelines(
+  source_file: Result(String, Nil),
+  module_selector: Result(String, Nil),
+) -> Result(String, String) {
+  case source_file, module_selector {
+    Ok(file_path), _ ->
+      case discover_pipelines_in_file(file_path) {
+        Error(err) -> Error(err)
+        Ok(entries) -> format_pipeline_entries(file_path, entries)
+      }
+    _, Ok(module_name) -> {
+      let file_path = module_to_file_path(module_name)
+      case discover_pipelines_in_file(file_path) {
+        Error(err) -> Error(err)
+        Ok(entries) -> format_pipeline_entries(module_name, entries)
+      }
+    }
+    Error(Nil), Error(Nil) ->
       Ok(string.join(
         [
-          "No embedded pipelines are shipped with the CLI.",
+          ansi.dim("No embedded pipelines are shipped with the CLI."),
           "",
-          "Run by runtime reference:",
-          "  thingfactory run <module:function>",
+          ansi.bold("Run by runtime reference:"),
+          "  " <> ansi.cyan("thingfactory run <module:function>"),
           "",
-          "Or run by source file:",
-          "  thingfactory run -f <file.gleam> <pipeline_function>",
+          ansi.bold("Or run by source file:"),
+          "  "
+            <> ansi.cyan("thingfactory run -f <file.gleam> <pipeline_function>"),
           "",
-          "Discover pipelines in a file:",
-          "  thingfactory list -f <file.gleam>",
+          ansi.bold("Discover pipelines in a module:"),
+          "  " <> ansi.cyan("thingfactory list <module>"),
           "",
-          "Inspect results interactively:",
-          "  thingfactory inspect -f <file.gleam> <pipeline_function>",
+          ansi.bold("Discover pipelines in a file:"),
+          "  " <> ansi.cyan("thingfactory list -f <file.gleam>"),
           "",
-          "Print a detailed result report:",
-          "  thingfactory results -f <file.gleam> <pipeline_function>",
+          ansi.bold("Inspect results interactively:"),
+          "  "
+            <> ansi.cyan(
+            "thingfactory inspect -f <file.gleam> <pipeline_function>",
+          ),
           "",
-          "Run and extract artifacts:",
-          "  thingfactory artifacts -f <file.gleam> <pipeline_function> -o <dir>",
+          ansi.bold("Print a detailed result report:"),
+          "  "
+            <> ansi.cyan(
+            "thingfactory results -f <file.gleam> <pipeline_function>",
+          ),
           "",
-          "Example:",
-          "  thingfactory run -f src/thingfactory/examples.gleam basic_pipeline",
+          ansi.bold("Run and extract artifacts:"),
+          "  "
+            <> ansi.cyan(
+            "thingfactory artifacts -f <file.gleam> <pipeline_function> -o <dir>",
+          ),
+          "",
+          ansi.bold("Example:"),
+          "  "
+            <> ansi.cyan(
+            "thingfactory run -f src/thingfactory/examples.gleam basic_pipeline",
+          ),
         ],
         "\n",
       ))
-    Ok(file_path) ->
-      case discover_pipelines_in_file(file_path) {
-        Error(err) -> Error(err)
-        Ok(entries) ->
-          case entries {
-            [] -> Ok("No pipeline-returning functions found in " <> file_path)
-            _ -> {
-              let header = "Pipelines in " <> file_path <> ":\n"
-              let lines =
-                entries
-                |> list.map(fn(entry) {
-                  "  "
-                  <> entry.func_name
-                  <> "  "
-                  <> entry.pipeline_name
-                  <> " v"
-                  <> entry.version
-                  <> "  ("
-                  <> int.to_string(entry.step_count)
-                  <> " steps)"
-                })
-              Ok(header <> string.join(lines, "\n"))
-            }
-          }
-      }
+  }
+}
+
+fn format_pipeline_entries(
+  source: String,
+  entries: List(PipelineEntry),
+) -> Result(String, String) {
+  case entries {
+    [] -> Ok(ansi.dim("No pipeline-returning functions found in " <> source))
+    _ -> {
+      let header = ansi.bold("Pipelines in ") <> ansi.cyan(source) <> ":\n"
+      let lines =
+        entries
+        |> list.map(fn(entry) {
+          "  "
+          <> ansi.cyan(entry.func_name)
+          <> "  "
+          <> entry.pipeline_name
+          <> " "
+          <> ansi.dim("v" <> entry.version)
+          <> "  "
+          <> ansi.dim("(" <> int.to_string(entry.step_count) <> " steps)")
+        })
+      Ok(header <> string.join(lines, "\n"))
+    }
   }
 }
 
@@ -662,6 +718,12 @@ fn discover_pipelines_in_file(
       Ok(entries)
     }
   }
+}
+
+/// Convert a module reference to a source file path.
+/// e.g. "thingfactory@examples" -> "src/thingfactory/examples.gleam"
+fn module_to_file_path(module_name: String) -> String {
+  "src/" <> string.replace(module_name, "@", "/") <> ".gleam"
 }
 
 /// Extract zero-arity public function names that return a Pipeline type.
@@ -723,9 +785,9 @@ fn execute_pipeline_selector(
 
 fn format_step_status(status: types.StepStatus) -> String {
   case status {
-    types.StepOk -> "OK"
-    types.StepSkipped -> "SKIPPED"
-    types.StepFailed(err) -> "FAILED: " <> format_step_error(err)
+    types.StepOk -> ansi.green("OK")
+    types.StepSkipped -> ansi.yellow("SKIPPED")
+    types.StepFailed(err) -> ansi.red("FAILED: " <> format_step_error(err))
   }
 }
 
@@ -745,32 +807,30 @@ fn format_results_report(
   let total_duration =
     list.fold(result.trace, 0, fn(acc, trace) { acc + trace.duration_ms })
   let status = case result.result {
-    Ok(_) -> "SUCCESS"
-    Error(_) -> "FAILED"
+    Ok(_) -> ansi.bold(ansi.green("SUCCESS"))
+    Error(_) -> ansi.bold(ansi.red("FAILED"))
   }
   let lines =
     result.trace
     |> list.index_map(fn(trace, index) {
-      "  ["
-      <> int.to_string(index + 1)
-      <> "] "
-      <> trace.step_name
-      <> " | "
+      ansi.dim("  [" <> int.to_string(index + 1) <> "]")
+      <> " "
+      <> ansi.cyan(trace.step_name)
+      <> ansi.dim(" | ")
       <> format_step_status(trace.status)
-      <> " | "
-      <> format_duration_ms(trace.duration_ms)
+      <> ansi.dim(" | " <> format_duration_ms(trace.duration_ms))
     })
 
   string.join(
     [
-      "Pipeline Results",
-      "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
-      "Pipeline: " <> pipeline_name,
-      "Status: " <> status,
-      "Steps: " <> int.to_string(list.length(result.trace)),
-      "Total: " <> format_duration_ms(total_duration),
+      ansi.bold("Pipeline Results"),
+      ansi.dim("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"),
+      ansi.bold("Pipeline: ") <> ansi.cyan(pipeline_name),
+      ansi.bold("Status:   ") <> status,
+      ansi.bold("Steps:    ") <> int.to_string(list.length(result.trace)),
+      ansi.bold("Total:    ") <> format_duration_ms(total_duration),
       "",
-      "Step Breakdown:",
+      ansi.bold("Step Breakdown:"),
       ..lines
     ],
     "\n",
@@ -794,7 +854,7 @@ pub fn main() {
     )) -> {
       let mode = resolve_mode(compact, interactive)
       case resolve_isolation_mode(isolator, docker_image, interactive) {
-        Error(err) -> io.println("Error: " <> err)
+        Error(err) -> io.println(ansi.red("Error: " <> err))
         Ok(DockerIsolation(image)) -> {
           case execute_run_in_docker(cli_args, image) {
             Ok(output) -> {
@@ -803,7 +863,7 @@ pub fn main() {
                 _ -> io.println(output)
               }
             }
-            Error(err) -> io.println("Error: " <> err)
+            Error(err) -> io.println(ansi.red("Error: " <> err))
           }
         }
         Ok(LocalIsolation) -> {
@@ -820,7 +880,7 @@ pub fn main() {
                     _ -> io.println(output)
                   }
                 }
-                Error(err) -> io.println("Error: " <> err)
+                Error(err) -> io.println(ansi.red("Error: " <> err))
               }
               // Extract artifacts if --output-dir was provided
               case output_dir {
@@ -831,7 +891,7 @@ pub fn main() {
                 Error(Nil) -> Nil
               }
             }
-            Error(err) -> io.println("Error: " <> err)
+            Error(err) -> io.println(ansi.red("Error: " <> err))
           }
         }
       }
@@ -845,14 +905,14 @@ pub fn main() {
           let _ = format_summary(label, exec_result, Interactive)
           Nil
         }
-        Error(err) -> io.println("Error: " <> err)
+        Error(err) -> io.println(ansi.red("Error: " <> err))
       }
     }
     Ok(Results(pipeline_selector, source_file)) -> {
       let label = pipeline_label(source_file, pipeline_selector)
       case execute_pipeline_selector(source_file, pipeline_selector, Compact) {
         Ok(exec_result) -> io.println(format_results_report(label, exec_result))
-        Error(err) -> io.println("Error: " <> err)
+        Error(err) -> io.println(ansi.red("Error: " <> err))
       }
     }
     Ok(Artifacts(pipeline_selector, source_file, output_dir)) -> {
@@ -861,16 +921,16 @@ pub fn main() {
           let _ = extract_artifacts(exec_result, output_dir)
           Nil
         }
-        Error(err) -> io.println("Error: " <> err)
+        Error(err) -> io.println(ansi.red("Error: " <> err))
       }
     }
-    Ok(ListPipelines(source_file)) -> {
-      case list_pipelines(source_file) {
+    Ok(ListPipelines(source_file, module_selector)) -> {
+      case list_pipelines(source_file, module_selector) {
         Ok(output) -> io.println(output)
-        Error(err) -> io.println("Error: " <> err)
+        Error(err) -> io.println(ansi.red("Error: " <> err))
       }
     }
-    Error(err) -> io.println(err)
+    Error(err) -> io.println(ansi.red(err))
   }
 }
 
@@ -1000,7 +1060,7 @@ fn run_interactive_loop(state: interactive_cli.InteractiveState) -> Nil {
       }
     }
     Error(_) -> {
-      io.println("Error reading input")
+      io.println(ansi.red("Error reading input"))
       Nil
     }
   }

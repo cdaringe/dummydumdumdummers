@@ -946,15 +946,17 @@ pub fn dogfood_pipeline() -> pipeline.Pipeline(Dynamic) {
     [],
   )
   // Gleam build steps (depend on validation passing)
-  |> fn(pl) {
-    io.println("[DEBUG]: " <> pl.id.name)
-    pipeline.add_step_with_deps(
-      pl,
-      "gleam_build_js",
-      command_runner.step("gleam", ["build", "--target", "javascript"]),
-      [pipeline.step_ref("gleam_check"), pipeline.step_ref("gleam_format")],
-    )
-  }
+  |> pipeline.add_step_with_deps(
+    "gleam_build_js",
+    fn(ctx, input) {
+      io.println("[DEBUG]: gleam_build_js running")
+      command_runner.step("gleam", ["build", "--target", "javascript"])(
+        ctx,
+        input,
+      )
+    },
+    [pipeline.step_ref("gleam_check"), pipeline.step_ref("gleam_format")],
+  )
   |> pipeline.add_step_with_deps(
     "gleam_build_erl",
     command_runner.step("gleam", ["build", "--target", "erlang"]),

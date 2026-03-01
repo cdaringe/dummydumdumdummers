@@ -1,6 +1,7 @@
 import gleam/dict
 import gleam/dynamic
 import gleam/string
+import gleam_community/ansi
 import gleeunit/should
 import thingfactory/interactive_cli.{type InteractiveState, InteractiveState}
 import thingfactory/types.{
@@ -174,10 +175,11 @@ pub fn stats_success_test() {
 pub fn stats_mixed_test() {
   let state = make_state(mixed_traces(), False)
   let #(_, output) = interactive_cli.execute_command(state, "stats")
-  should.be_true(string.contains(output, "FAILED"))
-  should.be_true(string.contains(output, "Successful: 1"))
-  should.be_true(string.contains(output, "Failed:     1"))
-  should.be_true(string.contains(output, "Skipped:    1"))
+  let plain = ansi.strip(output)
+  should.be_true(string.contains(plain, "FAILED"))
+  should.be_true(string.contains(plain, "Successful:  1"))
+  should.be_true(string.contains(plain, "Failed:      1"))
+  should.be_true(string.contains(plain, "Skipped:     1"))
 }
 
 // ---------------------------------------------------------------------------
