@@ -14,7 +14,7 @@ END_DEMO
 
 | scenario | status | documentation | rework notes |
 |---|---|---|---|
-| 0 | WORK_COMPLETE | docs/scenarios/0.md | |
+| 0 | NEEDS_REWORK | docs/scenarios/0.md | `docker run --rm thingfactory run basic` hangs. |
 | 1 | VERIFIED | docs/scenarios/1.md | README clearly shows CLI, Web GUI, Pipeline Runner & Orchestrator. |
 | 2 | VERIFIED | docs/scenarios/2.md | CLI with clip parser, 15 runnable pipelines, 3-command install. |
 | 3 | VERIFIED | docs/scenarios/3.md | `docs/README.md` now provides explicit Diataxis grouping (how-to + reference); all linked docs include TOCs and concise cross-links. |
@@ -63,3 +63,4 @@ END_DEMO
 | 46 | VERIFIED | docs/scenarios/46.md | Green palette (#059669, #10b981), tonal grays, flat style, SVG textures, compact/standard modes. |
 | 47 | VERIFIED | docs/scenarios/47.md | work_queue.gleam with enqueue/pull_all, push via step args, pull via queue. |
 | 48 | VERIFIED | docs/scenarios/48.md | `command_runner.sh/1` + `sh_in_dir/2` provide single-string external calls with shared error handling; tests added. |
+| 49 | WORK_COMPLETE | docs/scenarios/49.md | |

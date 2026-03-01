@@ -5,6 +5,7 @@ spirit of concourseci, buildkite, or argo, with improvements on the DevUX of eac
 
 ## Scenarios
 
+0. The project SHALL always have passing tests & working examples.
 1. A user SHALL be able to visit the README and understand what the project offers: a CLI, a web GUI, a pipeline runner & orchestrator.
 2. A user SHALL be able to rapidly install the CLI and run it against an example pipeline hosted in a file in this project's examples.
 3. The project shall offer documentation adherent to Diátaxis, mainly "how to" and "reference". We value conciseness and linking to other resources over long-form documentation.
@@ -55,6 +56,7 @@ spirit of concourseci, buildkite, or argo, with improvements on the DevUX of eac
 46. The Pipeline GUI SHALL stylistically focus on minimalism with theme very focused on light grays, some whites, and tonal grays. All highlights should be primarily light & dark greens, including text. It should offer a compact and standard mode. It should feel flat, simple, mechanical, and not cookie-cutter like often seen with tailwind styles. Backgrounds should be textured with very subtle patterns to add visual interest and depth.
 47. Pipelines SHALL be easy to express work in both an imperative (PUSH model) as well as workers in the pipeline PULLing work from a queue (PULL model). This shall be enabled by the substrate, but because it's a common pattern, pipeline tools SHOULD be considered for offering this to users as a first class feature.
 48. Pipelines SHALL enable users to call other programs succinctly with minimal boilerplate.
+49. The CLI SHALL have integration tests that verify all major features of the CLI work, including using the docker based execution.
 
 ## Requirements
 

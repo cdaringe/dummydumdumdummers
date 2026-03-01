@@ -750,7 +750,7 @@ pub fn main() {
   }
 }
 
-fn resolve_isolation_mode(
+pub fn resolve_isolation_mode(
   isolator: Result(String, Nil),
   docker_image: Result(String, Nil),
   interactive: Bool,
