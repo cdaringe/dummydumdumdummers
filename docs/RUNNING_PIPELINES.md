@@ -31,16 +31,16 @@ Commands:
 ## Running a Pipeline
 
 ```bash
-gleam run -m thingfactory/cli -- run <pipeline-name>
+gleam run -m thingfactory/cli -- run <module:function>
 ```
 
-Pipelines can be referenced by name or number:
+Pipelines can also be loaded directly from a `.gleam` source file:
 
 ```bash
-gleam run -m thingfactory/cli -- run basic       # by name
-gleam run -m thingfactory/cli -- run 1           # by number
-gleam run -m thingfactory/cli -- run typescript  # real build pipeline
-gleam run -m thingfactory/cli -- run parallel    # parallel DAG pipeline
+gleam run -m thingfactory/cli -- run thingfactory@examples:basic_pipeline --isolator local
+gleam run -m thingfactory/cli -- run -f src/thingfactory/examples.gleam basic_pipeline --isolator local
+gleam run -m thingfactory/cli -- run -f src/thingfactory/examples.gleam typescript_build_pipeline --isolator local
+gleam run -m thingfactory/cli -- run -f src/thingfactory/examples.gleam parallel_build_pipeline --isolator local
 ```
 
 ## Output Modes
@@ -72,7 +72,7 @@ Result: SUCCESS | 3 steps | 3ms
 Shows step N/M progress with minimal output:
 
 ```bash
-gleam run -m thingfactory/cli -- run basic -c
+gleam run -m thingfactory/cli -- run -f src/thingfactory/examples.gleam basic_pipeline --isolator local -c
 ```
 
 ```
@@ -87,7 +87,7 @@ gleam run -m thingfactory/cli -- run basic -c
 Runs the pipeline then drops into a REPL for exploring results:
 
 ```bash
-gleam run -m thingfactory/cli -- inspect artifacts
+gleam run -m thingfactory/cli -- inspect -f src/thingfactory/examples.gleam artifact_sharing_pipeline
 ```
 
 Available interactive commands:
@@ -107,7 +107,7 @@ Available interactive commands:
 Extract artifacts to disk after execution using `artifacts -o/--output-dir`:
 
 ```bash
-gleam run -m thingfactory/cli -- artifacts artifacts -o ./output
+gleam run -m thingfactory/cli -- artifacts -f src/thingfactory/examples.gleam artifact_sharing_pipeline -o ./output
 ```
 
 Each artifact key becomes a file in the output directory:
@@ -129,8 +129,8 @@ docker build -t thingfactory .
 Run a pipeline in a container:
 
 ```bash
-docker run --rm thingfactory run basic
-docker run --rm thingfactory run typescript -c
+docker run --rm thingfactory run thingfactory@examples:basic_pipeline --isolator local
+docker run --rm thingfactory run thingfactory@examples:typescript_build_pipeline --isolator local -c
 docker run --rm thingfactory list
 ```
 
@@ -138,24 +138,11 @@ The Dockerfile uses a multi-stage build with `node:22-alpine`, compiling Gleam t
 
 ## Pipeline Resolution
 
-The CLI resolves pipeline names case-insensitively. Each pipeline has a number and one or more name aliases:
+The CLI resolves pipelines at runtime:
 
-| # | Names | Description |
-|---|---|---|
-| 1 | `basic` | Basic sequential pipeline |
-| 2 | `error` | Error handling demo |
-| 3 | `mock` | Mock testing patterns |
-| 4 | `dependency` | Dependency injection |
-| 5 | `artifacts` | Artifact sharing |
-| 6 | `typescript` | TypeScript build |
-| 7 | `rust` | Rust library build |
-| 8 | `fullstack` | Full-stack deployment |
-| 9 | `gleam` | Gleam project build |
-| 10 | `go` | Go library build |
-| 11 | `custom` | Custom runner factory |
-| 12 | `parallel` | Parallel DAG build |
-| 13 | `parallel_multi` | Multi-target parallel |
-| 14 | `dogfood` | Build thingfactory itself |
+- `run <module:function>` loads a compiled function (for example, `thingfactory@examples:basic_pipeline`).
+- `run -f <file.gleam> <function>` loads from a source file by function name.
+- `list` prints valid usage patterns and examples.
 
 ## Exit Codes
 

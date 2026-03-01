@@ -26,12 +26,12 @@ gleam build --warnings-as-errors
 ### Run a Pipeline
 
 ```bash
-gleam run -m thingfactory/cli -- list              # see available pipelines
-gleam run -m thingfactory/cli -- run basic          # run one
-gleam run -m thingfactory/cli -- run parallel -c    # compact output
-gleam run -m thingfactory/cli -- inspect artifacts  # interactive inspector
-gleam run -m thingfactory/cli -- results basic      # detailed result report
-gleam run -m thingfactory/cli -- artifacts artifacts -o ./out # extract artifacts
+gleam run -m thingfactory/cli -- list
+gleam run -m thingfactory/cli -- run thingfactory@examples:basic_pipeline --isolator local
+gleam run -m thingfactory/cli -- run -f src/thingfactory/examples.gleam parallel_build_pipeline --isolator local -c
+gleam run -m thingfactory/cli -- inspect -f src/thingfactory/examples.gleam artifact_sharing_pipeline
+gleam run -m thingfactory/cli -- results thingfactory@examples:basic_pipeline --isolator local
+gleam run -m thingfactory/cli -- artifacts -f src/thingfactory/examples.gleam artifact_sharing_pipeline -o ./out
 ```
 
 ### Define a Pipeline
@@ -79,7 +79,7 @@ let result = test_helpers.run_with_mocks(my_pipeline(), mocks, dynamic.nil())
 
 ```bash
 docker build -t thingfactory .
-docker run --rm thingfactory run basic
+docker run --rm thingfactory run thingfactory@examples:basic_pipeline --isolator local
 ```
 
 ## Features
@@ -121,7 +121,7 @@ docker run --rm thingfactory run basic
 - Kubernetes runner, custom runner factory, dogfooding
 
 ```bash
-gleam run -m thingfactory/cli -- list   # see all 14 runnable pipelines
+gleam run -m thingfactory/cli -- run -f src/thingfactory/examples.gleam basic_pipeline --isolator local
 gleam test                               # run all tests including examples
 ```
 

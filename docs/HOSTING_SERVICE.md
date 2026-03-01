@@ -47,7 +47,7 @@ The Dockerfile uses a multi-stage build:
 CLI mode:
 
 ```bash
-docker run --rm thingfactory run basic
+docker run --rm thingfactory run thingfactory@examples:basic_pipeline --isolator local
 docker run --rm thingfactory list
 ```
 

@@ -44,28 +44,28 @@ npm run dev
 
 ## Run an Example Pipeline
 
-Run a built-in example by name or number:
+Run an example pipeline from the source file:
 
 ```bash
-gleam run -m thingfactory/cli -- run basic
+gleam run -m thingfactory/cli -- run -f src/thingfactory/examples.gleam basic_pipeline --isolator local
 ```
 
-Or with verbose output:
+Run by runtime module reference:
 
 ```bash
-gleam run -m thingfactory/cli -- run typescript
+gleam run -m thingfactory/cli -- run thingfactory@examples:basic_pipeline --isolator local
 ```
 
 Compact mode (progress bar style):
 
 ```bash
-gleam run -m thingfactory/cli -- run parallel -c
+gleam run -m thingfactory/cli -- run -f src/thingfactory/examples.gleam parallel_build_pipeline --isolator local -c
 ```
 
 Interactive mode (drill into results after execution):
 
 ```bash
-gleam run -m thingfactory/cli -- run artifacts -i
+gleam run -m thingfactory/cli -- inspect -f src/thingfactory/examples.gleam artifact_sharing_pipeline
 ```
 
 ## List Available Pipelines
@@ -74,26 +74,7 @@ gleam run -m thingfactory/cli -- run artifacts -i
 gleam run -m thingfactory/cli -- list
 ```
 
-Output:
-
-```
-Available Pipelines:
-
-1  | basic                  - Basic sequential pipeline (3 steps)
-2  | error                  - Error handling and propagation
-3  | mock                   - Testing with mocks
-4  | dependency             - Dependency injection pattern
-5  | artifacts              - Artifact sharing between steps
-6  | typescript             - TypeScript build pipeline
-7  | rust                   - Rust library build pipeline
-8  | fullstack              - Full-stack deployment pipeline
-9  | gleam                  - Gleam project build pipeline
-10 | go                     - Go library build pipeline
-11 | custom                 - Custom runner factory pattern
-12 | parallel               - Parallel build pipeline
-13 | parallel_multi         - Parallel multi-target pipeline
-14 | dogfood                - Build thingfactory itself (dogfood)
-```
+`list` prints usage patterns for runtime loading (`module:function` or `-f <file> <function>`), not embedded pipeline names.
 
 ## Define Your Own Pipeline
 

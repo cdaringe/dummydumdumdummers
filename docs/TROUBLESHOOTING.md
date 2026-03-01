@@ -51,7 +51,13 @@ On macOS, you may need Xcode command line tools: `xcode-select --install`.
 
 **Problem**: Pipeline name not recognized.
 
-**Solution**: Use `gleam run -m thingfactory/cli -- list` to see available pipelines. Pipeline names are case-insensitive. You can also use numbers (e.g., `1` for `basic`).
+**Solution**: Runtime pipeline loading now expects either `module:function` or `-f <file> <function>`.
+
+```bash
+gleam run -m thingfactory/cli -- list
+gleam run -m thingfactory/cli -- run thingfactory@examples:basic_pipeline --isolator local
+gleam run -m thingfactory/cli -- run -f src/thingfactory/examples.gleam basic_pipeline --isolator local
+```
 
 ### No output in compact mode
 
@@ -193,5 +199,5 @@ docker run -v /var/run/docker.sock:/var/run/docker.sock thingfactory-web
 
 - Check the [User Guide](USER_GUIDE.md) for an overview of all features
 - See `src/thingfactory/examples.gleam` for 26 working pipeline examples
-- Run `gleam run -m thingfactory/cli -- run <pipeline> -i` to interactively explore execution results
+- Run `gleam run -m thingfactory/cli -- inspect -f src/thingfactory/examples.gleam artifact_sharing_pipeline` to interactively explore execution results
 - File issues at the project repository
