@@ -14,7 +14,7 @@ END_DEMO
 
 | scenario | status | documentation | rework notes |
 |---|---|---|---|
-| 0 | WORK_COMPLETE | docs/scenarios/0.md | |
+| 0 | VERIFIED | docs/scenarios/0.md | |
 | 1 | VERIFIED | docs/scenarios/1.md | README clearly shows CLI, Web GUI, Pipeline Runner & Orchestrator. |
 | 2 | VERIFIED | docs/scenarios/2.md | CLI with clip parser, 15 runnable pipelines, 3-command install. |
 | 3 | VERIFIED | docs/scenarios/3.md | `docs/README.md` now provides explicit Diataxis grouping (how-to + reference); all linked docs include TOCs and concise cross-links. |
@@ -42,7 +42,7 @@ END_DEMO
 | 25 | VERIFIED | docs/scenarios/25.md | runner_host.new() calls get_cpu_count() FFI, min 1 worker. |
 | 26 | VERIFIED | docs/scenarios/26.md | kubernetes_runner.gleam with Job YAML generation, kubectl integration. |
 | 27 | VERIFIED | docs/scenarios/27.md | secret_manager.gleam with opaque types, masking, CRUD, validation. |
-| 28 | WORK_COMPLETE | docs/scenarios/28.md | |
+| 28 | VERIFIED | docs/scenarios/28.md | |
 | 29 | VERIFIED | docs/scenarios/29.md | StepLogViewer.tsx + SSE streaming endpoint + RunDetailClient.tsx. |
 | 30 | VERIFIED | docs/scenarios/30.md | CLI uses same executor/parallel_executor as production. |
 | 31 | VERIFIED | docs/scenarios/31.md | 15 CLI-runnable pipelines, seed.ts populates GUI database. |
@@ -57,10 +57,10 @@ END_DEMO
 | 40 | VERIFIED | docs/scenarios/40.md | dogfood_pipeline() runs real gleam/npm commands to build itself. |
 | 41 | VERIFIED | docs/scenarios/41.md | Added distributed scenario-41 examples: `distributed_parallel_pipeline()` (async fan-out/fan-in) and `distributed_accumulation_pipeline()` (value accumulation pass-through), each step executed via distinct Kubernetes jobs/nodes; structure tests added in `test/examples_test.gleam`. |
 | 42 | VERIFIED | docs/scenarios/42.md | gleam_build_pipeline and dogfood_pipeline run real multi-step builds. |
-| 43 | WORK_COMPLETE | docs/scenarios/43.md | |
+| 43 | VERIFIED | docs/scenarios/43.md | |
 | 44 | VERIFIED | docs/scenarios/44.md | ArtifactsList.tsx, API endpoints, 0004_artifacts.sql migration. |
 | 45 | VERIFIED | docs/scenarios/45.md | Stats page, API endpoint, E2E test for statistics dashboard. |
 | 46 | VERIFIED | docs/scenarios/46.md | Green palette (#059669, #10b981), tonal grays, flat style, SVG textures, compact/standard modes. |
 | 47 | VERIFIED | docs/scenarios/47.md | work_queue.gleam with enqueue/pull_all, push via step args, pull via queue. |
 | 48 | VERIFIED | docs/scenarios/48.md | `command_runner.sh/1` + `sh_in_dir/2` provide single-string external calls with shared error handling; tests added. |
-| 49 | WORK_COMPLETE | docs/scenarios/49.md | |
+| 49 | VERIFIED | docs/scenarios/49.md | |
