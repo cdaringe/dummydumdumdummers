@@ -16,6 +16,7 @@ import gleam/int
 import gleam/io
 import gleam/list
 import gleam/string
+import simplifile
 import thingfactory/command_runner
 import thingfactory/executor
 import thingfactory/interactive_cli
@@ -41,7 +42,7 @@ pub type CliCommand {
     source_file: Result(String, Nil),
     output_dir: String,
   )
-  ListPipelines
+  ListPipelines(source_file: Result(String, Nil))
 }
 
 /// Output verbosity level for CLI
@@ -124,7 +125,20 @@ fn run_command() -> clip.Command(CliCommand) {
 
 /// Build the "list" subcommand parser
 fn list_command() -> clip.Command(CliCommand) {
-  clip.return(ListPipelines)
+  clip.command({
+    use source_file <- clip.parameter
+    ListPipelines(source_file: source_file)
+  })
+  |> clip.opt(
+    opt.new("file")
+    |> opt.short("f")
+    |> opt.help("Gleam file to discover pipeline functions from")
+    |> opt.optional(),
+  )
+  |> clip.help(help.simple(
+    "thingfactory list",
+    "List available pipelines (use -f to discover from a source file)",
+  ))
 }
 
 /// Build the "inspect" subcommand parser
@@ -548,31 +562,141 @@ fn format_duration_ms(ms: Int) -> String {
   }
 }
 
-fn list_pipelines() -> Result(String, String) {
-  Ok(string.join(
-    [
-      "No embedded pipelines are shipped with the CLI.",
-      "",
-      "Run by runtime reference:",
-      "  thingfactory run <module:function>",
-      "",
-      "Or run by source file:",
-      "  thingfactory run -f <file.gleam> <pipeline_function>",
-      "",
-      "Inspect results interactively:",
-      "  thingfactory inspect -f <file.gleam> <pipeline_function>",
-      "",
-      "Print a detailed result report:",
-      "  thingfactory results -f <file.gleam> <pipeline_function>",
-      "",
-      "Run and extract artifacts:",
-      "  thingfactory artifacts -f <file.gleam> <pipeline_function> -o <dir>",
-      "",
-      "Example:",
-      "  thingfactory run -f src/thingfactory/examples.gleam basic_pipeline",
-    ],
-    "\n",
-  ))
+fn list_pipelines(source_file: Result(String, Nil)) -> Result(String, String) {
+  case source_file {
+    Error(Nil) ->
+      Ok(string.join(
+        [
+          "No embedded pipelines are shipped with the CLI.",
+          "",
+          "Run by runtime reference:",
+          "  thingfactory run <module:function>",
+          "",
+          "Or run by source file:",
+          "  thingfactory run -f <file.gleam> <pipeline_function>",
+          "",
+          "Discover pipelines in a file:",
+          "  thingfactory list -f <file.gleam>",
+          "",
+          "Inspect results interactively:",
+          "  thingfactory inspect -f <file.gleam> <pipeline_function>",
+          "",
+          "Print a detailed result report:",
+          "  thingfactory results -f <file.gleam> <pipeline_function>",
+          "",
+          "Run and extract artifacts:",
+          "  thingfactory artifacts -f <file.gleam> <pipeline_function> -o <dir>",
+          "",
+          "Example:",
+          "  thingfactory run -f src/thingfactory/examples.gleam basic_pipeline",
+        ],
+        "\n",
+      ))
+    Ok(file_path) ->
+      case discover_pipelines_in_file(file_path) {
+        Error(err) -> Error(err)
+        Ok(entries) ->
+          case entries {
+            [] -> Ok("No pipeline-returning functions found in " <> file_path)
+            _ -> {
+              let header = "Pipelines in " <> file_path <> ":\n"
+              let lines =
+                entries
+                |> list.map(fn(entry) {
+                  "  "
+                  <> entry.func_name
+                  <> "  "
+                  <> entry.pipeline_name
+                  <> " v"
+                  <> entry.version
+                  <> "  ("
+                  <> int.to_string(entry.step_count)
+                  <> " steps)"
+                })
+              Ok(header <> string.join(lines, "\n"))
+            }
+          }
+      }
+  }
+}
+
+/// Info about a discovered pipeline entrypoint
+pub type PipelineEntry {
+  PipelineEntry(
+    func_name: String,
+    pipeline_name: String,
+    version: String,
+    step_count: Int,
+  )
+}
+
+/// Discover pipeline-returning functions in a Gleam source file.
+/// Reads the file, extracts zero-arity public function names, tries
+/// loading each via the existing FFI, and returns metadata for those
+/// that return a Pipeline.
+fn discover_pipelines_in_file(
+  file_path: String,
+) -> Result(List(PipelineEntry), String) {
+  case simplifile.read(file_path) {
+    Error(_) -> Error("Could not read file: " <> file_path)
+    Ok(source) -> {
+      let func_names = extract_pipeline_fn_names(source)
+      let entries =
+        func_names
+        |> list.filter_map(fn(name) {
+          case load_pipeline_from_file(file_path, name) {
+            Ok(p) -> {
+              let id = pipeline.id(p)
+              let types.PipelineId(pname, pversion) = id
+              let step_count = list.length(pipeline.steps(p))
+              Ok(PipelineEntry(
+                func_name: name,
+                pipeline_name: pname,
+                version: pversion,
+                step_count: step_count,
+              ))
+            }
+            Error(_) -> Error(Nil)
+          }
+        })
+      Ok(entries)
+    }
+  }
+}
+
+/// Extract zero-arity public function names that return a Pipeline type.
+/// Matches lines like `pub fn name() -> pipeline.Pipeline(Dynamic) {`
+/// or `pub fn name() -> Pipeline(Dynamic) {`.
+fn extract_pipeline_fn_names(source: String) -> List(String) {
+  source
+  |> string.split("\n")
+  |> list.filter_map(fn(line) {
+    let trimmed = string.trim(line)
+    case string.starts_with(trimmed, "pub fn ") {
+      False -> Error(Nil)
+      True -> {
+        // Drop "pub fn " prefix
+        let rest = string.drop_start(trimmed, 7)
+        // Find the opening paren
+        case string.split_once(rest, "(") {
+          Error(Nil) -> Error(Nil)
+          Ok(#(name, after_paren)) -> {
+            // Check it's zero-arity: next non-whitespace char should be ")"
+            case string.starts_with(string.trim_start(after_paren), ")") {
+              False -> Error(Nil)
+              True -> {
+                // Check the return type contains "Pipeline"
+                case string.contains(after_paren, "Pipeline") {
+                  True -> Ok(string.trim(name))
+                  False -> Error(Nil)
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  })
 }
 
 fn pipeline_label(
@@ -740,8 +864,8 @@ pub fn main() {
         Error(err) -> io.println("Error: " <> err)
       }
     }
-    Ok(ListPipelines) -> {
-      case list_pipelines() {
+    Ok(ListPipelines(source_file)) -> {
+      case list_pipelines(source_file) {
         Ok(output) -> io.println(output)
         Error(err) -> io.println("Error: " <> err)
       }

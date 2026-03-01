@@ -72,3 +72,4 @@ spirit of concourseci, buildkite, or argo, with improvements on the DevUX of eac
 10. The system SHALL NOT accept YAML or JSON based flows.
 11. Features SHALL NOT be duplicated--DRY code is a must.
 12. Gleam code compilation SHALL NOT have any errors or warnings.
+13. FFI code SHALL NOT be written for gleam to erlang or javascript.

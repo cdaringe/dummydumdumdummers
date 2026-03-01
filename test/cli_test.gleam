@@ -4,7 +4,12 @@ import thingfactory/cli
 
 pub fn parse_list_command_test() {
   let parsed = cli.parse_args(["list"])
-  should.equal(parsed, Ok(cli.ListPipelines))
+  should.equal(parsed, Ok(cli.ListPipelines(source_file: Error(Nil))))
+}
+
+pub fn parse_list_command_with_file_test() {
+  let parsed = cli.parse_args(["list", "-f", "examples.gleam"])
+  should.equal(parsed, Ok(cli.ListPipelines(source_file: Ok("examples.gleam"))))
 }
 
 pub fn parse_run_command_with_flags_test() {
