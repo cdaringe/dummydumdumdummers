@@ -57,6 +57,9 @@ spirit of concourseci, buildkite, or argo, with improvements on the DevUX of eac
 47. Pipelines SHALL be easy to express work in both an imperative (PUSH model) as well as workers in the pipeline PULLing work from a queue (PULL model). This shall be enabled by the substrate, but because it's a common pattern, pipeline tools SHOULD be considered for offering this to users as a first class feature.
 48. Pipelines SHALL enable users to call other programs succinctly with minimal boilerplate.
 49. The CLI SHALL have integration tests that verify all major features of the CLI work, including using the docker based execution.
+50. The GUI SHALL show the graph of a pipeline with edges connecting every step.
+51. The project SHALL provide a deployment guide.
+52. The service SHALL be configurable via ALL THINGFACTORY_* environment variables, and the documentation SHALL provide a reference for all of these. The variables MUST be correlated to a clean/crisp typed datamodel that underpins the service.
 
 ## Requirements
 
