@@ -1,34 +1,25 @@
-# Build stage
-FROM node:22-alpine AS builder
-
-# Install Gleam
-RUN npm install -g gleam@1.13.0
+# Build stage: use Gleam's official Erlang/OTP image
+FROM ghcr.io/gleam-lang/gleam:v1.13.0-erlang-alpine AS builder
 
 WORKDIR /app
 
-# Copy manifest and build dependencies
+# Download dependencies
 COPY manifest.toml gleam.toml ./
 RUN gleam deps download
 
-# Copy source code
+# Build Erlang release shipment
 COPY src src
-COPY test test
+RUN gleam export erlang-shipment
 
-# Build JavaScript target
-RUN gleam build --warnings-as-errors --target javascript
-
-# Runtime stage
-FROM node:22-alpine
+# Runtime stage: minimal Erlang/OTP image
+FROM erlang:27-alpine
 
 # Install Docker CLI so --isolator docker can spawn containers via host socket
 RUN apk add --no-cache docker-cli
 
 WORKDIR /app
 
-# Copy only the compiled JavaScript from builder
-COPY --from=builder /app/build/dev /app/build/dev
+# Copy the self-contained Erlang release
+COPY --from=builder /app/erlang-shipment .
 
-# Copy CLI entry point
-COPY bin bin
-
-ENTRYPOINT ["node", "bin/cli.mjs"]
+ENTRYPOINT ["./entrypoint.sh", "run", "thingfactory", "main"]

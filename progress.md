@@ -67,4 +67,6 @@ END_DEMO
 | 50 | VERIFIED | docs/scenarios/50.md | |
 | 51 | VERIFIED | docs/scenarios/51.md | Deployment guide in docs/HOSTING_SERVICE.md (Docker, K8s, manual, nginx) and DOCKER.md. |
 | 52 | VERIFIED | docs/scenarios/52.md | ServiceConfig typed datamodel in web/lib/config.ts; THINGFACTORY_DATABASE_PATH + THINGFACTORY_PORT; all consumers updated; docs updated. |
+| 53 | VERIFIED | docs/scenarios/53.md | Root Dockerfile updated to ghcr.io/gleam-lang/gleam:v1.13.0-erlang-alpine builder + erlang:27-alpine runtime; gleam export erlang-shipment compiles to BEAM; entrypoint.sh runs thingfactory:main. |
+| 54 | VERIFIED | docs/scenarios/54.md | web/Dockerfile is 3-stage node:22-alpine build: Next.js build, native better-sqlite3 compile, standalone runtime on port 3000. |
 | 55 | VERIFIED | docs/scenarios/55.md | Flow Diagram on run detail page with live node states (pending/running/ok/failed) and per-node duration; PipelineDagNode shows status + duration; dag.ts updated with TraceData type; 61 E2E tests pass. |
