@@ -24,7 +24,7 @@ export function PipelineDagNode({ data }: Props) {
   return (
     <div
       style={{
-        background: "#fff",
+        background: "var(--color-gray-100)",
         border: `2px solid ${color}`,
         borderRadius: "var(--border-radius-sm)",
         padding: "var(--spacing-sm) var(--spacing-md)",

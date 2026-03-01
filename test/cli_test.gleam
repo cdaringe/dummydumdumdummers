@@ -21,12 +21,52 @@ pub fn parse_run_command_with_flags_test() {
 
   let assert Ok(command) = parsed
   case command {
-    cli.Run(pipeline_selector, source_file, compact, interactive, output_dir) -> {
+    cli.Run(
+      pipeline_selector,
+      source_file,
+      compact,
+      interactive,
+      output_dir,
+      isolator,
+      docker_image,
+    ) -> {
       should.equal(pipeline_selector, "basic_pipeline")
       should.equal(source_file, Ok("src/thingfactory/examples.gleam"))
       should.equal(compact, True)
       should.equal(interactive, False)
       should.equal(output_dir, Ok("./out"))
+      should.equal(isolator, Error(Nil))
+      should.equal(docker_image, Error(Nil))
+    }
+    _ -> should.fail()
+  }
+}
+
+pub fn parse_run_command_with_isolation_flags_test() {
+  let parsed =
+    cli.parse_args([
+      "run",
+      "--isolator",
+      "local",
+      "--docker-image",
+      "ghcr.io/gleam-lang/gleam:latest",
+      "thingfactory@examples:basic_pipeline",
+    ])
+
+  let assert Ok(command) = parsed
+  case command {
+    cli.Run(
+      pipeline_selector,
+      _source_file,
+      _compact,
+      _interactive,
+      _output_dir,
+      isolator,
+      docker_image,
+    ) -> {
+      should.equal(pipeline_selector, "thingfactory@examples:basic_pipeline")
+      should.equal(isolator, Ok("local"))
+      should.equal(docker_image, Ok("ghcr.io/gleam-lang/gleam:latest"))
     }
     _ -> should.fail()
   }

@@ -237,7 +237,7 @@ export default async function RunsPage({ searchParams }: Props) {
               className="btn btn-sm"
               style={{
                 background: p === page ? "var(--color-primary)" : "var(--color-gray-200)",
-                color: p === page ? "#fff" : "var(--color-gray-800)",
+                color: p === page ? "var(--color-gray-100)" : "var(--color-gray-800)",
               }}
             >
               {p}

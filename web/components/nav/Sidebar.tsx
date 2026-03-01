@@ -26,7 +26,7 @@ export function Sidebar() {
   return (
     <nav
       style={{
-        width: 220,
+        width: "var(--sidebar-width)",
         minHeight: "100vh",
         background: "var(--color-gray-950)",
         color: "var(--color-gray-100)",
@@ -43,10 +43,10 @@ export function Sidebar() {
           marginBottom: "var(--spacing-lg)",
         }}
       >
-        <div style={{ fontWeight: 700, fontSize: 18, color: "var(--color-gray-100)", fontFamily: "monospace" }}>
+        <div style={{ fontWeight: 700, fontSize: "var(--font-size-lg)", color: "var(--color-gray-100)", fontFamily: "monospace" }}>
           thingfactory
         </div>
-        <div style={{ fontSize: 11, color: "var(--color-gray-600)", marginTop: "var(--spacing-xs)" }}>
+        <div style={{ fontSize: "var(--font-size-xs)", color: "var(--color-gray-600)", marginTop: "var(--spacing-xs)" }}>
           Pipeline Dashboard
         </div>
       </div>

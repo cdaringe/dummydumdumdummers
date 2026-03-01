@@ -1,5 +1,5 @@
 -module(thingfactory_erlang_cli).
--export([load_pipeline/2, load_pipeline_from_file/2, read_line_sync/0, write_file/3]).
+-export([load_pipeline/2, load_pipeline_from_file/2, read_line_sync/0, write_file/3, get_cwd/0]).
 
 load_pipeline(ModuleName, FunctionName) ->
     case to_atom(ModuleName) of
@@ -209,6 +209,13 @@ write_file(Dir, Filename, Content) ->
     Path = filename:join(DirStr, FilenameStr),
     case file:write_file(Path, Content) of
         ok -> {ok, list_to_binary(Path)};
+        {error, Reason} ->
+            {error, list_to_binary(io_lib:format("~p", [Reason]))}
+    end.
+
+get_cwd() ->
+    case file:get_cwd() of
+        {ok, Dir} -> {ok, list_to_binary(Dir)};
         {error, Reason} ->
             {error, list_to_binary(io_lib:format("~p", [Reason]))}
     end.

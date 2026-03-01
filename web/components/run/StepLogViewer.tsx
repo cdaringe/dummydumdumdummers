@@ -111,10 +111,10 @@ export function StepLogViewer({ stepTraces }: Props) {
               onClick={() => hasLogs && toggleStep(trace.id)}
               style={{
                 display: "grid",
-                gridTemplateColumns: "32px 200px 90px 100px 1fr 24px",
+                gridTemplateColumns: "var(--step-number-width) var(--step-name-width) var(--step-status-width) var(--step-duration-width) 1fr 24px",
                 alignItems: "center",
                 gap: "var(--spacing-md)",
-                padding: "10px 0",
+                padding: "var(--step-row-padding) 0",
                 cursor: hasLogs ? "pointer" : "default",
                 userSelect: "none",
               }}
@@ -199,8 +199,7 @@ export function StepLogViewer({ stepTraces }: Props) {
                     style={{
                       height: 6,
                       borderRadius: 3,
-                      background:
-                        "linear-gradient(90deg, #10b981 0%, #10b98144 100%)",
+                      background: "var(--color-primary-light)",
                       width: "60%",
                       animation: "pulse 1.5s ease-in-out infinite",
                     }}
@@ -236,7 +235,7 @@ export function StepLogViewer({ stepTraces }: Props) {
               <div
                 data-testid={`step-log-${trace.step_name}`}
                 style={{
-                  margin: "0 0 var(--spacing-md) 44px",
+                  margin: "0 0 var(--spacing-md) var(--step-row-indent)",
                   padding: "var(--spacing-md) var(--spacing-lg)",
                   backgroundColor: "var(--color-gray-950)",
                   color: "var(--color-gray-400)",

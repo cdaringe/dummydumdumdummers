@@ -22,8 +22,6 @@ export function GanttTimeline({ stepTraces, totalDuration }: Props) {
   });
 
   const pixelsPerMs = totalDuration > 0 ? 600 / totalDuration : 1;
-  const barHeight = 32;
-  const padding = 12;
 
   return (
     <div style={{ marginTop: "var(--spacing-lg)" }}>
@@ -50,7 +48,7 @@ export function GanttTimeline({ stepTraces, totalDuration }: Props) {
                 color: "var(--color-gray-500)",
                 fontFamily: "monospace",
                 paddingRight: "var(--spacing-lg)",
-                marginLeft: 200,
+                marginLeft: "var(--gantt-label-width)",
               }}
             >
               <span>0ms</span>
@@ -63,8 +61,8 @@ export function GanttTimeline({ stepTraces, totalDuration }: Props) {
               style={{
                 height: 1,
                 background: "var(--color-gray-300)",
-                marginLeft: 200,
-                marginRight: 16,
+                marginLeft: "var(--gantt-label-width)",
+                marginRight: "var(--spacing-lg)",
               }}
             />
           </div>
@@ -89,14 +87,14 @@ export function GanttTimeline({ stepTraces, totalDuration }: Props) {
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  marginBottom: padding,
-                  minHeight: barHeight,
+                  marginBottom: "var(--gantt-bar-gap)",
+                  minHeight: "var(--gantt-bar-height)",
                 }}
               >
                 {/* Step name column */}
                 <div
                   style={{
-                    width: 200,
+                    width: "var(--gantt-label-width)",
                     fontSize: "var(--font-size-base)",
                     fontFamily: "monospace",
                     fontWeight: 500,
@@ -118,7 +116,7 @@ export function GanttTimeline({ stepTraces, totalDuration }: Props) {
                   style={{
                     flex: 1,
                     position: "relative",
-                    height: barHeight,
+                    height: "var(--gantt-bar-height)",
                     display: "flex",
                     alignItems: "center",
                     paddingRight: "var(--spacing-lg)",
@@ -128,8 +126,8 @@ export function GanttTimeline({ stepTraces, totalDuration }: Props) {
                   <div
                     style={{
                       marginLeft: `${offsetLeft}px`,
-                      height: "24px",
-                      borderRadius: "4px",
+                      height: "calc(var(--gantt-bar-height) - 8px)",
+                      borderRadius: "var(--border-radius-sm)",
                       background: statusColor,
                       opacity: 0.85,
                       minWidth: barWidth,

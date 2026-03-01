@@ -16,6 +16,7 @@ import gleam/int
 import gleam/io
 import gleam/list
 import gleam/string
+import thingfactory/command_runner
 import thingfactory/executor
 import thingfactory/interactive_cli
 import thingfactory/parallel_executor
@@ -30,6 +31,8 @@ pub type CliCommand {
     compact: Bool,
     interactive: Bool,
     output_dir: Result(String, Nil),
+    isolator: Result(String, Nil),
+    docker_image: Result(String, Nil),
   )
   Inspect(
     pipeline_selector: String,
@@ -54,6 +57,11 @@ pub type OutputMode {
   Interactive
 }
 
+pub type IsolationMode {
+  LocalIsolation
+  DockerIsolation(image: String)
+}
+
 /// Build the "run" subcommand parser
 fn run_command() -> clip.Command(CliCommand) {
   clip.command({
@@ -61,6 +69,8 @@ fn run_command() -> clip.Command(CliCommand) {
     use compact <- clip.parameter
     use interactive <- clip.parameter
     use output_dir <- clip.parameter
+    use isolator <- clip.parameter
+    use docker_image <- clip.parameter
     use pipeline_selector <- clip.parameter
     Run(
       pipeline_selector: pipeline_selector,
@@ -68,6 +78,8 @@ fn run_command() -> clip.Command(CliCommand) {
       compact: compact,
       interactive: interactive,
       output_dir: output_dir,
+      isolator: isolator,
+      docker_image: docker_image,
     )
   })
   |> clip.opt(
@@ -92,6 +104,16 @@ fn run_command() -> clip.Command(CliCommand) {
     opt.new("output-dir")
     |> opt.short("o")
     |> opt.help("Extract artifacts to this directory after execution")
+    |> opt.optional(),
+  )
+  |> clip.opt(
+    opt.new("isolator")
+    |> opt.help("Pipeline isolation backend: docker (default) or local")
+    |> opt.optional(),
+  )
+  |> clip.opt(
+    opt.new("docker-image")
+    |> opt.help("Docker image to use when --isolator docker is selected")
     |> opt.optional(),
   )
   |> clip.arg(
@@ -641,35 +663,61 @@ fn format_results_report(
 
 /// Main entry point for CLI
 pub fn main() {
-  let result = parse_args(argv.load().arguments)
+  let cli_args = argv.load().arguments
+  let result = parse_args(cli_args)
 
   case result {
-    Ok(Run(pipeline_selector, source_file, compact, interactive, output_dir)) -> {
+    Ok(Run(
+      pipeline_selector,
+      source_file,
+      compact,
+      interactive,
+      output_dir,
+      isolator,
+      docker_image,
+    )) -> {
       let mode = resolve_mode(compact, interactive)
-      let label = pipeline_label(source_file, pipeline_selector)
-      let execution_result = execute_pipeline_selector(source_file, pipeline_selector, mode)
-
-      case execution_result {
-        Ok(exec_result) -> {
-          case format_summary(label, exec_result, mode) {
+      case resolve_isolation_mode(isolator, docker_image, interactive) {
+        Error(err) -> io.println("Error: " <> err)
+        Ok(DockerIsolation(image)) -> {
+          case execute_run_in_docker(cli_args, image) {
             Ok(output) -> {
-              case output {
+              case string.trim(output) {
                 "" -> Nil
                 _ -> io.println(output)
               }
             }
             Error(err) -> io.println("Error: " <> err)
           }
-          // Extract artifacts if --output-dir was provided
-          case output_dir {
-            Ok(dir) -> {
-              let _ = extract_artifacts(exec_result, dir)
-              Nil
+        }
+        Ok(LocalIsolation) -> {
+          let label = pipeline_label(source_file, pipeline_selector)
+          let execution_result =
+            execute_pipeline_selector(source_file, pipeline_selector, mode)
+
+          case execution_result {
+            Ok(exec_result) -> {
+              case format_summary(label, exec_result, mode) {
+                Ok(output) -> {
+                  case output {
+                    "" -> Nil
+                    _ -> io.println(output)
+                  }
+                }
+                Error(err) -> io.println("Error: " <> err)
+              }
+              // Extract artifacts if --output-dir was provided
+              case output_dir {
+                Ok(dir) -> {
+                  let _ = extract_artifacts(exec_result, dir)
+                  Nil
+                }
+                Error(Nil) -> Nil
+              }
             }
-            Error(Nil) -> Nil
+            Error(err) -> io.println("Error: " <> err)
           }
         }
-        Error(err) -> io.println("Error: " <> err)
       }
     }
     Ok(Inspect(pipeline_selector, source_file)) -> {
@@ -706,6 +754,107 @@ pub fn main() {
     }
     Error(err) -> io.println(err)
   }
+}
+
+fn resolve_isolation_mode(
+  isolator: Result(String, Nil),
+  docker_image: Result(String, Nil),
+  interactive: Bool,
+) -> Result(IsolationMode, String) {
+  // Interactive mode requires direct stdin/stdout so default to local.
+  case interactive {
+    True -> Ok(LocalIsolation)
+    False -> {
+      let selected = case isolator {
+        Ok(value) -> string.lowercase(string.trim(value))
+        Error(Nil) -> "docker"
+      }
+      let image = case docker_image {
+        Ok(value) -> string.trim(value)
+        Error(Nil) -> "ghcr.io/gleam-lang/gleam:latest"
+      }
+      case selected {
+        "docker" -> Ok(DockerIsolation(image: image))
+        "local" -> Ok(LocalIsolation)
+        _ -> Error(
+          "Invalid isolator: " <> selected <> ". Expected 'docker' or 'local'.",
+        )
+      }
+    }
+  }
+}
+
+fn execute_run_in_docker(args: List(String), image: String) -> Result(String, String) {
+  case get_cwd() {
+    Error(err) -> Error("Failed to determine current directory: " <> err)
+    Ok(cwd) -> {
+      let rewritten_args = rewrite_run_args_for_local_isolation(args)
+      let inner =
+        "gleam build --target erlang --warnings-as-errors && gleam run -m thingfactory/cli -- "
+        <> shell_join(rewritten_args)
+      let docker_args = [
+        "run",
+        "--rm",
+        "-v",
+        cwd <> ":/workspace",
+        "-w",
+        "/workspace",
+        image,
+        "sh",
+        "-lc",
+        inner,
+      ]
+      case command_runner.run("docker", docker_args) {
+        Error(err) -> Error("Failed to execute docker isolation: " <> err)
+        Ok(output) -> {
+          let combined = string.trim(output.stdout <> output.stderr)
+          case output.exit_code {
+            0 -> Ok(combined)
+            _ ->
+              Error(
+                "Docker-isolated run failed (exit "
+                <> int.to_string(output.exit_code)
+                <> "): "
+                <> combined,
+              )
+          }
+        }
+      }
+    }
+  }
+}
+
+fn rewrite_run_args_for_local_isolation(args: List(String)) -> List(String) {
+  case args {
+    ["run", ..rest] -> {
+      let without_isolator = strip_opt_with_value(rest, "--isolator")
+      let without_image = strip_opt_with_value(without_isolator, "--docker-image")
+      let run_args = list.append(without_image, ["--isolator", "local"])
+      ["run", ..run_args]
+    }
+    _ -> args
+  }
+}
+
+fn strip_opt_with_value(args: List(String), opt_name: String) -> List(String) {
+  case args {
+    [] -> []
+    [first] -> [first]
+    [first, second, ..rest] if first == opt_name ->
+      strip_opt_with_value(rest, opt_name)
+    [first, ..rest] ->
+      [first, ..strip_opt_with_value(rest, opt_name)]
+  }
+}
+
+fn shell_join(args: List(String)) -> String {
+  args
+  |> list.map(shell_quote)
+  |> string.join(" ")
+}
+
+fn shell_quote(value: String) -> String {
+  "'" <> string.replace(value, "'", "'\"'\"'") <> "'"
 }
 
 fn run_interactive_loop(state: interactive_cli.InteractiveState) -> Nil {
@@ -758,3 +907,7 @@ fn write_file(
   filename: String,
   content: String,
 ) -> Result(String, String)
+
+@external(erlang, "thingfactory_erlang_cli", "get_cwd")
+@external(javascript, "./cli_ffi.mjs", "get_cwd")
+fn get_cwd() -> Result(String, String)

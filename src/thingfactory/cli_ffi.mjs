@@ -59,6 +59,14 @@ export function write_file(dir, filename, content) {
   }
 }
 
+export function get_cwd() {
+  try {
+    return new Ok(process.cwd());
+  } catch (e) {
+    return new Error(e.message);
+  }
+}
+
 // Read a single line from stdin (using readline)
 // Note: This must be called with proper async handling
 export async function read_line_sync() {
