@@ -581,6 +581,126 @@ pub fn run_parallel_multi_target() -> types.ExecutionResult(Dynamic) {
   )
 }
 
+/// Distributed pipeline example for scenario 41:
+/// - asynchronous/parallel fan-out (`async_left`, `async_right`)
+/// - every step runs as a distinct Kubernetes Job (different node/pod)
+pub fn distributed_parallel_pipeline() -> pipeline.Pipeline(Dynamic) {
+  let k8s_config =
+    kubernetes_runner.default_config("alpine:3.20")
+    |> kubernetes_runner.with_namespace("ci")
+
+  pipeline.new("distributed_parallel", "1.0.0")
+  |> pipeline.with_timeout(600_000)
+  |> pipeline.add_step_with_deps(
+    "seed",
+    kubernetes_runner.step(k8s_config, "s41-seed-node-a", [
+      "sh",
+      "-lc",
+      "echo seed",
+    ]),
+    [],
+  )
+  |> pipeline.add_step_with_deps(
+    "async_left",
+    kubernetes_runner.step(k8s_config, "s41-async-left-node-b", [
+      "sh",
+      "-lc",
+      "echo left",
+    ]),
+    ["seed"],
+  )
+  |> pipeline.add_step_with_deps(
+    "async_right",
+    kubernetes_runner.step(k8s_config, "s41-async-right-node-c", [
+      "sh",
+      "-lc",
+      "echo right",
+    ]),
+    ["seed"],
+  )
+  |> pipeline.add_step_with_deps(
+    "merge",
+    kubernetes_runner.step(k8s_config, "s41-merge-node-d", [
+      "sh",
+      "-lc",
+      "echo merged",
+    ]),
+    ["async_left", "async_right"],
+  )
+}
+
+/// Execute the distributed parallel pipeline.
+pub fn run_distributed_parallel() -> types.ExecutionResult(Dynamic) {
+  let config = types.default_config()
+  parallel_executor.execute_parallel(
+    distributed_parallel_pipeline(),
+    dynamic.nil(),
+    config,
+  )
+}
+
+/// Distributed accumulation pipeline for scenario 41:
+/// each step runs in a different Kubernetes Job, and accumulated output is
+/// passed through subsequent steps.
+pub fn distributed_accumulation_pipeline() -> pipeline.Pipeline(Dynamic) {
+  let k8s_config =
+    kubernetes_runner.default_config("alpine:3.20")
+    |> kubernetes_runner.with_namespace("ci")
+  let node_b_step =
+    kubernetes_runner.step(k8s_config, "s41-accumulate-node-b", [
+      "sh",
+      "-lc",
+      "echo +b",
+    ])
+  let node_c_step =
+    kubernetes_runner.step(k8s_config, "s41-accumulate-node-c", [
+      "sh",
+      "-lc",
+      "echo +c",
+    ])
+  let publish_step =
+    kubernetes_runner.step(k8s_config, "s41-publish-node-d", [
+      "sh",
+      "-lc",
+      "echo published",
+    ])
+
+  pipeline.new("distributed_accumulation", "1.0.0")
+  |> pipeline.with_timeout(600_000)
+  |> pipeline.add_step(
+    "node_a_base",
+    kubernetes_runner.step(k8s_config, "s41-base-node-a", [
+      "sh",
+      "-lc",
+      "echo base",
+    ]),
+  )
+  |> pipeline.add_step("node_b_append", fn(ctx, input) {
+    case node_b_step(ctx, dynamic.nil()) {
+      Ok(value) -> Ok(dynamic.string(string.inspect(input) <> string.inspect(value)))
+      Error(err) -> Error(err)
+    }
+  })
+  |> pipeline.add_step("node_c_append", fn(ctx, input) {
+    case node_c_step(ctx, dynamic.nil()) {
+      Ok(value) -> Ok(dynamic.string(string.inspect(input) <> string.inspect(value)))
+      Error(err) -> Error(err)
+    }
+  })
+  |> pipeline.add_step("node_d_publish", fn(ctx, accumulated) {
+    case publish_step(ctx, accumulated) {
+      Ok(_) -> Ok(accumulated)
+      Error(err) -> Error(err)
+    }
+  })
+}
+
+/// Execute the distributed accumulation pipeline.
+pub fn run_distributed_accumulation() -> types.ExecutionResult(Dynamic) {
+  let config = types.default_config()
+  executor.execute(distributed_accumulation_pipeline(), dynamic.nil(), config)
+}
+
 // ---------------------------------------------------------------------------
 // Example 14: Loop Support — Retry Pattern
 // ---------------------------------------------------------------------------
@@ -1084,4 +1204,5 @@ pub fn run_queue_worker() -> types.ExecutionResult(Dynamic) {
 
 import gleam/int
 import gleam/list
+import gleam/string
 import thingfactory/work_queue

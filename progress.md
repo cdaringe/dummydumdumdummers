@@ -54,7 +54,7 @@ END_DEMO
 | 38 | VERIFIED | docs/scenarios/38.md | `thingfactory run` now defaults to `--isolator docker`, with pluggable `--isolator docker|local` and configurable `--docker-image`; Docker execution path is implemented and tested. |
 | 39 | VERIFIED | docs/scenarios/39.md | 6 docs with TOCs covering hosting, running, all aspects. |
 | 40 | VERIFIED | docs/scenarios/40.md | dogfood_pipeline() runs real gleam/npm commands to build itself. |
-| 41 | NEEDS_REWORK | docs/scenarios/41.md | Parallel steps and value accumulation work, but spec says "Each step should run on a different node (such as different docker container) to demonstrate the distributed nature." All examples run in-process. No distributed node execution demonstrated. |
+| 41 | VERIFIED | docs/scenarios/41.md | Added distributed scenario-41 examples: `distributed_parallel_pipeline()` (async fan-out/fan-in) and `distributed_accumulation_pipeline()` (value accumulation pass-through), each step executed via distinct Kubernetes jobs/nodes; structure tests added in `test/examples_test.gleam`. |
 | 42 | VERIFIED | docs/scenarios/42.md | gleam_build_pipeline and dogfood_pipeline run real multi-step builds. |
 | 43 | VERIFIED | docs/scenarios/43.md | Dockerfile (CLI), web/Dockerfile (GUI), docker-compose.yml (one-command deploy), DOCKER.md (docs). |
 | 44 | VERIFIED | docs/scenarios/44.md | ArtifactsList.tsx, API endpoints, 0004_artifacts.sql migration. |

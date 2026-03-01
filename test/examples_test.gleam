@@ -97,6 +97,35 @@ pub fn parallel_multi_target_pipeline_test() {
   list.length(result.trace) |> should.equal(7)
 }
 
+pub fn distributed_parallel_pipeline_structure_test() {
+  // Structure-only: this example runs Kubernetes jobs, so we validate DAG shape.
+  let p = examples.distributed_parallel_pipeline()
+  pipeline.id(p) |> should.equal(types.PipelineId("distributed_parallel", "1.0.0"))
+
+  let steps = pipeline.steps(p)
+  list.length(steps) |> should.equal(4)
+  deps_for_step(steps, "seed") |> should.equal([])
+  deps_for_step(steps, "async_left") |> should.equal(["seed"])
+  deps_for_step(steps, "async_right") |> should.equal(["seed"])
+  deps_for_step(steps, "merge") |> should.equal(["async_left", "async_right"])
+}
+
+pub fn distributed_accumulation_pipeline_structure_test() {
+  // Structure-only: this example runs Kubernetes jobs, so we validate
+  // sequential accumulation flow (no explicit dependencies).
+  let p = examples.distributed_accumulation_pipeline()
+  pipeline.id(p)
+  |> should.equal(types.PipelineId("distributed_accumulation", "1.0.0"))
+
+  let steps = pipeline.steps(p)
+  list.length(steps) |> should.equal(4)
+  list.all(steps, fn(step) {
+    let pipeline.Step(_, _, _, depends_on, _) = step
+    depends_on == []
+  })
+  |> should.be_true()
+}
+
 pub fn retry_example_test() {
   let result = examples.run_retry_example()
   result.result |> should.be_ok()
@@ -191,4 +220,17 @@ pub fn dogfood_pipeline_test() {
   // 7 steps: gleam_check, gleam_format, gleam_build_js, gleam_build_erl,
   //          web_install, web_build, verify
   list.length(pipeline.steps(p)) |> should.equal(7)
+}
+
+fn deps_for_step(steps: List(pipeline.Step), target: String) -> List(String) {
+  case list.find(steps, fn(step) {
+    let pipeline.Step(name, _, _, _, _) = step
+    name == target
+  }) {
+    Ok(found) -> {
+      let pipeline.Step(_, _, _, depends_on, _) = found
+      depends_on
+    }
+    Error(Nil) -> []
+  }
 }
