@@ -12,7 +12,7 @@ test.describe("Pipelines List", () => {
     await page.goto("/pipelines");
     const rows = page.locator("table tbody tr");
     const count = await rows.count();
-    expect(count).toBeGreaterThanOrEqual(24);
+    expect(count).toBeGreaterThanOrEqual(29);
   });
 
   test("each row has a pipeline name link", async ({ page }) => {

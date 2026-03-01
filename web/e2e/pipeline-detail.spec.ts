@@ -10,7 +10,7 @@ test.describe("Pipeline Detail", () => {
   test("shows pipeline metadata (version, steps count, schedule)", async ({ page }) => {
     await page.goto("/pipelines/typescript_build/1.0.0");
     await expect(page.getByText(/v1\.0\.0/)).toBeVisible();
-    await expect(page.getByText(/6 steps/)).toBeVisible();
+    await expect(page.getByText(/4 steps/)).toBeVisible();
   });
 
   test("renders the React Flow DAG canvas", async ({ page }) => {
@@ -28,14 +28,13 @@ test.describe("Pipeline Detail", () => {
     await page.goto("/pipelines/typescript_build/1.0.0");
     await page.waitForTimeout(500);
 
-    // typescript_build has 6 dependency edges:
-    // checkout->install-deps, install-deps->lint, install-deps->compile,
-    // compile->unit_tests, lint->package, unit_tests->package
+    // typescript_build has 3 sequential dependency edges:
+    // install_deps->lint, lint->build, build->test
     const edges = page.locator("[data-testid='pipeline-dag-edges'] span");
-    await expect(edges).toHaveCount(6);
+    await expect(edges).toHaveCount(3);
 
     // Spot-check a specific edge id to ensure wiring is correct (div is hidden, use toBeAttached)
-    await expect(page.locator('[data-testid="edge-install-deps->lint"]'))
+    await expect(page.locator('[data-testid="edge-install_deps->lint"]'))
       .toBeAttached();
   });
 
@@ -45,18 +44,18 @@ test.describe("Pipeline Detail", () => {
     await page.waitForTimeout(1000);
     // Step names should appear in the custom nodes
     const dag = page.locator("[data-testid='pipeline-dag']");
-    const checkoutNode = dag.locator(
-      "[data-testid='rf__node-checkout'], div[class*='react-flow']:has-text('checkout')",
+    const installNode = dag.locator(
+      "[data-testid='rf__node-install_deps'], div[class*='react-flow']:has-text('install_deps')",
     ).first();
-    await expect(checkoutNode).toBeVisible({ timeout: 5000 });
+    await expect(installNode).toBeVisible({ timeout: 5000 });
   });
 
   test("shows steps table with correct step count", async ({ page }) => {
     await page.goto("/pipelines/typescript_build/1.0.0");
-    await expect(page.getByText("Steps (6)")).toBeVisible();
-    await expect(page.getByRole("cell", { name: "checkout" }).first())
+    await expect(page.getByText("Steps (4)")).toBeVisible();
+    await expect(page.getByRole("cell", { name: "install_deps" }).first())
       .toBeVisible();
-    await expect(page.getByRole("cell", { name: "unit_tests" }).first())
+    await expect(page.getByRole("cell", { name: "test" }).first())
       .toBeVisible();
   });
 

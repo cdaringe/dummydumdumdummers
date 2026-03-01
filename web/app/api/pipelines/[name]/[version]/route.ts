@@ -6,6 +6,8 @@ import type {
   TriggerConfig,
 } from "@/lib/types";
 
+export const dynamic = "force-dynamic";
+
 type Params = { params: Promise<{ name: string; version: string }> };
 
 export async function GET(_req: Request, { params }: Params) {

@@ -1,6 +1,8 @@
 import { db } from "@/lib/db";
 import { sql } from "kysely";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     // Overall statistics

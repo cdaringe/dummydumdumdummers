@@ -3,6 +3,8 @@ import { rawDb } from "@/lib/db";
 import { clearAllData, seedFixtures } from "@/lib/seed-fixtures";
 import { config } from "@/lib/config";
 
+export const dynamic = "force-dynamic";
+
 export async function POST() {
   if (config.databasePath !== ":memory:") {
     return NextResponse.json(

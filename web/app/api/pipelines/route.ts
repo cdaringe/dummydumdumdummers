@@ -6,6 +6,8 @@ import type {
   TriggerConfig,
 } from "@/lib/types";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const pipelines = await db
     .selectFrom("pipeline_definitions")

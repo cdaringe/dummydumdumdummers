@@ -4,6 +4,8 @@ import { v4 as uuidv4 } from "uuid";
 import { type RunEvent, runEvents } from "@/lib/run-events";
 import type { StepDefinition } from "@/lib/types";
 
+export const dynamic = "force-dynamic";
+
 type Params = { params: Promise<{ name: string; version: string }> };
 
 function generateStepLog(

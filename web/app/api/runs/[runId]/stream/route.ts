@@ -1,6 +1,8 @@
 import { db } from "@/lib/db";
 import { type RunEvent, runEvents } from "@/lib/run-events";
 
+export const dynamic = "force-dynamic";
+
 type Params = { params: Promise<{ runId: string }> };
 
 export async function GET(req: Request, { params }: Params) {

@@ -40,16 +40,18 @@ function generateStepLog(
   return lines.join("\n");
 }
 
+interface StepFixture {
+  name: string;
+  timeout_ms: number;
+  depends_on: string[];
+  loop?: unknown;
+}
+
 interface PipelineFixture {
   name: string;
   version: string;
   description: string;
-  steps: Array<{
-    name: string;
-    timeout_ms: number;
-    depends_on: string[];
-    loop?: unknown;
-  }>;
+  steps: StepFixture[];
   schedule?: unknown;
   trigger?: unknown;
   runs: Array<{
@@ -61,691 +63,486 @@ interface PipelineFixture {
   artifacts?: Array<{ name: string; content: string }>;
 }
 
+// ---------------------------------------------------------------------------
+// Helper: create sequential step chain (each step depends on the previous)
+// ---------------------------------------------------------------------------
+function seqSteps(
+  names: string[],
+  timeout_ms: number,
+): StepFixture[] {
+  return names.map((name, i) => ({
+    name,
+    timeout_ms,
+    depends_on: i === 0 ? [] : [names[i - 1]!],
+  }));
+}
+
+// ---------------------------------------------------------------------------
+// Pipeline definitions — derived from src/thingfactory/examples.gleam
+//
+// Every pipeline here corresponds 1:1 to a pub fn *_pipeline() in examples.gleam.
+// Step names, dependency edges, timeouts, schedules, and loop configs all match
+// the Gleam source exactly.
+// ---------------------------------------------------------------------------
+
 const pipelines: PipelineFixture[] = [
+  // Example 1: Basic Sequential Pipeline
+  {
+    name: "basic_example",
+    version: "1.0.0",
+    description: "Simple 3-step pipeline demonstrating basic sequential flow",
+    steps: seqSteps(["fetch", "transform", "output"], 1_800_000),
+    runs: [
+      { status: "success", trigger_type: "manual", duration_ms: 1200, daysAgo: 0 },
+      { status: "success", trigger_type: "manual", duration_ms: 1100, daysAgo: 2 },
+    ],
+  },
+
+  // Example 2: Error Handling
+  {
+    name: "error_example",
+    version: "1.0.0",
+    description: "Pipeline demonstrating error handling and step skipping",
+    steps: seqSteps(["step1", "step2_fails", "step3_skipped"], 1_800_000),
+    runs: [
+      { status: "failed", trigger_type: "manual", duration_ms: 800, daysAgo: 0 },
+      { status: "failed", trigger_type: "manual", duration_ms: 750, daysAgo: 3 },
+    ],
+  },
+
+  // Example 3: Testing with Mocks
+  {
+    name: "mockable_example",
+    version: "1.0.0",
+    description: "Pipeline demonstrating testability with mocked steps",
+    steps: seqSteps(["fetch_from_db", "process"], 1_800_000),
+    runs: [
+      { status: "success", trigger_type: "manual", duration_ms: 900, daysAgo: 0 },
+    ],
+  },
+
+  // Example 4: Using Dependencies (injected config)
+  {
+    name: "dependency_example",
+    version: "1.0.0",
+    description: "Pipeline using injected dependencies for configuration",
+    steps: seqSteps(["use_config", "use_credentials"], 1_800_000),
+    runs: [
+      { status: "success", trigger_type: "manual", duration_ms: 600, daysAgo: 1 },
+    ],
+  },
+
+  // Example 5: TypeScript Build Pipeline (REAL commands)
   {
     name: "typescript_build",
     version: "1.0.0",
-    description: "Build and test a TypeScript library",
-    steps: [
-      { name: "checkout", timeout_ms: 15000, depends_on: [] },
-      { name: "install-deps", timeout_ms: 60000, depends_on: ["checkout"] },
-      { name: "lint", timeout_ms: 30000, depends_on: ["install-deps"] },
-      { name: "compile", timeout_ms: 60000, depends_on: ["install-deps"] },
-      { name: "unit_tests", timeout_ms: 120000, depends_on: ["compile"] },
-      {
-        name: "package",
-        timeout_ms: 30000,
-        depends_on: ["lint", "unit_tests"],
-      },
-    ],
+    description: "Build and test a TypeScript library with npm",
+    steps: seqSteps(["install_deps", "lint", "build", "test"], 120_000),
     runs: [
-      {
-        status: "success",
-        trigger_type: "manual",
-        duration_ms: 12500,
-        daysAgo: 0,
-      },
-      {
-        status: "success",
-        trigger_type: "webhook",
-        duration_ms: 13200,
-        daysAgo: 1,
-      },
-      {
-        status: "failed",
-        trigger_type: "manual",
-        duration_ms: 8400,
-        daysAgo: 2,
-      },
-      {
-        status: "success",
-        trigger_type: "schedule",
-        duration_ms: 11800,
-        daysAgo: 3,
-      },
-      {
-        status: "success",
-        trigger_type: "manual",
-        duration_ms: 12100,
-        daysAgo: 5,
-      },
+      { status: "success", trigger_type: "manual", duration_ms: 12500, daysAgo: 0 },
+      { status: "success", trigger_type: "manual", duration_ms: 13200, daysAgo: 1 },
+      { status: "failed", trigger_type: "manual", duration_ms: 8400, daysAgo: 2 },
+      { status: "success", trigger_type: "manual", duration_ms: 11800, daysAgo: 3 },
+      { status: "success", trigger_type: "manual", duration_ms: 12100, daysAgo: 5 },
     ],
     artifacts: [
       { name: "dist.tar.gz", content: "typescript build output" },
       { name: "coverage.json", content: '{"lines": 94.2, "branches": 87.1}' },
     ],
   },
+
+  // Example 6: Rust Library Build Pipeline
   {
     name: "rust_build",
     version: "1.0.0",
-    description: "Build and test a Rust library",
-    steps: [
-      { name: "cargo-check", timeout_ms: 120000, depends_on: [] },
-      { name: "cargo-test", timeout_ms: 180000, depends_on: ["cargo-check"] },
-      { name: "cargo-build", timeout_ms: 180000, depends_on: ["cargo-check"] },
-      { name: "cargo-clippy", timeout_ms: 60000, depends_on: ["cargo-check"] },
-    ],
+    description: "Build and test a Rust library with cargo",
+    steps: seqSteps(
+      ["validate_source", "run_tests", "build_release", "generate_docs", "publish_artifacts"],
+      180_000,
+    ),
     runs: [
-      {
-        status: "success",
-        trigger_type: "manual",
-        duration_ms: 45000,
-        daysAgo: 0,
-      },
-      {
-        status: "success",
-        trigger_type: "webhook",
-        duration_ms: 47500,
-        daysAgo: 1,
-      },
-      {
-        status: "success",
-        trigger_type: "manual",
-        duration_ms: 43200,
-        daysAgo: 4,
-      },
+      { status: "success", trigger_type: "manual", duration_ms: 45000, daysAgo: 0 },
+      { status: "success", trigger_type: "manual", duration_ms: 47500, daysAgo: 1 },
+      { status: "success", trigger_type: "manual", duration_ms: 43200, daysAgo: 4 },
     ],
     artifacts: [
       { name: "librust.so", content: "rust binary output" },
     ],
   },
+
+  // Example 7: Full Application Stack
+  {
+    name: "full_stack_deployment",
+    version: "1.0.0",
+    description: "Complete application deployment with API, frontend, and E2E tests",
+    steps: seqSteps(
+      ["build_api", "build_frontend", "integration_tests", "e2e_tests", "deploy_staging"],
+      300_000,
+    ),
+    runs: [
+      { status: "success", trigger_type: "manual", duration_ms: 220000, daysAgo: 0 },
+      { status: "success", trigger_type: "manual", duration_ms: 215000, daysAgo: 1 },
+    ],
+  },
+
+  // Example 8: Gleam Project Build Pipeline (REAL commands)
+  {
+    name: "gleam_build",
+    version: "1.0.0",
+    description: "Build and test a Gleam project for both JS and Erlang targets",
+    steps: seqSteps(
+      ["validate", "unit_tests", "format_check", "build_javascript", "build_erlang", "publish_docs"],
+      150_000,
+    ),
+    runs: [
+      { status: "success", trigger_type: "manual", duration_ms: 35000, daysAgo: 0 },
+      { status: "success", trigger_type: "manual", duration_ms: 38000, daysAgo: 1 },
+      { status: "failed", trigger_type: "manual", duration_ms: 18000, daysAgo: 3 },
+    ],
+  },
+
+  // Example 9: Artifact Sharing Pattern
+  {
+    name: "artifact_sharing",
+    version: "1.0.0",
+    description: "Pipeline demonstrating artifact sharing across steps",
+    steps: seqSteps(
+      ["generate_config", "generate_secrets", "build_with_artifacts", "verify_artifacts"],
+      1_800_000,
+    ),
+    runs: [
+      { status: "success", trigger_type: "manual", duration_ms: 5000, daysAgo: 0 },
+      { status: "success", trigger_type: "manual", duration_ms: 4800, daysAgo: 2 },
+    ],
+  },
+
+  // Example 10: Go Library Build Pipeline (REAL commands)
   {
     name: "go_build",
     version: "1.0.0",
-    description: "Build and test a Go library",
-    steps: [
-      { name: "go-vet", timeout_ms: 30000, depends_on: [] },
-      { name: "go-test", timeout_ms: 120000, depends_on: ["go-vet"] },
-      { name: "go-build", timeout_ms: 60000, depends_on: ["go-vet"] },
-    ],
-    schedule: { Daily: { hour: 3, minute: 0 } },
+    description: "Build and test a Go library with go toolchain",
+    steps: seqSteps(
+      ["download_dependencies", "run_tests", "build", "lint_and_vet"],
+      120_000,
+    ),
     runs: [
-      {
-        status: "success",
-        trigger_type: "schedule",
-        duration_ms: 8200,
-        daysAgo: 0,
-      },
-      {
-        status: "failed",
-        trigger_type: "schedule",
-        duration_ms: 5100,
-        daysAgo: 1,
-      },
-      {
-        status: "success",
-        trigger_type: "manual",
-        duration_ms: 7800,
-        daysAgo: 2,
-      },
-      {
-        status: "success",
-        trigger_type: "schedule",
-        duration_ms: 8500,
-        daysAgo: 3,
-      },
+      { status: "success", trigger_type: "manual", duration_ms: 8200, daysAgo: 0 },
+      { status: "failed", trigger_type: "manual", duration_ms: 5100, daysAgo: 1 },
+      { status: "success", trigger_type: "manual", duration_ms: 7800, daysAgo: 2 },
+      { status: "success", trigger_type: "manual", duration_ms: 8500, daysAgo: 3 },
     ],
     artifacts: [
       { name: "go-binary", content: "go build output" },
     ],
   },
+
+  // Example 11: Custom Runner Factory
   {
-    name: "deploy_staging",
-    version: "2.0.0",
-    description: "Deploy application to staging environment",
-    steps: [
-      { name: "build", timeout_ms: 120000, depends_on: [] },
-      { name: "push-image", timeout_ms: 60000, depends_on: ["build"] },
-      { name: "deploy", timeout_ms: 120000, depends_on: ["push-image"] },
-      { name: "health-check", timeout_ms: 30000, depends_on: ["deploy"] },
-    ],
-    trigger: { Webhook: { url: "/hooks/deploy" } },
+    name: "custom_runner_demo",
+    version: "1.0.0",
+    description: "Pipeline using custom command runner step factories",
+    steps: seqSteps(
+      ["lint_code", "run_tests", "build_artifacts", "publish_package"],
+      180_000,
+    ),
     runs: [
-      {
-        status: "success",
-        trigger_type: "webhook",
-        duration_ms: 95000,
-        daysAgo: 0,
-      },
-      {
-        status: "success",
-        trigger_type: "webhook",
-        duration_ms: 88000,
-        daysAgo: 2,
-      },
-      {
-        status: "failed",
-        trigger_type: "manual",
-        duration_ms: 42000,
-        daysAgo: 5,
-      },
+      { status: "success", trigger_type: "manual", duration_ms: 15000, daysAgo: 0 },
+      { status: "success", trigger_type: "manual", duration_ms: 14500, daysAgo: 1 },
     ],
   },
+
+  // Example 13: Parallel Execution with Dependencies (DAG)
   {
     name: "parallel_build",
     version: "1.0.0",
-    description:
-      "Parallel multi-platform build demonstrating DAG fan-out/fan-in",
+    description: "Parallel build with fan-out/fan-in DAG dependencies",
     steps: [
-      { name: "setup", timeout_ms: 20000, depends_on: [] },
-      { name: "build-frontend", timeout_ms: 90000, depends_on: ["setup"] },
-      { name: "build-backend", timeout_ms: 120000, depends_on: ["setup"] },
-      {
-        name: "run-tests",
-        timeout_ms: 180000,
-        depends_on: ["build-frontend", "build-backend"],
-      },
-      { name: "deploy", timeout_ms: 60000, depends_on: ["run-tests"] },
+      { name: "clone", timeout_ms: 600_000, depends_on: [] },
+      { name: "lint", timeout_ms: 600_000, depends_on: ["clone"] },
+      { name: "test", timeout_ms: 600_000, depends_on: ["clone"] },
+      { name: "build", timeout_ms: 600_000, depends_on: ["lint", "test"] },
+      { name: "package", timeout_ms: 600_000, depends_on: ["build"] },
     ],
     runs: [
-      {
-        status: "success",
-        trigger_type: "manual",
-        duration_ms: 220000,
-        daysAgo: 0,
-      },
-      {
-        status: "success",
-        trigger_type: "webhook",
-        duration_ms: 215000,
-        daysAgo: 1,
-      },
+      { status: "success", trigger_type: "manual", duration_ms: 220000, daysAgo: 0 },
+      { status: "success", trigger_type: "manual", duration_ms: 215000, daysAgo: 1 },
     ],
   },
+
+  // Example 13b: Diamond Dependency Pattern
   {
-    name: "python_build",
+    name: "parallel_multi_target",
     version: "1.0.0",
-    description: "Build and test a Python package",
+    description: "Diamond dependency pattern with multi-target compilation",
     steps: [
-      { name: "lint", timeout_ms: 30000, depends_on: [] },
-      { name: "test", timeout_ms: 120000, depends_on: ["lint"] },
-      { name: "package", timeout_ms: 45000, depends_on: ["test"] },
-    ],
-    schedule: { Daily: { hour: 6, minute: 0 } },
-    runs: [
-      {
-        status: "success",
-        trigger_type: "schedule",
-        duration_ms: 9800,
-        daysAgo: 0,
-      },
-      {
-        status: "success",
-        trigger_type: "manual",
-        duration_ms: 10200,
-        daysAgo: 1,
-      },
-    ],
-  },
-  {
-    name: "java_build",
-    version: "3.1.0",
-    description: "Maven build and test for Java service",
-    steps: [
-      { name: "compile", timeout_ms: 120000, depends_on: [] },
-      { name: "test", timeout_ms: 180000, depends_on: ["compile"] },
-      { name: "package", timeout_ms: 60000, depends_on: ["test"] },
-      { name: "publish", timeout_ms: 45000, depends_on: ["package"] },
+      { name: "setup", timeout_ms: 900_000, depends_on: [] },
+      { name: "compile_a", timeout_ms: 900_000, depends_on: ["setup"] },
+      { name: "compile_b", timeout_ms: 900_000, depends_on: ["setup"] },
+      { name: "test_a", timeout_ms: 900_000, depends_on: ["compile_a"] },
+      { name: "test_b", timeout_ms: 900_000, depends_on: ["compile_b"] },
+      { name: "integration", timeout_ms: 900_000, depends_on: ["test_a", "test_b"] },
+      { name: "deploy", timeout_ms: 900_000, depends_on: ["integration"] },
     ],
     runs: [
-      {
-        status: "success",
-        trigger_type: "webhook",
-        duration_ms: 320000,
-        daysAgo: 0,
-      },
-      {
-        status: "failed",
-        trigger_type: "webhook",
-        duration_ms: 180000,
-        daysAgo: 2,
-      },
+      { status: "success", trigger_type: "manual", duration_ms: 340000, daysAgo: 0 },
+      { status: "success", trigger_type: "manual", duration_ms: 360000, daysAgo: 2 },
     ],
   },
+
+  // Distributed Parallel Pipeline (Kubernetes)
   {
-    name: "node_ci",
+    name: "distributed_parallel",
     version: "1.0.0",
-    description: "Node.js CI pipeline",
+    description: "Distributed parallel pipeline with Kubernetes Jobs",
     steps: [
-      { name: "install", timeout_ms: 60000, depends_on: [] },
-      { name: "test", timeout_ms: 120000, depends_on: ["install"] },
-      { name: "lint", timeout_ms: 30000, depends_on: ["install"] },
+      { name: "seed", timeout_ms: 600_000, depends_on: [] },
+      { name: "async_left", timeout_ms: 600_000, depends_on: ["seed"] },
+      { name: "async_right", timeout_ms: 600_000, depends_on: ["seed"] },
+      { name: "merge", timeout_ms: 600_000, depends_on: ["async_left", "async_right"] },
     ],
     runs: [
-      {
-        status: "success",
-        trigger_type: "webhook",
-        duration_ms: 15000,
-        daysAgo: 0,
-      },
-      {
-        status: "success",
-        trigger_type: "webhook",
-        duration_ms: 14500,
-        daysAgo: 1,
-      },
-      {
-        status: "success",
-        trigger_type: "webhook",
-        duration_ms: 16200,
-        daysAgo: 2,
-      },
+      { status: "success", trigger_type: "manual", duration_ms: 95000, daysAgo: 0 },
+      { status: "success", trigger_type: "manual", duration_ms: 88000, daysAgo: 3 },
     ],
   },
+
+  // Distributed Accumulation Pipeline (Kubernetes)
   {
-    name: "docker_build",
-    version: "1.2.0",
-    description: "Build and publish Docker image",
-    steps: [
-      { name: "build", timeout_ms: 180000, depends_on: [] },
-      { name: "tag", timeout_ms: 10000, depends_on: ["build"] },
-      { name: "push", timeout_ms: 60000, depends_on: ["tag"] },
-    ],
-    trigger: { Webhook: { url: "/hooks/docker" } },
-    runs: [
-      {
-        status: "success",
-        trigger_type: "webhook",
-        duration_ms: 48000,
-        daysAgo: 0,
-      },
-      {
-        status: "success",
-        trigger_type: "webhook",
-        duration_ms: 52000,
-        daysAgo: 3,
-      },
-    ],
-  },
-  {
-    name: "integration_tests",
+    name: "distributed_accumulation",
     version: "1.0.0",
-    description: "Full integration test suite",
-    steps: [
-      { name: "setup", timeout_ms: 60000, depends_on: [] },
-      { name: "run", timeout_ms: 600000, depends_on: ["setup"] },
-      { name: "cleanup", timeout_ms: 30000, depends_on: ["run"] },
-    ],
-    schedule: { Daily: { hour: 2, minute: 30 } },
+    description: "Distributed accumulation pipeline with Kubernetes Jobs",
+    steps: seqSteps(
+      ["node_a_base", "node_b_append", "node_c_append", "node_d_publish"],
+      600_000,
+    ),
     runs: [
-      {
-        status: "success",
-        trigger_type: "schedule",
-        duration_ms: 520000,
-        daysAgo: 0,
-      },
-      {
-        status: "failed",
-        trigger_type: "schedule",
-        duration_ms: 310000,
-        daysAgo: 1,
-      },
+      { status: "success", trigger_type: "manual", duration_ms: 120000, daysAgo: 0 },
+      { status: "failed", trigger_type: "manual", duration_ms: 65000, daysAgo: 2 },
     ],
   },
+
+  // Example 14: Retry Pattern
   {
-    name: "deploy_production",
-    version: "2.0.0",
-    description: "Production deployment pipeline with approval gates",
-    steps: [
-      { name: "validate", timeout_ms: 60000, depends_on: [] },
-      { name: "backup", timeout_ms: 120000, depends_on: ["validate"] },
-      { name: "deploy", timeout_ms: 180000, depends_on: ["backup"] },
-      { name: "smoke-test", timeout_ms: 60000, depends_on: ["deploy"] },
-      { name: "notify", timeout_ms: 10000, depends_on: ["smoke-test"] },
-    ],
-    trigger: { Webhook: { url: "/hooks/production" } },
-    runs: [
-      {
-        status: "success",
-        trigger_type: "webhook",
-        duration_ms: 340000,
-        daysAgo: 0,
-      },
-      {
-        status: "success",
-        trigger_type: "manual",
-        duration_ms: 360000,
-        daysAgo: 7,
-      },
-    ],
-  },
-  {
-    name: "data_pipeline",
+    name: "retry_example",
     version: "1.0.0",
-    description: "ETL data processing pipeline",
+    description: "Pipeline demonstrating retry-on-failure loop pattern",
     steps: [
-      { name: "extract", timeout_ms: 300000, depends_on: [] },
-      { name: "transform", timeout_ms: 600000, depends_on: ["extract"] },
-      { name: "validate", timeout_ms: 120000, depends_on: ["transform"] },
-      { name: "load", timeout_ms: 300000, depends_on: ["validate"] },
+      { name: "setup", timeout_ms: 1_800_000, depends_on: [] },
+      {
+        name: "unreliable_operation",
+        timeout_ms: 1_800_000,
+        depends_on: ["setup"],
+        loop: { type: "RetryOnFailure", max_attempts: 3 },
+      },
     ],
-    schedule: { Daily: { hour: 1, minute: 0 } },
     runs: [
-      {
-        status: "success",
-        trigger_type: "schedule",
-        duration_ms: 1100000,
-        daysAgo: 0,
-      },
-      {
-        status: "success",
-        trigger_type: "schedule",
-        duration_ms: 980000,
-        daysAgo: 1,
-      },
+      { status: "success", trigger_type: "manual", duration_ms: 3500, daysAgo: 0 },
+      { status: "success", trigger_type: "manual", duration_ms: 4200, daysAgo: 1 },
     ],
   },
+
+  // Example 15: Fixed Repeat Pattern
   {
-    name: "security_scan",
+    name: "repeat_example",
     version: "1.0.0",
-    description: "Security vulnerability scanning",
+    description: "Pipeline demonstrating fixed-count repetition pattern",
     steps: [
-      { name: "sast", timeout_ms: 300000, depends_on: [] },
-      { name: "dast", timeout_ms: 600000, depends_on: ["sast"] },
-      { name: "report", timeout_ms: 30000, depends_on: ["dast"] },
+      { name: "initialize", timeout_ms: 1_800_000, depends_on: [] },
+      {
+        name: "gather_data",
+        timeout_ms: 1_800_000,
+        depends_on: ["initialize"],
+        loop: { type: "FixedCount", count: 3 },
+      },
     ],
-    schedule: { Daily: { hour: 4, minute: 0 } },
     runs: [
-      {
-        status: "success",
-        trigger_type: "schedule",
-        duration_ms: 720000,
-        daysAgo: 0,
-      },
-      {
-        status: "success",
-        trigger_type: "schedule",
-        duration_ms: 680000,
-        daysAgo: 1,
-      },
+      { status: "success", trigger_type: "manual", duration_ms: 2800, daysAgo: 0 },
     ],
   },
+
+  // Example 16: Until Success Pattern
   {
-    name: "performance_tests",
+    name: "until_success_example",
     version: "1.0.0",
-    description: "Load and performance testing suite",
+    description: "Pipeline demonstrating keep-trying-until-success pattern",
     steps: [
-      { name: "load-test", timeout_ms: 600000, depends_on: [] },
-      { name: "stress-test", timeout_ms: 600000, depends_on: ["load-test"] },
-      { name: "report", timeout_ms: 30000, depends_on: ["stress-test"] },
-    ],
-    schedule: { Daily: { hour: 3, minute: 30 } },
-    runs: [
+      { name: "start", timeout_ms: 1_800_000, depends_on: [] },
       {
-        status: "success",
-        trigger_type: "schedule",
-        duration_ms: 980000,
-        daysAgo: 0,
+        name: "validate_connection",
+        timeout_ms: 1_800_000,
+        depends_on: ["start"],
+        loop: { type: "UntilSuccess", max_attempts: 5 },
       },
+    ],
+    runs: [
+      { status: "success", trigger_type: "manual", duration_ms: 5200, daysAgo: 0 },
+      { status: "failed", trigger_type: "manual", duration_ms: 12000, daysAgo: 1 },
     ],
   },
+
+  // Example 17: Simple Pub-Sub Messaging
   {
-    name: "e2e_tests",
+    name: "simple_messaging_example",
     version: "1.0.0",
-    description: "End-to-end browser test suite",
-    steps: [
-      { name: "setup", timeout_ms: 60000, depends_on: [] },
-      { name: "run", timeout_ms: 300000, depends_on: ["setup"] },
-      { name: "teardown", timeout_ms: 30000, depends_on: ["run"] },
-    ],
+    description: "Simple pub-sub messaging between pipeline steps",
+    steps: seqSteps(["publisher", "subscriber"], 1_800_000),
     runs: [
-      {
-        status: "success",
-        trigger_type: "webhook",
-        duration_ms: 280000,
-        daysAgo: 0,
-      },
-      {
-        status: "failed",
-        trigger_type: "webhook",
-        duration_ms: 145000,
-        daysAgo: 1,
-      },
+      { status: "success", trigger_type: "manual", duration_ms: 1500, daysAgo: 0 },
     ],
   },
+
+  // Example 18: Multi-Topic Messaging
   {
-    name: "release",
+    name: "multi_topic_messaging_example",
     version: "1.0.0",
-    description: "Release pipeline for versioned artifacts",
-    steps: [
-      { name: "tag", timeout_ms: 10000, depends_on: [] },
-      { name: "build", timeout_ms: 120000, depends_on: ["tag"] },
-      { name: "sign", timeout_ms: 30000, depends_on: ["build"] },
-      { name: "publish", timeout_ms: 60000, depends_on: ["sign"] },
-    ],
-    trigger: { Webhook: { url: "/hooks/release" } },
+    description: "Multi-topic message coordination between steps",
+    steps: seqSteps(["task_a", "task_b", "coordinator"], 1_800_000),
     runs: [
-      {
-        status: "success",
-        trigger_type: "webhook",
-        duration_ms: 185000,
-        daysAgo: 0,
-      },
-      {
-        status: "success",
-        trigger_type: "manual",
-        duration_ms: 190000,
-        daysAgo: 14,
-      },
+      { status: "success", trigger_type: "manual", duration_ms: 2200, daysAgo: 0 },
+      { status: "success", trigger_type: "manual", duration_ms: 2100, daysAgo: 2 },
     ],
   },
+
+  // Example 19: Event-Driven Workflow
   {
-    name: "database_migration",
+    name: "event_driven_example",
     version: "1.0.0",
-    description: "Database schema migration pipeline",
-    steps: [
-      { name: "validate", timeout_ms: 30000, depends_on: [] },
-      { name: "run", timeout_ms: 120000, depends_on: ["validate"] },
-      { name: "verify", timeout_ms: 60000, depends_on: ["run"] },
-    ],
+    description: "Event-driven workflow with conditional step execution",
+    steps: seqSteps(
+      ["event_producer", "event_handler_1", "event_handler_2"],
+      1_800_000,
+    ),
     runs: [
-      {
-        status: "success",
-        trigger_type: "manual",
-        duration_ms: 95000,
-        daysAgo: 0,
-      },
-      {
-        status: "success",
-        trigger_type: "manual",
-        duration_ms: 88000,
-        daysAgo: 7,
-      },
+      { status: "success", trigger_type: "manual", duration_ms: 3000, daysAgo: 0 },
     ],
   },
+
+  // Example 20: Dogfood Pipeline (builds thingfactory itself)
   {
-    name: "frontend_build",
+    name: "dogfood",
     version: "1.0.0",
-    description: "Frontend build and asset deployment",
+    description: "Self-building pipeline for thingfactory (dogfooding)",
     steps: [
-      { name: "install", timeout_ms: 60000, depends_on: [] },
-      { name: "lint", timeout_ms: 30000, depends_on: ["install"] },
-      { name: "build", timeout_ms: 120000, depends_on: ["install"] },
-      { name: "deploy", timeout_ms: 45000, depends_on: ["build", "lint"] },
+      { name: "gleam_check", timeout_ms: 300_000, depends_on: [] },
+      { name: "gleam_format", timeout_ms: 300_000, depends_on: [] },
+      { name: "gleam_build_js", timeout_ms: 300_000, depends_on: ["gleam_check", "gleam_format"] },
+      { name: "gleam_build_erl", timeout_ms: 300_000, depends_on: ["gleam_check", "gleam_format"] },
+      { name: "web_install", timeout_ms: 300_000, depends_on: [] },
+      { name: "web_build", timeout_ms: 300_000, depends_on: ["web_install"] },
+      { name: "verify", timeout_ms: 300_000, depends_on: ["gleam_build_js", "gleam_build_erl", "web_build"] },
     ],
     runs: [
-      {
-        status: "success",
-        trigger_type: "webhook",
-        duration_ms: 145000,
-        daysAgo: 0,
-      },
-      {
-        status: "success",
-        trigger_type: "webhook",
-        duration_ms: 138000,
-        daysAgo: 1,
-      },
-      {
-        status: "failed",
-        trigger_type: "webhook",
-        duration_ms: 78000,
-        daysAgo: 3,
-      },
+      { status: "success", trigger_type: "manual", duration_ms: 185000, daysAgo: 0 },
+      { status: "success", trigger_type: "manual", duration_ms: 190000, daysAgo: 1 },
+      { status: "failed", trigger_type: "manual", duration_ms: 78000, daysAgo: 3 },
     ],
   },
+
+  // Example 21: Kubernetes Build Pipeline
   {
-    name: "infrastructure",
+    name: "kubernetes_build",
     version: "1.0.0",
-    description: "Terraform infrastructure provisioning",
+    description: "Kubernetes-backed build pipeline with K8s Jobs",
     steps: [
-      { name: "plan", timeout_ms: 120000, depends_on: [] },
-      { name: "apply", timeout_ms: 300000, depends_on: ["plan"] },
-      { name: "verify", timeout_ms: 60000, depends_on: ["apply"] },
-      { name: "notify", timeout_ms: 10000, depends_on: ["verify"] },
+      { name: "install", timeout_ms: 600_000, depends_on: [] },
+      { name: "lint", timeout_ms: 600_000, depends_on: ["install"] },
+      { name: "test", timeout_ms: 600_000, depends_on: ["install"] },
+      { name: "build", timeout_ms: 600_000, depends_on: ["lint", "test"] },
     ],
     runs: [
-      {
-        status: "success",
-        trigger_type: "manual",
-        duration_ms: 385000,
-        daysAgo: 0,
-      },
+      { status: "success", trigger_type: "manual", duration_ms: 320000, daysAgo: 0 },
+      { status: "failed", trigger_type: "manual", duration_ms: 180000, daysAgo: 2 },
     ],
   },
+
+  // Scheduling: Daily Health Check (9:00 AM UTC)
   {
-    name: "ml_train",
+    name: "daily_health_check",
     version: "1.0.0",
-    description: "Machine learning model training pipeline",
-    steps: [
-      { name: "prepare", timeout_ms: 600000, depends_on: [] },
-      { name: "train", timeout_ms: 3600000, depends_on: ["prepare"] },
-      { name: "evaluate", timeout_ms: 300000, depends_on: ["train"] },
-      { name: "deploy", timeout_ms: 120000, depends_on: ["evaluate"] },
-    ],
-    schedule: { Daily: { hour: 0, minute: 0 } },
+    description: "Daily infrastructure health checks at 9:00 AM UTC",
+    steps: seqSteps(
+      ["check_api", "check_database", "check_cache"],
+      1_800_000,
+    ),
+    schedule: { Daily: { hour: 9, minute: 0 } },
     runs: [
-      {
-        status: "success",
-        trigger_type: "schedule",
-        duration_ms: 4200000,
-        daysAgo: 0,
-      },
-      {
-        status: "success",
-        trigger_type: "schedule",
-        duration_ms: 4350000,
-        daysAgo: 1,
-      },
-    ],
-    artifacts: [
-      { name: "model.pkl", content: "trained model weights" },
-      { name: "metrics.json", content: '{"accuracy": 0.94, "f1": 0.91}' },
+      { status: "success", trigger_type: "schedule", duration_ms: 4500, daysAgo: 0 },
+      { status: "success", trigger_type: "schedule", duration_ms: 4200, daysAgo: 1 },
+      { status: "success", trigger_type: "schedule", duration_ms: 4800, daysAgo: 2 },
     ],
   },
+
+  // Scheduling: Weekly Backup (Friday 2:00 AM UTC)
   {
-    name: "report_gen",
+    name: "weekly_backup",
     version: "1.0.0",
-    description: "Automated report generation and distribution",
-    steps: [
-      { name: "collect", timeout_ms: 120000, depends_on: [] },
-      { name: "generate", timeout_ms: 180000, depends_on: ["collect"] },
-      { name: "send", timeout_ms: 30000, depends_on: ["generate"] },
-    ],
-    schedule: { Daily: { hour: 8, minute: 0 } },
+    description: "Weekly database backup every Friday at 2:00 AM UTC",
+    steps: seqSteps(
+      ["prepare_snapshot", "upload_to_storage", "verify_backup"],
+      1_800_000,
+    ),
+    schedule: { Weekly: { day: 4, hour: 2, minute: 0 } },
     runs: [
-      {
-        status: "success",
-        trigger_type: "schedule",
-        duration_ms: 245000,
-        daysAgo: 0,
-      },
-      {
-        status: "success",
-        trigger_type: "schedule",
-        duration_ms: 232000,
-        daysAgo: 1,
-      },
+      { status: "success", trigger_type: "schedule", duration_ms: 95000, daysAgo: 0 },
+      { status: "success", trigger_type: "schedule", duration_ms: 88000, daysAgo: 7 },
     ],
   },
+
+  // Scheduling: Monthly Reporting (1st and 15th, 8:00 AM UTC)
   {
-    name: "nightly_ci",
+    name: "monthly_reporting",
     version: "1.0.0",
-    description: "Comprehensive nightly CI run",
-    steps: [
-      { name: "checkout", timeout_ms: 15000, depends_on: [] },
-      { name: "build", timeout_ms: 180000, depends_on: ["checkout"] },
-      { name: "unit-test", timeout_ms: 120000, depends_on: ["build"] },
-      {
-        name: "integration-test",
-        timeout_ms: 300000,
-        depends_on: ["unit-test"],
-      },
-      { name: "report", timeout_ms: 30000, depends_on: ["integration-test"] },
-    ],
-    schedule: { Daily: { hour: 23, minute: 0 } },
+    description: "Monthly reporting on the 1st and 15th at 8:00 AM UTC",
+    steps: seqSteps(
+      ["collect_metrics", "generate_report", "send_to_stakeholders"],
+      1_800_000,
+    ),
+    schedule: { Monthly: { days: [1, 15], hour: 8, minute: 0 } },
     runs: [
-      {
-        status: "success",
-        trigger_type: "schedule",
-        duration_ms: 520000,
-        daysAgo: 0,
-      },
-      {
-        status: "failed",
-        trigger_type: "schedule",
-        duration_ms: 410000,
-        daysAgo: 1,
-      },
-      {
-        status: "success",
-        trigger_type: "schedule",
-        duration_ms: 510000,
-        daysAgo: 2,
-      },
+      { status: "success", trigger_type: "schedule", duration_ms: 245000, daysAgo: 0 },
+      { status: "success", trigger_type: "schedule", duration_ms: 232000, daysAgo: 15 },
     ],
   },
+
+  // Scheduling: Frequent Health Check (every 5 minutes)
   {
-    name: "api_tests",
+    name: "frequent_health_check",
     version: "1.0.0",
-    description: "REST API contract and integration tests",
-    steps: [
-      { name: "mock-server", timeout_ms: 30000, depends_on: [] },
-      { name: "test", timeout_ms: 180000, depends_on: ["mock-server"] },
-      { name: "cleanup", timeout_ms: 15000, depends_on: ["test"] },
-    ],
+    description: "Frequent service health check every 5 minutes",
+    steps: seqSteps(["ping_service", "record_metrics"], 1_800_000),
+    schedule: { Interval: { interval_ms: 300_000 } },
     runs: [
-      {
-        status: "success",
-        trigger_type: "webhook",
-        duration_ms: 185000,
-        daysAgo: 0,
-      },
-      {
-        status: "success",
-        trigger_type: "webhook",
-        duration_ms: 192000,
-        daysAgo: 1,
-      },
+      { status: "success", trigger_type: "schedule", duration_ms: 1200, daysAgo: 0 },
+      { status: "success", trigger_type: "schedule", duration_ms: 1100, daysAgo: 0 },
     ],
   },
+
+  // Scheduling: Cron Cleanup (weekdays at 11:00 PM UTC)
   {
-    name: "mobile_build",
+    name: "cron_cleanup",
     version: "1.0.0",
-    description: "iOS and Android mobile app build pipeline",
-    steps: [
-      { name: "ios", timeout_ms: 600000, depends_on: [] },
-      { name: "android", timeout_ms: 480000, depends_on: [] },
-      { name: "sign", timeout_ms: 60000, depends_on: ["ios", "android"] },
-      { name: "distribute", timeout_ms: 120000, depends_on: ["sign"] },
-    ],
+    description: "Cron-based cleanup running weekdays at 11:00 PM UTC",
+    steps: seqSteps(
+      ["cleanup_temp_files", "vacuum_database", "archive_logs"],
+      1_800_000,
+    ),
+    schedule: { Cron: { expression: "0 23 * * 1-5" } },
     runs: [
-      {
-        status: "success",
-        trigger_type: "manual",
-        duration_ms: 720000,
-        daysAgo: 0,
-      },
-      {
-        status: "success",
-        trigger_type: "webhook",
-        duration_ms: 680000,
-        daysAgo: 3,
-      },
+      { status: "success", trigger_type: "schedule", duration_ms: 520000, daysAgo: 0 },
+      { status: "failed", trigger_type: "schedule", duration_ms: 410000, daysAgo: 1 },
+      { status: "success", trigger_type: "schedule", duration_ms: 510000, daysAgo: 2 },
     ],
-    artifacts: [
-      { name: "app.ipa", content: "iOS app bundle" },
-      { name: "app.apk", content: "Android app bundle" },
+  },
+
+  // Example 22: Queue-Based Worker Pipeline (PULL Model)
+  {
+    name: "queue_worker",
+    version: "1.0.0",
+    description: "Queue-based PULL model worker pipeline",
+    steps: seqSteps(["produce_work", "worker", "summarize"], 1_800_000),
+    runs: [
+      { status: "success", trigger_type: "manual", duration_ms: 3800, daysAgo: 0 },
+      { status: "success", trigger_type: "manual", duration_ms: 3500, daysAgo: 1 },
     ],
   },
 ];
