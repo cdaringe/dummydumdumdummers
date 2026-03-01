@@ -62,6 +62,7 @@ spirit of concourseci, buildkite, or argo, with improvements on the DevUX of eac
 52. The service SHALL be configurable via ALL THINGFACTORY_* environment variables, and the documentation SHALL provide a reference for all of these. The variables MUST be correlated to a clean/crisp typed datamodel that underpins the service.
 53. The CLI Dockerfile SHALL be gleam based using erlang target.
 54. The web Dockerfile SHALL be node based using next.js.
+55. The GUI SHALL show the node state when a pipeline is running, such as "pending", "running", "failed", "succeeded", etc. It should also show the duration of each node, and the overall pipeline in the flow diagram itself.
 
 ## Requirements
 

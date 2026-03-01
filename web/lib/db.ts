@@ -142,7 +142,9 @@ export const rawDb: DatabaseConstructor.Database = new Proxy(
   {} as DatabaseConstructor.Database,
   {
     get(_, prop) {
-      return (initRawDb() as never)[prop];
+      const target = initRawDb() as any;
+      const value = target[prop];
+      return typeof value === "function" ? value.bind(target) : value;
     },
   },
 );
@@ -151,7 +153,9 @@ export const db: Kysely<ThingfactoryDB> = new Proxy(
   {} as Kysely<ThingfactoryDB>,
   {
     get(_, prop) {
-      return (initDb() as never)[prop];
+      const target = initDb() as any;
+      const value = target[prop];
+      return typeof value === "function" ? value.bind(target) : value;
     },
   },
 );
