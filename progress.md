@@ -17,7 +17,7 @@ Fill in the table as you progess
 | 3 | VERIFIED | docs/scenarios/3.md | 6 docs following Diataxis (how-to + reference), all with TOCs. |
 | 4 | VERIFIED | docs/scenarios/4.md | pipeline.gleam builder API with Pipeline(output) phantom type, types.gleam with sum types. |
 | 5 | VERIFIED | docs/scenarios/5.md | test_helpers.gleam with mock injection, test_helpers_test.gleam validates it. |
-| 6 | VERIFIED | docs/scenarios/6.md | Dockerfile + bin/cli.mjs exist and work. Scenario doc references docker-compose.yml/DOCKER.md which don't exist but aren't essential to core claim. |
+| 6 | VERIFIED | docs/scenarios/6.md | Dockerfile + bin/cli.mjs + docker-compose.yml + DOCKER.md all exist. |
 | 7 | VERIFIED | docs/scenarios/7.md | artifact_store.gleam with read/write/keys, artifact_store_test.gleam. |
 | 8 | VERIFIED | docs/scenarios/8.md | FixedCount/RetryOnFailure/UntilSuccess loop types in executor.gleam. |
 | 9 | VERIFIED | docs/scenarios/9.md | command_runner.gleam with FFI for shell execution. Any fn can be a step. |
@@ -54,7 +54,7 @@ Fill in the table as you progess
 | 40 | VERIFIED | docs/scenarios/40.md | dogfood_pipeline() runs real gleam/npm commands to build itself. |
 | 41 | NEEDS_REWORK | docs/scenarios/41.md | Parallel steps and value accumulation work, but spec says "Each step should run on a different node (such as different docker container) to demonstrate the distributed nature." All examples run in-process. No distributed node execution demonstrated. |
 | 42 | VERIFIED | docs/scenarios/42.md | gleam_build_pipeline and dogfood_pipeline run real multi-step builds. |
-| 43 | NEEDS_REWORK | docs/scenarios/43.md | Scenario doc references docker-compose.yml and DOCKER.md as evidence but neither file exists. Dockerfile + HOSTING_SERVICE.md provide basic self-hosting. Missing: docker-compose.yml for easy one-command hobbyist deployment, no docker-in-docker demonstration. |
+| 43 | VERIFIED | docs/scenarios/43.md | Dockerfile (CLI), web/Dockerfile (GUI), docker-compose.yml (one-command deploy), DOCKER.md (docs). |
 | 44 | VERIFIED | docs/scenarios/44.md | ArtifactsList.tsx, API endpoints, 0004_artifacts.sql migration. |
 | 45 | VERIFIED | docs/scenarios/45.md | Stats page, API endpoint, E2E test for statistics dashboard. |
 | 46 | VERIFIED | docs/scenarios/46.md | Green palette (#059669, #10b981), tonal grays, flat style, SVG textures, compact/standard modes. |

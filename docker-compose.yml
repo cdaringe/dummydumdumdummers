@@ -1,0 +1,29 @@
+version: "3.9"
+
+services:
+  # CLI pipeline runner - runs pipelines in an isolated container
+  cli:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./examples:/app/examples:ro
+    profiles:
+      - cli
+
+  # Web GUI service - pipeline dashboard and visualization
+  web:
+    build:
+      context: web
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - thingfactory_db:/app/data
+    environment:
+      - DATABASE_URL=/app/data/thingfactory.db
+      - NODE_ENV=production
+    restart: unless-stopped
+
+volumes:
+  thingfactory_db:
