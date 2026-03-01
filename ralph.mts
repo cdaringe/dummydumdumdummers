@@ -290,17 +290,14 @@ const runIteration = async ({ iterationNum, agent, signal, log, validationFailur
 
   log({ tags: ["info"], message: `Starting iteration ${iterationNum} (${model})...` });
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
-  const onAbort = () => controller.abort();
-  signal.addEventListener("abort", onAbort);
+  const combinedSignal = AbortSignal.any([signal, AbortSignal.timeout(TIMEOUT_MS)]);
 
   try {
     const child = new Deno.Command(spec.command, {
       args: spec.args,
       stdout: "piped",
       stderr: "piped",
-      signal: controller.signal,
+      signal: combinedSignal,
     }).spawn();
 
     const [status, foundComplete] = await Promise.all([
@@ -308,9 +305,6 @@ const runIteration = async ({ iterationNum, agent, signal, log, validationFailur
       pipeStream({ stream: child.stdout, output: Deno.stdout, marker: COMPLETION_MARKER }),
       pipeStream({ stream: child.stderr, output: Deno.stderr }),
     ]);
-
-    clearTimeout(timeoutId);
-    signal.removeEventListener("abort", onAbort);
 
     return status.code !== 0
       ? (log({ tags: ["error"], message: `iteration ${iterationNum} failed with exit code ${status.code}` }),
@@ -321,9 +315,6 @@ const runIteration = async ({ iterationNum, agent, signal, log, validationFailur
         : (log({ tags: ["info"], message: `Iteration ${iterationNum} complete.` }),
            { status: "continue" });
   } catch (error) {
-    clearTimeout(timeoutId);
-    signal.removeEventListener("abort", onAbort);
-
     if (error instanceof DOMException && error.name === "AbortError") {
       log({ tags: ["error"], message: `TIMEOUT: iteration ${iterationNum} exceeded 60 minutes` });
       return { status: "timeout" };
@@ -348,9 +339,13 @@ const main = async (): Promise<void> => {
   log({ tags: ["info"], message: `Starting ralph loop for ${iterations} iterations with ${agent}...` });
 
   const shutdownController = new AbortController();
+  let interrupted = false;
   Deno.addSignalListener("SIGINT", () => {
-    log({ tags: ["error"], message: "Interrupted" });
+    if (interrupted) Deno.exit(130);
+    interrupted = true;
+    log({ tags: ["error"], message: "Interrupted (ctrl+c again to force exit)" });
     shutdownController.abort();
+    setTimeout(() => Deno.exit(130), 3_000);
   });
 
   const hookResult = await ensureValidationHook(log);
