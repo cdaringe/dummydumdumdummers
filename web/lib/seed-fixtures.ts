@@ -1,5 +1,4 @@
 import type Database from "better-sqlite3";
-import { v4 as uuidv4 } from "uuid";
 
 export function clearAllData(db: Database.Database) {
   db.exec("DELETE FROM artifacts");
@@ -458,7 +457,24 @@ const pipelines: PipelineFixture[] = [
   },
 ];
 
+/**
+ * Generate a deterministic UUID-format ID from a counter.
+ * All module instances (Next.js/Turbopack creates separate ones for pages vs API routes)
+ * will produce the same IDs because the fixture data and insertion order are identical,
+ * preventing cross-module UUID mismatches that cause 404s in E2E tests.
+ */
+function makeId(prefix: string, counter: number): string {
+  const p = prefix.padStart(8, "0").slice(-8);
+  const c = counter.toString(16).padStart(12, "0");
+  return `${p}-0000-4000-a000-${c}`;
+}
+
 export function seedFixtures(db: Database.Database) {
+  // Counters reset per call so IDs are deterministic across module instances
+  let runCounter = 0;
+  let traceCounter = 0;
+  let artifactCounter = 0;
+
   const insertPipeline = db.prepare(
     `INSERT INTO pipeline_definitions (id, name, version, description, schedule, trigger, steps) VALUES (?, ?, ?, ?, ?, ?, ?)`
   );
@@ -489,7 +505,7 @@ export function seedFixtures(db: Database.Database) {
     );
 
     for (const run of p.runs) {
-      const runId = uuidv4();
+      const runId = makeId("0000aa00", ++runCounter);
       const startedAt = new Date(
         Date.now() - run.daysAgo * 86_400_000
       ).toISOString();
@@ -523,7 +539,7 @@ export function seedFixtures(db: Database.Database) {
         const logOutput = generateStepLog(step.name, stepStatus, stepDuration);
 
         insertTrace.run(
-          uuidv4(),
+          makeId("0000bb00", ++traceCounter),
           runId,
           step.name,
           stepStatus,
@@ -537,7 +553,12 @@ export function seedFixtures(db: Database.Database) {
       // Add artifacts to the first successful run
       if (run === p.runs[0] && run.status === "success" && p.artifacts) {
         for (const artifact of p.artifacts) {
-          insertArtifact.run(uuidv4(), runId, artifact.name, artifact.content);
+          insertArtifact.run(
+            makeId("0000cc00", ++artifactCounter),
+            runId,
+            artifact.name,
+            artifact.content
+          );
         }
       }
     }
