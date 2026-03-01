@@ -840,7 +840,7 @@ fn strip_opt_with_value(args: List(String), opt_name: String) -> List(String) {
   case args {
     [] -> []
     [first] -> [first]
-    [first, second, ..rest] if first == opt_name ->
+    [first, _second, ..rest] if first == opt_name ->
       strip_opt_with_value(rest, opt_name)
     [first, ..rest] ->
       [first, ..strip_opt_with_value(rest, opt_name)]

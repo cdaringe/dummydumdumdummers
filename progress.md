@@ -51,7 +51,7 @@ END_DEMO
 | 35 | VERIFIED | docs/scenarios/35.md | CLI now uses clip subcommands for `run`, `inspect`, `results`, `artifacts`, and `list`; parser behavior is covered by dedicated CLI parse tests. |
 | 36 | VERIFIED | docs/scenarios/36.md | Verbose mode now prints per-step output via `StepFinished.output`; compact mode remains concise. |
 | 37 | VERIFIED | docs/scenarios/37.md | -o/--output-dir flag extracts artifacts to disk. |
-| 38 | NEEDS_REWORK | docs/scenarios/38.md | CLI defaults to Local (in-process) execution via runner_host.new(). Spec says "default to docker containers." Docker is available but not the default isolation mechanism. |
+| 38 | VERIFIED | docs/scenarios/38.md | `thingfactory run` now defaults to `--isolator docker`, with pluggable `--isolator docker|local` and configurable `--docker-image`; Docker execution path is implemented and tested. |
 | 39 | VERIFIED | docs/scenarios/39.md | 6 docs with TOCs covering hosting, running, all aspects. |
 | 40 | VERIFIED | docs/scenarios/40.md | dogfood_pipeline() runs real gleam/npm commands to build itself. |
 | 41 | NEEDS_REWORK | docs/scenarios/41.md | Parallel steps and value accumulation work, but spec says "Each step should run on a different node (such as different docker container) to demonstrate the distributed nature." All examples run in-process. No distributed node execution demonstrated. |
