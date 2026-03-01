@@ -492,22 +492,22 @@ pub fn parallel_build_pipeline() -> pipeline.Pipeline(Dynamic) {
   |> pipeline.add_step_with_deps(
     "lint",
     fn(_ctx, _input) { Ok(dynamic.string("lint passed")) },
-    ["clone"],
+    [pipeline.step_ref("clone")],
   )
   |> pipeline.add_step_with_deps(
     "test",
     fn(_ctx, _input) { Ok(dynamic.string("tests passed")) },
-    ["clone"],
+    [pipeline.step_ref("clone")],
   )
   |> pipeline.add_step_with_deps(
     "build",
     fn(_ctx, _input) { Ok(dynamic.string("build succeeded")) },
-    ["lint", "test"],
+    [pipeline.step_ref("lint"), pipeline.step_ref("test")],
   )
   |> pipeline.add_step_with_deps(
     "package",
     fn(_ctx, _input) { Ok(dynamic.string("package created")) },
-    ["build"],
+    [pipeline.step_ref("build")],
   )
 }
 
@@ -542,32 +542,32 @@ pub fn parallel_multi_target_pipeline() -> pipeline.Pipeline(Dynamic) {
   |> pipeline.add_step_with_deps(
     "compile_a",
     fn(_ctx, _input) { Ok(dynamic.string("target_a compiled")) },
-    ["setup"],
+    [pipeline.step_ref("setup")],
   )
   |> pipeline.add_step_with_deps(
     "compile_b",
     fn(_ctx, _input) { Ok(dynamic.string("target_b compiled")) },
-    ["setup"],
+    [pipeline.step_ref("setup")],
   )
   |> pipeline.add_step_with_deps(
     "test_a",
     fn(_ctx, _input) { Ok(dynamic.string("target_a tests passed")) },
-    ["compile_a"],
+    [pipeline.step_ref("compile_a")],
   )
   |> pipeline.add_step_with_deps(
     "test_b",
     fn(_ctx, _input) { Ok(dynamic.string("target_b tests passed")) },
-    ["compile_b"],
+    [pipeline.step_ref("compile_b")],
   )
   |> pipeline.add_step_with_deps(
     "integration",
     fn(_ctx, _input) { Ok(dynamic.string("integration tests passed")) },
-    ["test_a", "test_b"],
+    [pipeline.step_ref("test_a"), pipeline.step_ref("test_b")],
   )
   |> pipeline.add_step_with_deps(
     "deploy",
     fn(_ctx, _input) { Ok(dynamic.string("deployment successful")) },
-    ["integration"],
+    [pipeline.step_ref("integration")],
   )
 }
 
@@ -607,7 +607,7 @@ pub fn distributed_parallel_pipeline() -> pipeline.Pipeline(Dynamic) {
       "-lc",
       "echo left",
     ]),
-    ["seed"],
+    [pipeline.step_ref("seed")],
   )
   |> pipeline.add_step_with_deps(
     "async_right",
@@ -616,7 +616,7 @@ pub fn distributed_parallel_pipeline() -> pipeline.Pipeline(Dynamic) {
       "-lc",
       "echo right",
     ]),
-    ["seed"],
+    [pipeline.step_ref("seed")],
   )
   |> pipeline.add_step_with_deps(
     "merge",
@@ -625,7 +625,7 @@ pub fn distributed_parallel_pipeline() -> pipeline.Pipeline(Dynamic) {
       "-lc",
       "echo merged",
     ]),
-    ["async_left", "async_right"],
+    [pipeline.step_ref("async_left"), pipeline.step_ref("async_right")],
   )
 }
 
@@ -952,13 +952,13 @@ pub fn dogfood_pipeline() -> pipeline.Pipeline(Dynamic) {
       pl,
       "gleam_build_js",
       command_runner.step("gleam", ["build", "--target", "javascript"]),
-      ["gleam_check", "gleam_format"],
+      [pipeline.step_ref("gleam_check"), pipeline.step_ref("gleam_format")],
     )
   }
   |> pipeline.add_step_with_deps(
     "gleam_build_erl",
     command_runner.step("gleam", ["build", "--target", "erlang"]),
-    ["gleam_check", "gleam_format"],
+    [pipeline.step_ref("gleam_check"), pipeline.step_ref("gleam_format")],
   )
   // Web GUI build (independent from gleam until verify)
   |> pipeline.add_step_with_deps(
@@ -974,13 +974,17 @@ pub fn dogfood_pipeline() -> pipeline.Pipeline(Dynamic) {
   |> pipeline.add_step_with_deps(
     "web_build",
     command_runner.step("npm", ["--prefix", "web", "run", "build"]),
-    ["web_install"],
+    [pipeline.step_ref("web_install")],
   )
   // Final verification: all components built
   |> pipeline.add_step_with_deps(
     "verify",
     fn(_ctx, _input) { Ok(dynamic.string("dogfood_verified=true")) },
-    ["gleam_build_js", "gleam_build_erl", "web_build"],
+    [
+      pipeline.step_ref("gleam_build_js"),
+      pipeline.step_ref("gleam_build_erl"),
+      pipeline.step_ref("web_build"),
+    ],
   )
 }
 
@@ -1020,17 +1024,17 @@ pub fn kubernetes_build_pipeline() -> pipeline.Pipeline(Dynamic) {
   |> pipeline.add_step_with_deps(
     "lint",
     kubernetes_runner.step(k8s_config, "tf-lint", ["npm", "run", "lint"]),
-    ["install"],
+    [pipeline.step_ref("install")],
   )
   |> pipeline.add_step_with_deps(
     "test",
     kubernetes_runner.step(k8s_config, "tf-test", ["npm", "test"]),
-    ["install"],
+    [pipeline.step_ref("install")],
   )
   |> pipeline.add_step_with_deps(
     "build",
     kubernetes_runner.step(k8s_config, "tf-build", ["npm", "run", "build"]),
-    ["lint", "test"],
+    [pipeline.step_ref("lint"), pipeline.step_ref("test")],
   )
 }
 

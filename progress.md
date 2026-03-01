@@ -57,7 +57,7 @@ END_DEMO
 | 40 | VERIFIED | docs/scenarios/40.md | dogfood_pipeline() runs real gleam/npm commands to build itself. |
 | 41 | VERIFIED | docs/scenarios/41.md | Added distributed scenario-41 examples: `distributed_parallel_pipeline()` (async fan-out/fan-in) and `distributed_accumulation_pipeline()` (value accumulation pass-through), each step executed via distinct Kubernetes jobs/nodes; structure tests added in `test/examples_test.gleam`. |
 | 42 | VERIFIED | docs/scenarios/42.md | gleam_build_pipeline and dogfood_pipeline run real multi-step builds. |
-| 43 | NEEDS_REWORK | docs/scenarios/43.md | docker-compose.yml has no Docker socket mount or DinD setup; running `--isolator docker` from inside the deployed container fails because no Docker daemon/client is available inside the container. Hobbyist single-container DinD use case (SHOULD) is unimplemented. |
+| 43 | WORK_COMPLETE | docs/scenarios/43.md | |
 | 44 | VERIFIED | docs/scenarios/44.md | ArtifactsList.tsx, API endpoints, 0004_artifacts.sql migration. |
 | 45 | VERIFIED | docs/scenarios/45.md | Stats page, API endpoint, E2E test for statistics dashboard. |
 | 46 | VERIFIED | docs/scenarios/46.md | Green palette (#059669, #10b981), tonal grays, flat style, SVG textures, compact/standard modes. |

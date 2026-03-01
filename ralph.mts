@@ -16,6 +16,10 @@ type Result<T, E> = { ok: true; value: T } | { ok: false; error: E };
 const ok = <T,>(value: T): Result<T, never> => ({ ok: true, value });
 const err = <E,>(error: E): Result<never, E> => ({ ok: false, error });
 
+type ValidationResult =
+  | { status: "passed" }
+  | { status: "failed"; outputPath: string };
+
 type ModelSelection = {
   readonly model: string;
   readonly useStrongModel: boolean;
@@ -40,6 +44,20 @@ const TIMEOUT_MS = 60 * 60 * 1000;
 const REWORK_THRESHOLD = 1;
 const USAGE = "Usage: deno run ralph.mts --iterations <n> [--agent claude|codex]";
 const COMPLETION_MARKER = "<promise>COMPLETE</promise>";
+const VALIDATE_SCRIPT = "specification.validate.sh";
+const VALIDATE_OUTPUT_DIR = ".ralph/validation";
+const VALIDATE_TEMPLATE = `#!/usr/bin/env bash
+set -euo pipefail
+
+# specification.validate.sh
+# Validates that specification requirements are met.
+# Fill in your validation logic below.
+# Exit 0 on success, non-zero on failure.
+# stdout/stderr will be captured and provided to the agent on failure.
+
+echo "TODO: implement validation checks"
+exit 1
+`;
 
 const BASE_PROMPT = `@specification.md @progress.md
 ONLY DO ONE TASK AT A TIME.
@@ -134,14 +152,26 @@ const computeModelSelection = (content: string, agent: Agent): Result<ModelSelec
   });
 };
 
-const buildPrompt = (targetScenario: number | undefined, useStrongModel: boolean): string =>
-  !useStrongModel || targetScenario === undefined
+const buildPrompt = ({ targetScenario, useStrongModel, validationFailurePath }: {
+  targetScenario: number | undefined;
+  useStrongModel: boolean;
+  validationFailurePath: string | undefined;
+}): string => {
+  const base = !useStrongModel || targetScenario === undefined
     ? BASE_PROMPT
     : `${BASE_PROMPT}
 
 ACTUALLY:
 - You must work ONLY on scenario ${targetScenario}.
 - Do not work on any other scenario in this iteration.`;
+
+  return validationFailurePath === undefined
+    ? base
+    : `${base}
+
+VALIDATION FAILED on previous iteration. Review the failure output at: ${validationFailurePath}
+Fix the issues identified in the validation output before proceeding with other work.`;
+};
 
 const buildCommandSpec = ({ agent, model, prompt }: {
   agent: Agent;
@@ -207,14 +237,55 @@ const resolveModelSelection = async (agent: Agent, log: Logger): Promise<ModelSe
   return result.value;
 };
 
-const runIteration = async ({ iterationNum, agent, signal, log }: {
+const ensureValidationHook = async (log: Logger): Promise<Result<void, string>> => {
+  const exists = await Deno.stat(VALIDATE_SCRIPT).then(() => true, () => false);
+  if (exists) return ok(undefined);
+
+  await Deno.writeTextFile(VALIDATE_SCRIPT, VALIDATE_TEMPLATE);
+  await Deno.chmod(VALIDATE_SCRIPT, 0o755);
+  log({ tags: ["info", "hook"], message: `Created ${VALIDATE_SCRIPT}. Fill in your validation logic and re-run.` });
+  return err(`${VALIDATE_SCRIPT} created — fill in validation logic before re-running.`);
+};
+
+const runValidation = async ({ iterationNum, log }: {
+  iterationNum: number;
+  log: Logger;
+}): Promise<ValidationResult> => {
+  await Deno.mkdir(VALIDATE_OUTPUT_DIR, { recursive: true });
+  const outputPath = `${VALIDATE_OUTPUT_DIR}/iteration-${iterationNum}.log`;
+  const decoder = new TextDecoder();
+
+  const output = await new Deno.Command("bash", {
+    args: [VALIDATE_SCRIPT],
+    stdout: "piped",
+    stderr: "piped",
+  }).output();
+
+  const content = [
+    "--- stdout ---",
+    decoder.decode(output.stdout),
+    "--- stderr ---",
+    decoder.decode(output.stderr),
+    `--- exit code: ${output.code} ---`,
+  ].join("\n");
+  await Deno.writeTextFile(outputPath, content);
+
+  return output.code === 0
+    ? (log({ tags: ["info", "validate"], message: `Validation passed (iteration ${iterationNum})` }),
+       { status: "passed" })
+    : (log({ tags: ["error", "validate"], message: `Validation failed (iteration ${iterationNum}), see ${outputPath}` }),
+       { status: "failed", outputPath });
+};
+
+const runIteration = async ({ iterationNum, agent, signal, log, validationFailurePath }: {
   iterationNum: number;
   agent: Agent;
   signal: AbortSignal;
   log: Logger;
+  validationFailurePath: string | undefined;
 }): Promise<IterationResult> => {
   const { model, useStrongModel, targetScenario } = await resolveModelSelection(agent, log);
-  const prompt = buildPrompt(targetScenario, useStrongModel);
+  const prompt = buildPrompt({ targetScenario, useStrongModel, validationFailurePath });
   const spec = buildCommandSpec({ agent, model, prompt });
 
   log({ tags: ["info"], message: `Starting iteration ${iterationNum} (${model})...` });
@@ -282,6 +353,14 @@ const main = async (): Promise<void> => {
     shutdownController.abort();
   });
 
+  const hookResult = await ensureValidationHook(log);
+  if (!hookResult.ok) {
+    log({ tags: ["error"], message: hookResult.error });
+    Deno.exit(1);
+  }
+
+  let validationFailurePath: string | undefined;
+
   for (let i = 1; i <= iterations; i++) {
     if (shutdownController.signal.aborted) {
       log({ tags: ["error"], message: "Exiting due to signal" });
@@ -293,9 +372,23 @@ const main = async (): Promise<void> => {
       agent,
       signal: shutdownController.signal,
       log,
+      validationFailurePath,
     });
 
-    if (result.status === "complete") return;
+    // On error/timeout, clear validation state and continue
+    if (result.status === "failed" || result.status === "timeout") {
+      validationFailurePath = undefined;
+      continue;
+    }
+
+    // Run validation after successful agent iteration
+    const validation = await runValidation({ iterationNum: i, log });
+    validationFailurePath = validation.status === "failed"
+      ? validation.outputPath
+      : undefined;
+
+    // Only accept completion if validation also passes
+    if (result.status === "complete" && validation.status === "passed") return;
   }
 
   log({ tags: ["info"], message: `All ${iterations} iterations completed without completion marker.` });

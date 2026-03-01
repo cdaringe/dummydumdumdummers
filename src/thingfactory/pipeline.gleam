@@ -22,6 +22,18 @@ import thingfactory/types.{
 }
 import thingfactory/webhook_trigger.{type Trigger, NoTrigger}
 
+/// An opaque reference to a named step within a pipeline.
+/// Obtain via `step_ref/1`. Used as typed dependency handle in `add_step_with_deps`.
+pub type StepRef {
+  StepRef(name: String)
+}
+
+/// Create a typed reference to a step by name.
+/// Pass these to `add_step_with_deps` instead of plain strings.
+pub fn step_ref(name: String) -> StepRef {
+  StepRef(name)
+}
+
 // ---------------------------------------------------------------------------
 // Internal step representation
 // ---------------------------------------------------------------------------
@@ -34,7 +46,7 @@ pub type Step {
     name: String,
     run: fn(Context, Dynamic) -> Result(#(Dynamic, Context), StepError),
     timeout_ms: Int,
-    depends_on: List(String),
+    depends_on: List(StepRef),
     loop: Option(Loop),
   )
 }
@@ -203,7 +215,7 @@ pub fn add_step_with_deps(
   pipeline: Pipeline(a),
   name: String,
   run: fn(Context, Dynamic) -> Result(Dynamic, StepError),
-  depends_on: List(String),
+  depends_on: List(StepRef),
 ) -> Pipeline(Dynamic) {
   let step =
     Step(

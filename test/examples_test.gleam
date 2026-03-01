@@ -106,9 +106,15 @@ pub fn distributed_parallel_pipeline_structure_test() {
   let steps = pipeline.steps(p)
   list.length(steps) |> should.equal(4)
   deps_for_step(steps, "seed") |> should.equal([])
-  deps_for_step(steps, "async_left") |> should.equal(["seed"])
-  deps_for_step(steps, "async_right") |> should.equal(["seed"])
-  deps_for_step(steps, "merge") |> should.equal(["async_left", "async_right"])
+  deps_for_step(steps, "async_left")
+  |> should.equal([pipeline.StepRef("seed")])
+  deps_for_step(steps, "async_right")
+  |> should.equal([pipeline.StepRef("seed")])
+  deps_for_step(steps, "merge")
+  |> should.equal([
+    pipeline.StepRef("async_left"),
+    pipeline.StepRef("async_right"),
+  ])
 }
 
 pub fn distributed_accumulation_pipeline_structure_test() {
@@ -223,7 +229,10 @@ pub fn dogfood_pipeline_test() {
   list.length(pipeline.steps(p)) |> should.equal(7)
 }
 
-fn deps_for_step(steps: List(pipeline.Step), target: String) -> List(String) {
+fn deps_for_step(
+  steps: List(pipeline.Step),
+  target: String,
+) -> List(pipeline.StepRef) {
   case
     list.find(steps, fn(step) {
       let pipeline.Step(name, _, _, _, _) = step

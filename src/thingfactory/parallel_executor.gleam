@@ -195,7 +195,8 @@ fn execute_with_deps(
         Ok(step) -> {
           // Check if dependencies failed
           let has_failed_dep =
-            list.any(step.depends_on, fn(dep_name) {
+            list.any(step.depends_on, fn(dep) {
+              let pipeline.StepRef(dep_name) = dep
               case dict.get(step_status, dep_name) {
                 Ok(Failed(_, _)) -> True
                 _ -> False
@@ -325,7 +326,8 @@ fn execute_with_deps_progress(
       case find_ready_step(steps, step_status) {
         Ok(step) -> {
           let has_failed_dep =
-            list.any(step.depends_on, fn(dep_name) {
+            list.any(step.depends_on, fn(dep) {
+              let pipeline.StepRef(dep_name) = dep
               case dict.get(step_status, dep_name) {
                 Ok(Failed(_, _)) -> True
                 _ -> False
@@ -439,7 +441,8 @@ fn find_ready_step(
     case dict.get(status, step.name) {
       Ok(Completed(_, _)) | Ok(Failed(_, _)) -> False
       _ ->
-        list.all(step.depends_on, fn(dep_name) {
+        list.all(step.depends_on, fn(dep) {
+          let pipeline.StepRef(dep_name) = dep
           case dict.get(status, dep_name) {
             Ok(Completed(_, _)) | Ok(Failed(_, _)) -> True
             _ -> False
@@ -460,7 +463,10 @@ fn validate_dependencies(steps: List(Step)) -> Result(Nil, String) {
   // Check that all dependencies reference valid steps
   let has_invalid_refs =
     list.any(steps, fn(step) {
-      list.any(step.depends_on, fn(dep) { !list.contains(step_names, dep) })
+      list.any(step.depends_on, fn(dep) {
+        let pipeline.StepRef(dep_name) = dep
+        !list.contains(step_names, dep_name)
+      })
     })
 
   case has_invalid_refs {
