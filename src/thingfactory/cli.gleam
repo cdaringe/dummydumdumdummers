@@ -31,6 +31,19 @@ pub type CliCommand {
     interactive: Bool,
     output_dir: Result(String, Nil),
   )
+  Inspect(
+    pipeline_selector: String,
+    source_file: Result(String, Nil),
+  )
+  Results(
+    pipeline_selector: String,
+    source_file: Result(String, Nil),
+  )
+  Artifacts(
+    pipeline_selector: String,
+    source_file: Result(String, Nil),
+    output_dir: String,
+  )
   ListPipelines
 }
 
@@ -44,11 +57,11 @@ pub type OutputMode {
 /// Build the "run" subcommand parser
 fn run_command() -> clip.Command(CliCommand) {
   clip.command({
-    use pipeline_selector <- clip.parameter
     use source_file <- clip.parameter
     use compact <- clip.parameter
     use interactive <- clip.parameter
     use output_dir <- clip.parameter
+    use pipeline_selector <- clip.parameter
     Run(
       pipeline_selector: pipeline_selector,
       source_file: source_file,
@@ -57,12 +70,6 @@ fn run_command() -> clip.Command(CliCommand) {
       output_dir: output_dir,
     )
   })
-  |> clip.arg(
-    arg.new("pipeline")
-    |> arg.help(
-      "Pipeline selector: module:function, or function name when -f/--file is used",
-    ),
-  )
   |> clip.opt(
     opt.new("file")
     |> opt.short("f")
@@ -87,6 +94,12 @@ fn run_command() -> clip.Command(CliCommand) {
     |> opt.help("Extract artifacts to this directory after execution")
     |> opt.optional(),
   )
+  |> clip.arg(
+    arg.new("pipeline")
+    |> arg.help(
+      "Pipeline selector: module:function, or function name when -f/--file is used",
+    ),
+  )
   |> clip.help(help.simple(
     "thingfactory run",
     "Run a pipeline by module:function",
@@ -98,13 +111,115 @@ fn list_command() -> clip.Command(CliCommand) {
   clip.return(ListPipelines)
 }
 
+/// Build the "inspect" subcommand parser
+fn inspect_command() -> clip.Command(CliCommand) {
+  clip.command({
+    use source_file <- clip.parameter
+    use pipeline_selector <- clip.parameter
+    Inspect(
+      pipeline_selector: pipeline_selector,
+      source_file: source_file,
+    )
+  })
+  |> clip.opt(
+    opt.new("file")
+    |> opt.short("f")
+    |> opt.help("Gleam file to load pipeline from at runtime")
+    |> opt.optional(),
+  )
+  |> clip.arg(
+    arg.new("pipeline")
+    |> arg.help(
+      "Pipeline selector: module:function, or function name when -f/--file is used",
+    ),
+  )
+  |> clip.help(help.simple(
+    "thingfactory inspect",
+    "Run a pipeline, then enter an interactive result inspector",
+  ))
+}
+
+/// Build the "results" subcommand parser
+fn results_command() -> clip.Command(CliCommand) {
+  clip.command({
+    use source_file <- clip.parameter
+    use pipeline_selector <- clip.parameter
+    Results(
+      pipeline_selector: pipeline_selector,
+      source_file: source_file,
+    )
+  })
+  |> clip.opt(
+    opt.new("file")
+    |> opt.short("f")
+    |> opt.help("Gleam file to load pipeline from at runtime")
+    |> opt.optional(),
+  )
+  |> clip.arg(
+    arg.new("pipeline")
+    |> arg.help(
+      "Pipeline selector: module:function, or function name when -f/--file is used",
+    ),
+  )
+  |> clip.help(help.simple(
+    "thingfactory results",
+    "Run a pipeline and print a detailed result report",
+  ))
+}
+
+/// Build the "artifacts" subcommand parser
+fn artifacts_command() -> clip.Command(CliCommand) {
+  clip.command({
+    use source_file <- clip.parameter
+    use output_dir <- clip.parameter
+    use pipeline_selector <- clip.parameter
+    Artifacts(
+      pipeline_selector: pipeline_selector,
+      source_file: source_file,
+      output_dir: output_dir,
+    )
+  })
+  |> clip.opt(
+    opt.new("file")
+    |> opt.short("f")
+    |> opt.help("Gleam file to load pipeline from at runtime")
+    |> opt.optional(),
+  )
+  |> clip.opt(
+    opt.new("output-dir")
+    |> opt.short("o")
+    |> opt.help("Directory to write extracted artifacts to"),
+  )
+  |> clip.arg(
+    arg.new("pipeline")
+    |> arg.help(
+      "Pipeline selector: module:function, or function name when -f/--file is used",
+    ),
+  )
+  |> clip.help(help.simple(
+    "thingfactory artifacts",
+    "Run a pipeline and extract artifacts to disk",
+  ))
+}
+
 /// Build the top-level CLI parser with subcommands
 fn cli() -> clip.Command(CliCommand) {
-  clip.subcommands([#("run", run_command()), #("list", list_command())])
+  clip.subcommands([
+    #("run", run_command()),
+    #("list", list_command()),
+    #("inspect", inspect_command()),
+    #("results", results_command()),
+    #("artifacts", artifacts_command()),
+  ])
   |> clip.help(help.simple(
     "thingfactory",
     "A best-in-class task runner for CI/CD pipelines",
   ))
+}
+
+/// Parse CLI args into a command.
+pub fn parse_args(args: List(String)) -> Result(CliCommand, String) {
+  cli() |> clip.run(args)
 }
 
 /// Resolve output mode from parsed flags
@@ -430,6 +545,15 @@ fn list_pipelines() -> Result(String, String) {
       "Or run by source file:",
       "  thingfactory run -f <file.gleam> <pipeline_function>",
       "",
+      "Inspect results interactively:",
+      "  thingfactory inspect -f <file.gleam> <pipeline_function>",
+      "",
+      "Print a detailed result report:",
+      "  thingfactory results -f <file.gleam> <pipeline_function>",
+      "",
+      "Run and extract artifacts:",
+      "  thingfactory artifacts -f <file.gleam> <pipeline_function> -o <dir>",
+      "",
       "Example:",
       "  thingfactory run -f src/thingfactory/examples.gleam basic_pipeline",
     ],
@@ -437,26 +561,93 @@ fn list_pipelines() -> Result(String, String) {
   ))
 }
 
+fn pipeline_label(source_file: Result(String, Nil), pipeline_selector: String) -> String {
+  case source_file {
+    Ok(file_path) -> file_path <> ":" <> pipeline_selector
+    Error(Nil) -> pipeline_selector
+  }
+}
+
+fn execute_pipeline_selector(
+  source_file: Result(String, Nil),
+  pipeline_selector: String,
+  mode: OutputMode,
+) -> Result(ExecutionResult(Dynamic), String) {
+  case source_file {
+    Ok(file_path) -> execute_pipeline_from_file(file_path, pipeline_selector, mode)
+    Error(Nil) -> execute_pipeline(pipeline_selector, mode)
+  }
+}
+
+fn format_step_status(status: types.StepStatus) -> String {
+  case status {
+    types.StepOk -> "OK"
+    types.StepSkipped -> "SKIPPED"
+    types.StepFailed(err) -> "FAILED: " <> format_step_error(err)
+  }
+}
+
+fn format_step_error(error: types.StepError) -> String {
+  case error {
+    types.StepFailure(message) -> message
+    types.StepTimeout(step, limit_ms) ->
+      step <> " exceeded timeout of " <> int.to_string(limit_ms) <> "ms"
+    types.ArtifactNotFound(key) -> "Artifact not found: " <> key
+  }
+}
+
+fn format_results_report(
+  pipeline_name: String,
+  result: ExecutionResult(Dynamic),
+) -> String {
+  let total_duration =
+    list.fold(result.trace, 0, fn(acc, trace) { acc + trace.duration_ms })
+  let status = case result.result {
+    Ok(_) -> "SUCCESS"
+    Error(_) -> "FAILED"
+  }
+  let lines =
+    result.trace
+    |> list.index_map(fn(trace, index) {
+      "  ["
+      <> int.to_string(index + 1)
+      <> "] "
+      <> trace.step_name
+      <> " | "
+      <> format_step_status(trace.status)
+      <> " | "
+      <> format_duration_ms(trace.duration_ms)
+    })
+
+  string.join(
+    [
+      "Pipeline Results",
+      "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+      "Pipeline: " <> pipeline_name,
+      "Status: " <> status,
+      "Steps: " <> int.to_string(list.length(result.trace)),
+      "Total: " <> format_duration_ms(total_duration),
+      "",
+      "Step Breakdown:",
+      ..lines
+    ],
+    "\n",
+  )
+}
+
 /// Main entry point for CLI
 pub fn main() {
-  let result = cli() |> clip.run(argv.load().arguments)
+  let result = parse_args(argv.load().arguments)
 
   case result {
     Ok(Run(pipeline_selector, source_file, compact, interactive, output_dir)) -> {
       let mode = resolve_mode(compact, interactive)
-      let pipeline_label = case source_file {
-        Ok(file_path) -> file_path <> ":" <> pipeline_selector
-        Error(Nil) -> pipeline_selector
-      }
-      let execution_result = case source_file {
-        Ok(file_path) ->
-          execute_pipeline_from_file(file_path, pipeline_selector, mode)
-        Error(Nil) -> execute_pipeline(pipeline_selector, mode)
-      }
+      let label = pipeline_label(source_file, pipeline_selector)
+      let execution_result = execute_pipeline_selector(source_file, pipeline_selector, mode)
 
       case execution_result {
         Ok(exec_result) -> {
-          case format_summary(pipeline_label, exec_result, mode) {
+          case format_summary(label, exec_result, mode) {
             Ok(output) -> {
               case output {
                 "" -> Nil
@@ -473,6 +664,32 @@ pub fn main() {
             }
             Error(Nil) -> Nil
           }
+        }
+        Error(err) -> io.println("Error: " <> err)
+      }
+    }
+    Ok(Inspect(pipeline_selector, source_file)) -> {
+      let label = pipeline_label(source_file, pipeline_selector)
+      case execute_pipeline_selector(source_file, pipeline_selector, Interactive) {
+        Ok(exec_result) -> {
+          let _ = format_summary(label, exec_result, Interactive)
+          Nil
+        }
+        Error(err) -> io.println("Error: " <> err)
+      }
+    }
+    Ok(Results(pipeline_selector, source_file)) -> {
+      let label = pipeline_label(source_file, pipeline_selector)
+      case execute_pipeline_selector(source_file, pipeline_selector, Compact) {
+        Ok(exec_result) -> io.println(format_results_report(label, exec_result))
+        Error(err) -> io.println("Error: " <> err)
+      }
+    }
+    Ok(Artifacts(pipeline_selector, source_file, output_dir)) -> {
+      case execute_pipeline_selector(source_file, pipeline_selector, Compact) {
+        Ok(exec_result) -> {
+          let _ = extract_artifacts(exec_result, output_dir)
+          Nil
         }
         Error(err) -> io.println("Error: " <> err)
       }

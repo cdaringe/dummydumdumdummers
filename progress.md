@@ -48,7 +48,7 @@ END_DEMO
 | 32 | VERIFIED | docs/scenarios/32.md | CLI no longer embeds hardcoded example pipeline mappings; `run` resolves runtime `module:function` refs via FFI loader. |
 | 33 | VERIFIED | docs/scenarios/33.md | CLI now supports `run -f <file.gleam> <pipeline_function>` and auto-runs `gleam build --target erlang --warnings-as-errors` when needed, so no manual pre-compilation step is required. |
 | 34 | VERIFIED | docs/scenarios/34.md | GanttTimeline.tsx with horizontal bars, color-coded status, duration labels. |
-| 35 | NEEDS_REWORK | docs/scenarios/35.md | --interactive flag makes no sense. what is it supposed to do? |
+| 35 | VERIFIED | docs/scenarios/35.md | CLI now uses clip subcommands for `run`, `inspect`, `results`, `artifacts`, and `list`; parser behavior is covered by dedicated CLI parse tests. |
 | 36 | NEEDS_REWORK | docs/scenarios/36.md | The dogfood pipeline uses io.println, but no output is shown when running the CLI. |
 | 37 | VERIFIED | docs/scenarios/37.md | -o/--output-dir flag extracts artifacts to disk. |
 | 38 | NEEDS_REWORK | docs/scenarios/38.md | CLI defaults to Local (in-process) execution via runner_host.new(). Spec says "default to docker containers." Docker is available but not the default isolation mechanism. |

@@ -29,7 +29,9 @@ gleam build --warnings-as-errors
 gleam run -m thingfactory/cli -- list              # see available pipelines
 gleam run -m thingfactory/cli -- run basic          # run one
 gleam run -m thingfactory/cli -- run parallel -c    # compact output
-gleam run -m thingfactory/cli -- run artifacts -i   # interactive mode
+gleam run -m thingfactory/cli -- inspect artifacts  # interactive inspector
+gleam run -m thingfactory/cli -- results basic      # detailed result report
+gleam run -m thingfactory/cli -- artifacts artifacts -o ./out # extract artifacts
 ```
 
 ### Define a Pipeline
@@ -89,7 +91,7 @@ docker run --rm thingfactory run basic
 - **Secrets management** -- built-in secret store with access control
 - **Inter-step messaging** -- pub-sub message bus between steps
 - **Artifact sharing** -- read/write artifacts through the execution context
-- **CLI** -- compact, verbose, and interactive output modes with artifact extraction
+- **CLI** -- command-parser subcommands for run/list/results/inspect/artifacts
 - **Web GUI** -- Next.js 15 + React Flow with DAG visualization, Gantt timeline, statistics dashboard
 - **Kubernetes runner** -- execute pipeline steps as K8s Jobs
 - **Docker isolation** -- pipeline steps run in containers by default

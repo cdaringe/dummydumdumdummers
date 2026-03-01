@@ -21,8 +21,11 @@ The CLI uses the [clip](https://hexdocs.pm/clip/) library for argument parsing w
 thingfactory <command>
 
 Commands:
-  run    Run a pipeline by name
-  list   List available pipelines
+  run        Run a pipeline (compact or verbose progress)
+  inspect    Run then enter interactive result inspector
+  results    Run and print detailed step results
+  artifacts  Run and extract artifacts to disk
+  list       Show command usage patterns
 ```
 
 ## Running a Pipeline
@@ -79,12 +82,12 @@ gleam run -m thingfactory/cli -- run basic -c
 ── ✓ basic (3 steps, 3ms)
 ```
 
-### Interactive (`-i` / `--interactive`)
+### Interactive (`inspect`)
 
 Runs the pipeline then drops into a REPL for exploring results:
 
 ```bash
-gleam run -m thingfactory/cli -- run artifacts -i
+gleam run -m thingfactory/cli -- inspect artifacts
 ```
 
 Available interactive commands:
@@ -101,10 +104,10 @@ Available interactive commands:
 
 ## Artifact Extraction
 
-Extract artifacts to disk after execution using `--output-dir` / `-o`:
+Extract artifacts to disk after execution using `artifacts -o/--output-dir`:
 
 ```bash
-gleam run -m thingfactory/cli -- run artifacts -o ./output
+gleam run -m thingfactory/cli -- artifacts artifacts -o ./output
 ```
 
 Each artifact key becomes a file in the output directory:
