@@ -64,16 +64,24 @@ const REWORK_THRESHOLD = 1;
 
 function detectScenarioFromProgress(content: string): number | null {
   const lines = content.split("\n");
+  let endDemoSigilSeen = false;
+  let count = 0;
   for (const line of lines) {
+    if (line.includes("END_DEMO")) {
+      endDemoSigilSeen = true;
+      continue;
+    }
     const match = line.match(/^\|\s*(\d+)\s*\|\s*NEEDS_REWORK\s*\|/);
-    if (match) {
+    if (match && endDemoSigilSeen) {
       const scenario = parseInt(match[1], 10);
       if (isNaN(scenario)) {
         throw new Error(`Failed to parse scenario number from progress.md line: ${line}`);
       }
       return scenario;
     }
+    ++count;
   }
+  if (!endDemoSigilSeen) throw new Error("END_DEMO sigil not found in progress.md");
   return null;
 }
 

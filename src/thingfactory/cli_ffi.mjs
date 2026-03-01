@@ -7,6 +7,12 @@ import * as readline from "readline";
 import * as fs from "fs";
 import * as path from "path";
 
+export function load_pipeline(module_name, function_name) {
+  return new Error(
+    `Dynamic pipeline loading is only supported on the Erlang target. Received ${module_name}:${function_name}`,
+  );
+}
+
 export function get_argv() {
   const args = typeof process !== 'undefined' ? process.argv.slice(2) : [];
 

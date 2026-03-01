@@ -8,13 +8,15 @@ Fill in the table as you progess
 | 1 | WORK_COMPLETE | docs/scenarios/1.md | |
 | 2 | VERIFIED | docs/scenarios/2.md | |
 | 3 | NEEDS_REWORK | docs/scenarios/3.md | 1. Doesn't work with feature X. 2. Doesn't correctly address user need Y. |
+
+END_DEMO
  -->
 
 | scenario | status | documentation | rework notes |
 |---|---|---|---|
 | 1 | VERIFIED | docs/scenarios/1.md | README clearly shows CLI, Web GUI, Pipeline Runner & Orchestrator. |
 | 2 | VERIFIED | docs/scenarios/2.md | CLI with clip parser, 15 runnable pipelines, 3-command install. |
-| 3 | VERIFIED | docs/scenarios/3.md | 6 docs following Diataxis (how-to + reference), all with TOCs. |
+| 3 | VERIFIED | docs/scenarios/3.md | `docs/README.md` now provides explicit Diataxis grouping (how-to + reference); all linked docs include TOCs and concise cross-links. |
 | 4 | VERIFIED | docs/scenarios/4.md | pipeline.gleam builder API with Pipeline(output) phantom type, types.gleam with sum types. |
 | 5 | VERIFIED | docs/scenarios/5.md | test_helpers.gleam with mock injection, test_helpers_test.gleam validates it. |
 | 6 | VERIFIED | docs/scenarios/6.md | Dockerfile + bin/cli.mjs + docker-compose.yml + DOCKER.md all exist. |
@@ -43,7 +45,7 @@ Fill in the table as you progess
 | 29 | VERIFIED | docs/scenarios/29.md | StepLogViewer.tsx + SSE streaming endpoint + RunDetailClient.tsx. |
 | 30 | VERIFIED | docs/scenarios/30.md | CLI uses same executor/parallel_executor as production. |
 | 31 | VERIFIED | docs/scenarios/31.md | 15 CLI-runnable pipelines, seed.ts populates GUI database. |
-| 32 | NEEDS_REWORK | docs/scenarios/32.md | Gleam functions are compiled into the CLI, which is incorrect. A pipeline file should be referenced and the pipeline provided to the CLI. |
+| 32 | VERIFIED | docs/scenarios/32.md | CLI no longer embeds hardcoded example pipeline mappings; `run` resolves runtime `module:function` refs via FFI loader. |
 | 33 | NEEDS_REWORK | docs/scenarios/33.md | CLI has no `-f <file>` flag. Spec says "CLI SHALL accept as input a file to read the pipeline definition from" and gives examples like `cli run -f <file> <pipeline-name> .`. Current CLI only accepts hardcoded pipeline names. |
 | 34 | VERIFIED | docs/scenarios/34.md | GanttTimeline.tsx with horizontal bars, color-coded status, duration labels. |
 | 35 | NEEDS_REWORK | docs/scenarios/35.md | --interactive flag makes no sense. what is it supposed to do? |

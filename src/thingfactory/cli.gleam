@@ -1,8 +1,8 @@
 /// Command-line interface for running pipelines
 ///
-/// This module provides a CLI for executing pipelines, enabling
-/// Thingfactory to run in Docker containers and CI/CD systems.
-/// Uses the clip library for proper argument parsing with auto-generated help.
+/// This module provides a CLI for executing pipelines with a runtime
+/// pipeline reference (`module:function`) so the CLI artifact does not
+/// embed any example pipelines.
 import argv
 import clip
 import clip/arg
@@ -16,16 +16,16 @@ import gleam/int
 import gleam/io
 import gleam/list
 import gleam/string
-import thingfactory/examples
 import thingfactory/executor
 import thingfactory/interactive_cli
 import thingfactory/parallel_executor
+import thingfactory/pipeline
 import thingfactory/types.{type ExecutionResult, type StepEvent}
 
 /// CLI command variants
 pub type CliCommand {
   Run(
-    pipeline: String,
+    pipeline_ref: String,
     compact: Bool,
     interactive: Bool,
     output_dir: Result(String, Nil),
@@ -43,12 +43,12 @@ pub type OutputMode {
 /// Build the "run" subcommand parser
 fn run_command() -> clip.Command(CliCommand) {
   clip.command({
-    use pipeline <- clip.parameter
+    use pipeline_ref <- clip.parameter
     use compact <- clip.parameter
     use interactive <- clip.parameter
     use output_dir <- clip.parameter
     Run(
-      pipeline: pipeline,
+      pipeline_ref: pipeline_ref,
       compact: compact,
       interactive: interactive,
       output_dir: output_dir,
@@ -56,7 +56,9 @@ fn run_command() -> clip.Command(CliCommand) {
   })
   |> clip.arg(
     arg.new("pipeline")
-    |> arg.help("Pipeline name or number (e.g. typescript, 1, parallel)"),
+    |> arg.help(
+      "Pipeline reference in module:function format (e.g. thingfactory@examples:basic_pipeline)",
+    ),
   )
   |> clip.flag(
     flag.new("compact")
@@ -74,7 +76,7 @@ fn run_command() -> clip.Command(CliCommand) {
     |> opt.help("Extract artifacts to this directory after execution")
     |> opt.optional(),
   )
-  |> clip.help(help.simple("thingfactory run", "Run a pipeline by name"))
+  |> clip.help(help.simple("thingfactory run", "Run a pipeline by module:function"))
 }
 
 /// Build the "list" subcommand parser
@@ -100,45 +102,81 @@ fn resolve_mode(compact: Bool, interactive: Bool) -> OutputMode {
   }
 }
 
-/// Execute a pipeline by name, returning its ExecutionResult
+/// Execute a pipeline by runtime reference, returning its ExecutionResult
 pub fn execute_pipeline(
-  pipeline_name: String,
+  pipeline_ref: String,
   mode: OutputMode,
 ) -> Result(ExecutionResult(Dynamic), String) {
-  case string.lowercase(pipeline_name) {
-    "1" | "basic" -> Ok(exec_basic(mode))
-    "2" | "error" -> Ok(exec_error_handling(mode))
-    "3" | "mock" -> Ok(exec_mockable(mode))
-    "4" | "dependency" -> Ok(exec_dependency_injection(mode))
-    "5" | "artifacts" -> Ok(exec_artifact_sharing(mode))
-    "6" | "typescript" -> Ok(exec_typescript_build(mode))
-    "7" | "rust" -> Ok(exec_rust_build(mode))
-    "8" | "fullstack" -> Ok(exec_fullstack(mode))
-    "9" | "gleam" -> Ok(exec_gleam_build(mode))
-    "10" | "go" -> Ok(exec_go_build(mode))
-    "11" | "custom" -> Ok(exec_custom_runner(mode))
-    "12" | "parallel" -> Ok(exec_parallel_build(mode))
-    "13" | "parallel_multi" -> Ok(exec_parallel_multi_target(mode))
-    "14" | "dogfood" -> Ok(exec_dogfood(mode))
-    "15" | "queue" -> Ok(exec_queue_worker(mode))
+  case parse_pipeline_ref(pipeline_ref) {
+    Ok(#(module_name, function_name)) -> {
+      case load_pipeline(module_name, function_name) {
+        Ok(loaded_pipeline) -> {
+          print_header(pipeline_ref, mode)
+          Ok(execute_loaded_pipeline(loaded_pipeline, mode))
+        }
+        Error(err) -> Error(err)
+      }
+    }
+    Error(err) -> Error(err)
+  }
+}
+
+/// Run a pipeline by runtime reference with specified output mode
+pub fn run_pipeline(
+  pipeline_ref: String,
+  mode: OutputMode,
+) -> Result(String, String) {
+  case execute_pipeline(pipeline_ref, mode) {
+    Ok(result) -> format_summary(pipeline_ref, result, mode)
+    Error(err) -> Error(err)
+  }
+}
+
+fn parse_pipeline_ref(pipeline_ref: String) -> Result(#(String, String), String) {
+  let trimmed = string.trim(pipeline_ref)
+
+  case string.split(trimmed, ":") {
+    [module_name, function_name] if module_name != "" && function_name != "" ->
+      Ok(#(module_name, function_name))
     _ ->
       Error(
-        "Unknown pipeline: "
-        <> pipeline_name
-        <> ". Use 'thingfactory list' to see available pipelines.",
+        "Invalid pipeline reference: "
+        <> pipeline_ref
+        <> ". Expected format module:function (e.g. thingfactory@examples:basic_pipeline).",
       )
   }
 }
 
-/// Run a pipeline by name with specified output mode (legacy API)
-pub fn run_pipeline(
-  pipeline_name: String,
+fn execute_loaded_pipeline(
+  loaded_pipeline: pipeline.Pipeline(Dynamic),
   mode: OutputMode,
-) -> Result(String, String) {
-  case execute_pipeline(pipeline_name, mode) {
-    Ok(result) -> format_summary(pipeline_name, result, mode)
-    Error(err) -> Error(err)
+) -> ExecutionResult(Dynamic) {
+  case pipeline_has_dependencies(loaded_pipeline) {
+    True ->
+      parallel_executor.execute_parallel_with_progress(
+        loaded_pipeline,
+        dynamic.nil(),
+        types.default_config(),
+        progress_fn(mode),
+      )
+    False ->
+      executor.execute_with_progress(
+        loaded_pipeline,
+        dynamic.nil(),
+        types.default_config(),
+        progress_fn(mode),
+      )
   }
+}
+
+fn pipeline_has_dependencies(p: pipeline.Pipeline(Dynamic)) -> Bool {
+  list.any(pipeline.steps(p), fn(step) {
+    let pipeline.Step(_, _, _, depends_on, _) = step
+    case depends_on {
+      [] -> False
+      _ -> True
+    }
+  })
 }
 
 // ---------------------------------------------------------------------------
@@ -290,176 +328,6 @@ fn format_summary(
 }
 
 // ---------------------------------------------------------------------------
-// Pipeline executors (sequential)
-// ---------------------------------------------------------------------------
-
-fn exec_basic(mode: OutputMode) -> ExecutionResult(Dynamic) {
-  print_header("basic_pipeline", mode)
-  executor.execute_with_progress(
-    examples.basic_pipeline(),
-    dynamic.nil(),
-    types.default_config(),
-    progress_fn(mode),
-  )
-}
-
-fn exec_error_handling(mode: OutputMode) -> ExecutionResult(Dynamic) {
-  print_header("error_handling_pipeline", mode)
-  executor.execute_with_progress(
-    examples.error_handling_pipeline(),
-    dynamic.nil(),
-    types.default_config(),
-    progress_fn(mode),
-  )
-}
-
-fn exec_mockable(mode: OutputMode) -> ExecutionResult(Dynamic) {
-  print_header("mockable_pipeline", mode)
-  executor.execute_with_progress(
-    examples.mockable_pipeline(),
-    dynamic.nil(),
-    types.default_config(),
-    progress_fn(mode),
-  )
-}
-
-fn exec_dependency_injection(mode: OutputMode) -> ExecutionResult(Dynamic) {
-  let bindings = [
-    types.Binding(
-      name: "config_url",
-      value: dynamic.string("https://config.example.com"),
-    ),
-    types.Binding(name: "api_key", value: dynamic.string("secret_key_123")),
-  ]
-  let config =
-    types.ExecutionConfig(
-      default_step_timeout_ms: 30_000,
-      dependency_bindings: bindings,
-    )
-  print_header("dependency_injection_pipeline", mode)
-  executor.execute_with_progress(
-    examples.dependency_injection_pipeline(),
-    dynamic.nil(),
-    config,
-    progress_fn(mode),
-  )
-}
-
-fn exec_artifact_sharing(mode: OutputMode) -> ExecutionResult(Dynamic) {
-  print_header("artifact_sharing_pipeline", mode)
-  executor.execute_with_progress(
-    examples.artifact_sharing_pipeline(),
-    dynamic.nil(),
-    types.default_config(),
-    progress_fn(mode),
-  )
-}
-
-fn exec_typescript_build(mode: OutputMode) -> ExecutionResult(Dynamic) {
-  print_header("typescript_build_pipeline", mode)
-  executor.execute_with_progress(
-    examples.typescript_build_pipeline(),
-    dynamic.nil(),
-    types.default_config(),
-    progress_fn(mode),
-  )
-}
-
-fn exec_rust_build(mode: OutputMode) -> ExecutionResult(Dynamic) {
-  print_header("rust_build_pipeline", mode)
-  executor.execute_with_progress(
-    examples.rust_build_pipeline(),
-    dynamic.nil(),
-    types.default_config(),
-    progress_fn(mode),
-  )
-}
-
-fn exec_fullstack(mode: OutputMode) -> ExecutionResult(Dynamic) {
-  print_header("full_stack_pipeline", mode)
-  executor.execute_with_progress(
-    examples.full_stack_pipeline(),
-    dynamic.nil(),
-    types.default_config(),
-    progress_fn(mode),
-  )
-}
-
-fn exec_gleam_build(mode: OutputMode) -> ExecutionResult(Dynamic) {
-  print_header("gleam_build_pipeline", mode)
-  executor.execute_with_progress(
-    examples.gleam_build_pipeline(),
-    dynamic.nil(),
-    types.default_config(),
-    progress_fn(mode),
-  )
-}
-
-fn exec_go_build(mode: OutputMode) -> ExecutionResult(Dynamic) {
-  print_header("go_build_pipeline", mode)
-  executor.execute_with_progress(
-    examples.go_build_pipeline(),
-    dynamic.nil(),
-    types.default_config(),
-    progress_fn(mode),
-  )
-}
-
-fn exec_custom_runner(mode: OutputMode) -> ExecutionResult(Dynamic) {
-  print_header("custom_runner_pipeline", mode)
-  executor.execute_with_progress(
-    examples.custom_runner_pipeline(),
-    dynamic.nil(),
-    types.default_config(),
-    progress_fn(mode),
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Pipeline executors (parallel)
-// ---------------------------------------------------------------------------
-
-fn exec_parallel_build(mode: OutputMode) -> ExecutionResult(Dynamic) {
-  print_header("parallel_build_pipeline", mode)
-  parallel_executor.execute_parallel_with_progress(
-    examples.parallel_build_pipeline(),
-    dynamic.nil(),
-    types.default_config(),
-    progress_fn(mode),
-  )
-}
-
-fn exec_parallel_multi_target(mode: OutputMode) -> ExecutionResult(Dynamic) {
-  print_header("parallel_multi_target_pipeline", mode)
-  parallel_executor.execute_parallel_with_progress(
-    examples.parallel_multi_target_pipeline(),
-    dynamic.nil(),
-    types.default_config(),
-    progress_fn(mode),
-  )
-}
-
-fn exec_dogfood(mode: OutputMode) -> ExecutionResult(Dynamic) {
-  print_header("dogfood_pipeline", mode)
-  parallel_executor.execute_parallel_with_progress(
-    examples.dogfood_pipeline(),
-    dynamic.nil(),
-    types.default_config(),
-    progress_fn(mode),
-  )
-}
-
-fn exec_queue_worker(mode: OutputMode) -> ExecutionResult(Dynamic) {
-  print_header("queue_worker_pipeline", mode)
-  executor.execute_with_progress(
-    examples.queue_worker_pipeline(),
-    dynamic.nil(),
-    types.default_config(),
-    progress_fn(mode),
-  )
-}
-
-// ---------------------------------------------------------------------------
 // Artifact extraction
 // ---------------------------------------------------------------------------
 
@@ -517,27 +385,15 @@ fn format_duration_ms(ms: Int) -> String {
 }
 
 fn list_pipelines() -> Result(String, String) {
-  let pipelines = [
-    "1  | basic                  - Basic sequential pipeline (3 steps)",
-    "2  | error                  - Error handling and propagation",
-    "3  | mock                   - Testing with mocks",
-    "4  | dependency             - Dependency injection pattern",
-    "5  | artifacts              - Artifact sharing between steps",
-    "6  | typescript             - TypeScript build pipeline",
-    "7  | rust                   - Rust library build pipeline",
-    "8  | fullstack              - Full-stack deployment pipeline",
-    "9  | gleam                  - Gleam project build pipeline",
-    "10 | go                     - Go library build pipeline",
-    "11 | custom                 - Custom runner factory pattern",
-    "12 | parallel               - Parallel build pipeline",
-    "13 | parallel_multi         - Parallel multi-target pipeline",
-    "14 | dogfood                - Build thingfactory itself (dogfood)",
-    "15 | queue                  - Queue-based worker pattern (PULL model)",
-  ]
-
-  let output = ["Available Pipelines:", "", ..pipelines]
-
-  Ok(string.join(output, "\n"))
+  Ok(string.join([
+    "No embedded pipelines are shipped with the CLI.",
+    "",
+    "Run a pipeline by passing a runtime reference:",
+    "  thingfactory run <module:function>",
+    "",
+    "Example:",
+    "  thingfactory run thingfactory@examples:basic_pipeline",
+  ], "\n"))
 }
 
 /// Main entry point for CLI
@@ -545,11 +401,11 @@ pub fn main() {
   let result = cli() |> clip.run(argv.load().arguments)
 
   case result {
-    Ok(Run(pipeline, compact, interactive, output_dir)) -> {
+    Ok(Run(pipeline_ref, compact, interactive, output_dir)) -> {
       let mode = resolve_mode(compact, interactive)
-      case execute_pipeline(pipeline, mode) {
+      case execute_pipeline(pipeline_ref, mode) {
         Ok(exec_result) -> {
-          case format_summary(pipeline, exec_result, mode) {
+          case format_summary(pipeline_ref, exec_result, mode) {
             Ok(output) -> {
               case output {
                 "" -> Nil
@@ -604,6 +460,13 @@ fn run_interactive_loop(state: interactive_cli.InteractiveState) -> Nil {
     }
   }
 }
+
+@external(erlang, "thingfactory_erlang_cli", "load_pipeline")
+@external(javascript, "./cli_ffi.mjs", "load_pipeline")
+fn load_pipeline(
+  module_name: String,
+  function_name: String,
+) -> Result(pipeline.Pipeline(Dynamic), String)
 
 @external(erlang, "thingfactory_erlang_cli", "read_line_sync")
 @external(javascript, "./cli_ffi.mjs", "read_line_sync")
