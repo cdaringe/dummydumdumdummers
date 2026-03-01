@@ -138,13 +138,27 @@ function initDb(): Kysely<ThingfactoryDB> {
 
 // Proxy exports so that db and rawDb are lazily initialized on first property access.
 // This prevents the native better-sqlite3 module from loading at import time.
+// Wrap a value from the target so that:
+// - Functions are called with target as `this` (needed for Kysely private fields).
+// - Function own-properties (e.g. db.fn.count) are still accessible.
+function wrapValue(target: any, value: any): any {
+  if (typeof value !== "function") return value;
+  return new Proxy(value, {
+    apply(_fn, _thisArg, args) {
+      return value.apply(target, args);
+    },
+    get(_fn, innerProp) {
+      return value[innerProp as string];
+    },
+  });
+}
+
 export const rawDb: DatabaseConstructor.Database = new Proxy(
   {} as DatabaseConstructor.Database,
   {
     get(_, prop) {
       const target = initRawDb() as any;
-      const value = target[prop];
-      return typeof value === "function" ? value.bind(target) : value;
+      return wrapValue(target, target[prop as string]);
     },
   },
 );
@@ -154,8 +168,7 @@ export const db: Kysely<ThingfactoryDB> = new Proxy(
   {
     get(_, prop) {
       const target = initDb() as any;
-      const value = target[prop];
-      return typeof value === "function" ? value.bind(target) : value;
+      return wrapValue(target, target[prop as string]);
     },
   },
 );

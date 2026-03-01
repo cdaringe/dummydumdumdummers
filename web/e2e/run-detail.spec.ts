@@ -145,6 +145,25 @@ test.describe("Run Detail", () => {
     await expect(header).toContainText(/Triggered by/);
   });
 
+  test("shows flow diagram with node states on run detail", async ({ page }) => {
+    await page.goto("/runs");
+    const firstDetailLink = page.locator("text=Details →").first();
+    await firstDetailLink.click();
+
+    await page.waitForLoadState("networkidle");
+
+    // Flow Diagram section should be present
+    const dagContainer = page.locator("[data-testid='run-dag-container']");
+    await expect(dagContainer).toBeVisible({ timeout: 5000 });
+
+    // The "Flow Diagram" heading should be visible
+    await expect(dagContainer.getByText("Flow Diagram")).toBeVisible();
+
+    // The React Flow DAG canvas should render
+    const dagCanvas = page.locator("[data-testid='pipeline-dag']");
+    await expect(dagCanvas).toBeVisible({ timeout: 5000 });
+  });
+
   test("shows log viewer hint text", async ({ page }) => {
     await page.goto("/runs");
     const firstDetailLink = page.locator("text=Details →").first();

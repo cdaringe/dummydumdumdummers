@@ -6,6 +6,8 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 import { GanttTimeline } from "@/components/run/GanttTimeline";
 import { ArtifactsList } from "@/components/run/ArtifactsList";
 import { StepLogViewer } from "@/components/run/StepLogViewer";
+import { PipelineDag } from "@/components/pipeline/PipelineDag";
+import { buildDagGraph } from "@/lib/dag";
 import { formatDate, formatDuration } from "@/lib/format";
 
 type StepDef = {
@@ -151,6 +153,15 @@ export function RunDetailClient({ run: initialRun, initialTraces }: Props) {
   const timelineDuration = durationMs ??
     completedTraces.reduce((s, t) => s + t.duration_ms, 0);
 
+  // Build DAG graph with live statuses and durations
+  const traceData = Object.fromEntries(
+    allSteps.map((t) => [
+      t.step_name,
+      { status: t.status, duration_ms: t.duration_ms || undefined },
+    ]),
+  );
+  const dagGraph = buildDagGraph(steps as any, traceData);
+
   return (
     <div>
       <div style={{ marginBottom: "var(--spacing-sm)" }}>
@@ -255,6 +266,79 @@ export function RunDetailClient({ run: initialRun, initialTraces }: Props) {
           </div>
           <div style={{ fontSize: "var(--font-size-base)" }}>
             {formatDate(finishedAt)}
+          </div>
+        </div>
+      </div>
+
+      {/* Flow Diagram - live DAG with node states and durations */}
+      <div
+        className="card"
+        style={{ marginBottom: "var(--spacing-xl)" }}
+        data-testid="run-dag-container"
+      >
+        <div
+          style={{
+            padding: "var(--spacing-lg)",
+            borderBottom: "1px solid var(--color-gray-300)",
+            fontWeight: 600,
+            fontSize: "var(--font-size-base)",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <span>Flow Diagram</span>
+          {status === "running" && (
+            <span
+              style={{
+                fontSize: "var(--font-size-xs)",
+                color: "var(--color-primary-light)",
+                fontWeight: 400,
+                animation: "pulse 2s infinite",
+              }}
+            >
+              live
+            </span>
+          )}
+        </div>
+        <div style={{ padding: "var(--spacing-lg)" }}>
+          <PipelineDag graph={dagGraph} />
+          <div
+            style={{
+              marginTop: "var(--spacing-sm)",
+              fontSize: "var(--font-size-sm)",
+              color: "var(--color-gray-500)",
+              display: "flex",
+              gap: "var(--spacing-lg)",
+            }}
+          >
+            {(["ok", "running", "failed", "pending"] as const).map((s) => (
+              <span
+                key={s}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "var(--spacing-xs)",
+                }}
+              >
+                <span
+                  style={{
+                    display: "inline-block",
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    background: s === "ok"
+                      ? "var(--color-status-ok)"
+                      : s === "running"
+                      ? "var(--color-status-running)"
+                      : s === "failed"
+                      ? "var(--color-status-failed)"
+                      : "var(--color-gray-400)",
+                  }}
+                />
+                {s}
+              </span>
+            ))}
           </div>
         </div>
       </div>

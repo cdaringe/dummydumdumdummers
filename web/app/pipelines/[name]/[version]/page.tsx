@@ -47,21 +47,25 @@ export default async function PipelineDetailPage({ params }: Props) {
   const schedule = JSON.parse(pipeline.schedule) as ScheduleConfig;
   const trigger = JSON.parse(pipeline.trigger) as TriggerConfig;
 
-  // Build last run status map for node coloring
+  // Build last run trace data for node coloring and duration
   const lastRun = recentRuns[0];
-  const traceStatuses: Record<string, "ok" | "failed" | "skipped"> = {};
+  const traceData: Record<string, { status: string; duration_ms?: number }> =
+    {};
   if (lastRun) {
     const traces = await db
       .selectFrom("step_traces")
-      .select(["step_name", "status"])
+      .select(["step_name", "status", "duration_ms"])
       .where("run_id", "=", lastRun.id ?? "")
       .execute();
     for (const t of traces) {
-      traceStatuses[t.step_name] = t.status as "ok" | "failed" | "skipped";
+      traceData[t.step_name] = {
+        status: t.status,
+        duration_ms: t.duration_ms ?? undefined,
+      };
     }
   }
 
-  const graph = buildDagGraph(steps, traceStatuses);
+  const graph = buildDagGraph(steps, traceData);
 
   return (
     <div>

@@ -12,6 +12,7 @@
     "db:seed": "tsx db/seed.ts",
     "db:codegen": "kysely-codegen --dialect sqlite --url ./db/thingfactory.db --out-file lib/db.types.ts",
     "db:setup": "npm run db:migrate && npm run db:seed && npm run db:codegen",
+    "dev:e2e": "next dev --turbopack",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui"
   },

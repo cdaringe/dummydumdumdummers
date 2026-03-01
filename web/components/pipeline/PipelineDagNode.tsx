@@ -1,6 +1,6 @@
 "use client";
 import { Handle, Position } from "@xyflow/react";
-import { statusColor } from "@/lib/format";
+import { formatDuration, statusColor } from "@/lib/format";
 import type { StepNodeData } from "@/lib/dag";
 
 type Props = { data: StepNodeData };
@@ -20,6 +20,7 @@ const loopLabel = (loop: StepNodeData["loop"]): string | null => {
 export function PipelineDagNode({ data }: Props) {
   const color = statusColor(data.status);
   const loop = loopLabel(data.loop);
+  const isRunning = data.status === "running";
 
   return (
     <div
@@ -29,6 +30,7 @@ export function PipelineDagNode({ data }: Props) {
         borderRadius: "var(--border-radius-sm)",
         padding: "var(--spacing-sm) var(--spacing-md)",
         minWidth: 160,
+        boxShadow: isRunning ? `0 0 0 3px ${color}33` : undefined,
       }}
     >
       <Handle type="target" position={Position.Left} />
@@ -68,6 +70,7 @@ export function PipelineDagNode({ data }: Props) {
             height: 8,
             borderRadius: "50%",
             background: color,
+            animation: isRunning ? "pulse 1.5s infinite" : undefined,
           }}
         />
         <span
@@ -78,6 +81,18 @@ export function PipelineDagNode({ data }: Props) {
         >
           {data.status}
         </span>
+        {data.duration_ms != null && data.duration_ms > 0 && (
+          <span
+            style={{
+              fontSize: "var(--font-size-xs)",
+              color: "var(--color-gray-500)",
+              fontFamily: "monospace",
+              marginLeft: "auto",
+            }}
+          >
+            {formatDuration(data.duration_ms)}
+          </span>
+        )}
       </div>
       <Handle type="source" position={Position.Right} />
     </div>

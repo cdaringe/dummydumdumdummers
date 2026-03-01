@@ -18,8 +18,10 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "npm run dev",
-    url: "http://localhost:3000",
+    // dev:e2e skips the predev db:setup hook so the server can manage its own
+    // in-memory DB initialization (auto-migrated and auto-seeded in db.ts).
+    command: "npm run dev:e2e",
+    url: "http://localhost:3000/api/health",
     reuseExistingServer: !process.env.CI,
     timeout: 60000,
     env: {

@@ -4,6 +4,7 @@ import type { LoopConfig, StepDefinition } from "./types";
 export interface StepNodeData {
   label: string;
   status: string;
+  duration_ms?: number;
   loop?: LoopConfig;
   [key: string]: unknown;
 }
@@ -13,9 +14,11 @@ export interface DagGraph {
   edges: Edge[];
 }
 
+export type TraceData = Record<string, { status: string; duration_ms?: number }>;
+
 export function buildDagGraph(
   steps: StepDefinition[],
-  traceStatuses: Record<string, "ok" | "failed" | "skipped">,
+  traceData: TraceData,
 ): DagGraph {
   const xGap = 260;
   const yGap = 100;
@@ -64,6 +67,7 @@ export function buildDagGraph(
     const depth = depthMap.get(step.name) ?? 0;
     const group = depthGroups.get(depth) ?? [step.name];
     const yIndex = group.indexOf(step.name);
+    const trace = traceData[step.name];
 
     return {
       id: step.name,
@@ -74,7 +78,8 @@ export function buildDagGraph(
       },
       data: {
         label: step.name,
-        status: traceStatuses[step.name] ?? "pending",
+        status: trace?.status ?? "pending",
+        duration_ms: trace?.duration_ms,
         loop: step.loop,
       },
     };
