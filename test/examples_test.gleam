@@ -28,10 +28,13 @@ pub fn mockable_pipeline_test() {
 }
 
 pub fn typescript_build_pipeline_test() {
-  let result = examples.run_typescript_build()
-  result.result |> should.be_ok()
-  // Should have 6 steps
-  list.length(result.trace) |> should.equal(6)
+  // Structure-only test: the typescript build pipeline uses real command_runner.step_in_dir()
+  // calls (npm install, npm run lint, npm run build, npm run test) against examples/typescript-lib/.
+  // Running these in tests would be slow (npm install). Instead we verify the pipeline is
+  // correctly constructed with real commands.
+  let p = examples.typescript_build_pipeline()
+  pipeline.id(p) |> should.equal(types.PipelineId("typescript_build", "1.0.0"))
+  list.length(pipeline.steps(p)) |> should.equal(4)
 }
 
 pub fn rust_build_pipeline_test() {
@@ -65,10 +68,12 @@ pub fn artifact_sharing_pipeline_test() {
 }
 
 pub fn go_build_pipeline_test() {
-  let result = examples.run_go_build()
-  result.result |> should.be_ok()
-  // Should have 5 steps
-  list.length(result.trace) |> should.equal(5)
+  // Structure-only test: the go build pipeline uses real command_runner.step_in_dir()
+  // calls (go mod download, go test, go build, go vet) against examples/go-lib/.
+  // Running these requires Go to be installed; tests validate structure instead.
+  let p = examples.go_build_pipeline()
+  pipeline.id(p) |> should.equal(types.PipelineId("go_build", "1.0.0"))
+  list.length(pipeline.steps(p)) |> should.equal(4)
 }
 
 pub fn custom_runner_pipeline_test() {

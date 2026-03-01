@@ -22,6 +22,19 @@ pub fn run(program: String, args: List(String)) -> Result(CommandOutput, String)
   }
 }
 
+/// Run a shell command in a specific working directory.
+pub fn run_in_dir(
+  program: String,
+  args: List(String),
+  cwd: String,
+) -> Result(CommandOutput, String) {
+  case run_in_dir_ffi(program, args, cwd) {
+    Ok(#(exit_code, stdout, stderr)) ->
+      Ok(CommandOutput(exit_code: exit_code, stdout: stdout, stderr: stderr))
+    Error(msg) -> Error(msg)
+  }
+}
+
 /// Create a step function that runs a shell command.
 /// Returns a function compatible with pipeline.add_step that:
 /// - Runs the specified command with arguments
@@ -33,6 +46,36 @@ pub fn step(
 ) -> fn(types.Context, Dynamic) -> types.StepResult(Dynamic) {
   fn(_ctx: types.Context, _input: Dynamic) {
     case run(program, args) {
+      Ok(output) ->
+        case output.exit_code {
+          0 -> Ok(dynamic.string(string.trim(output.stdout)))
+          _ ->
+            Error(types.StepFailure(
+              message: program
+              <> " failed (exit "
+              <> exit_code_to_string(output.exit_code)
+              <> "):\n"
+              <> output.stdout
+              <> output.stderr,
+            ))
+        }
+      Error(msg) ->
+        Error(types.StepFailure(
+          message: "Failed to start " <> program <> ": " <> msg,
+        ))
+    }
+  }
+}
+
+/// Create a step function that runs a shell command in a specific directory.
+/// Use this to run build tools against example projects in subdirectories.
+pub fn step_in_dir(
+  program: String,
+  args: List(String),
+  cwd: String,
+) -> fn(types.Context, Dynamic) -> types.StepResult(Dynamic) {
+  fn(_ctx: types.Context, _input: Dynamic) {
+    case run_in_dir(program, args, cwd) {
       Ok(output) ->
         case output.exit_code {
           0 -> Ok(dynamic.string(string.trim(output.stdout)))
@@ -69,4 +112,12 @@ fn exit_code_to_string(code: Int) -> String {
 fn run_ffi(
   program: String,
   args: List(String),
+) -> Result(#(Int, String, String), String)
+
+@external(erlang, "command_runner_erlang", "run_command_in_dir")
+@external(javascript, "./command_runner_ffi.mjs", "run_command_in_dir")
+fn run_in_dir_ffi(
+  program: String,
+  args: List(String),
+  cwd: String,
 ) -> Result(#(Int, String, String), String)

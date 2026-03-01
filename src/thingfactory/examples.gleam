@@ -140,32 +140,25 @@ pub fn run_error_example() -> types.ExecutionResult(Dynamic) {
 /// 4. Build artifacts
 /// 5. Package for distribution
 pub fn typescript_build_pipeline() -> pipeline.Pipeline(Dynamic) {
+  let ts_dir = "examples/typescript-lib"
   pipeline.new("typescript_build", "1.0.0")
   |> pipeline.with_timeout(120_000)
-  |> pipeline.add_step("checkout", fn(_ctx, _input) {
-    // In production: git clone https://github.com/user/ts-project.git
-    Ok(dynamic.string("project_root=/workspace/ts-project"))
-  })
-  |> pipeline.add_step("install_deps", fn(_ctx, project_root) {
-    // In production: npm install in the project directory
-    Ok(project_root)
-  })
-  |> pipeline.add_step("lint", fn(_ctx, project_root) {
-    // In production: npm run lint
-    Ok(dynamic.string("lint_passed=true"))
-  })
-  |> pipeline.add_step("unit_tests", fn(_ctx, _lint_result) {
-    // In production: npm test
-    Ok(dynamic.string("tests_passed=42"))
-  })
-  |> pipeline.add_step("build", fn(_ctx, _test_result) {
-    // In production: npm run build
-    Ok(dynamic.string("dist_path=/workspace/ts-project/dist"))
-  })
-  |> pipeline.add_step("package", fn(_ctx, dist_path) {
-    // In production: create tarball or docker image
-    Ok(dynamic.string("package_id=ts-project-1.0.0.tar.gz"))
-  })
+  |> pipeline.add_step(
+    "install_deps",
+    command_runner.step_in_dir("npm", ["install"], ts_dir),
+  )
+  |> pipeline.add_step(
+    "lint",
+    command_runner.step_in_dir("npm", ["run", "lint"], ts_dir),
+  )
+  |> pipeline.add_step(
+    "build",
+    command_runner.step_in_dir("npm", ["run", "build"], ts_dir),
+  )
+  |> pipeline.add_step(
+    "test",
+    command_runner.step_in_dir("npm", ["run", "test"], ts_dir),
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -344,29 +337,25 @@ pub fn run_artifact_sharing() -> types.ExecutionResult(Dynamic) {
 /// 4. Run linters and code quality checks
 /// 5. Publish artifacts
 pub fn go_build_pipeline() -> pipeline.Pipeline(Dynamic) {
+  let go_dir = "examples/go-lib"
   pipeline.new("go_build", "1.0.0")
   |> pipeline.with_timeout(120_000)
-  |> pipeline.add_step("download_dependencies", fn(_ctx, _input) {
-    // In production: go mod download
-    Ok(dynamic.string("dependencies_downloaded=true"))
-  })
-  |> pipeline.add_step("run_tests", fn(_ctx, dependencies) {
-    // In production: go test -v -cover ./...
-    Ok(dynamic.string("test_count=89"))
-  })
-  |> pipeline.add_step("build_binaries", fn(_ctx, _test_result) {
-    // In production: Build for linux/amd64, darwin/amd64, etc.
-    // GOOS=linux GOARCH=amd64 go build -o bin/app-linux-amd64
-    Ok(dynamic.string("binaries_built=3"))
-  })
-  |> pipeline.add_step("lint_and_vet", fn(_ctx, _build_result) {
-    // In production: go vet ./... && golangci-lint run
-    Ok(dynamic.string("lint_passed=true"))
-  })
-  |> pipeline.add_step("publish_artifacts", fn(_ctx, lint_result) {
-    // In production: upload binaries to release repository
-    Ok(dynamic.string("published=true"))
-  })
+  |> pipeline.add_step(
+    "download_dependencies",
+    command_runner.step_in_dir("go", ["mod", "download"], go_dir),
+  )
+  |> pipeline.add_step(
+    "run_tests",
+    command_runner.step_in_dir("go", ["test", "-v", "./..."], go_dir),
+  )
+  |> pipeline.add_step(
+    "build",
+    command_runner.step_in_dir("go", ["build", "./..."], go_dir),
+  )
+  |> pipeline.add_step(
+    "lint_and_vet",
+    command_runner.step_in_dir("go", ["vet", "./..."], go_dir),
+  )
 }
 
 /// Execute the Go build pipeline

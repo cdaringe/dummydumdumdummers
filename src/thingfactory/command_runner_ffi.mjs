@@ -5,12 +5,18 @@ import { Ok, Error } from "../gleam.mjs";
 import { spawnSync } from "child_process";
 
 export function run_command(program, args) {
+  return run_command_in_dir(program, args, null);
+}
+
+export function run_command_in_dir(program, args, cwd) {
   try {
     const argsArray = args.toArray();
-    const result = spawnSync(program, argsArray, {
+    const opts = {
       encoding: "utf-8",
       timeout: 300000, // 5 minutes
-    });
+    };
+    if (cwd) opts.cwd = cwd;
+    const result = spawnSync(program, argsArray, opts);
 
     if (result.error) {
       return new Error(result.error.message);
