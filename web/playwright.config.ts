@@ -23,7 +23,7 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     timeout: 60000,
     env: {
-      DATABASE_PATH: ":memory:",
+      THINGFACTORY_DATABASE_PATH: ":memory:",
     },
   },
 });

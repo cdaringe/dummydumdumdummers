@@ -66,3 +66,4 @@ END_DEMO
 | 49 | VERIFIED | docs/scenarios/49.md | |
 | 50 | VERIFIED | docs/scenarios/50.md | |
 | 51 | VERIFIED | docs/scenarios/51.md | Deployment guide in docs/HOSTING_SERVICE.md (Docker, K8s, manual, nginx) and DOCKER.md. |
+| 52 | VERIFIED | docs/scenarios/52.md | ServiceConfig typed datamodel in web/lib/config.ts; THINGFACTORY_DATABASE_PATH + THINGFACTORY_PORT; all consumers updated; docs updated. |

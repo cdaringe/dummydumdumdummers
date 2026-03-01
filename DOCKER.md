@@ -99,9 +99,9 @@ docker-compose run --rm cli run thingfactory@examples:typescript_build_pipeline 
 
 | Environment Variable | Default | Description |
 |---|---|---|
-| `DATABASE_URL` | `/app/data/thingfactory.db` | SQLite database path |
+| `THINGFACTORY_DATABASE_PATH` | `./db/thingfactory.db` | SQLite database path |
+| `THINGFACTORY_PORT` | `3000` | Web GUI port (also read from `PORT`) |
 | `NODE_ENV` | `production` | Node environment |
-| `PORT` | `3000` | Web GUI port |
 
 ### Persistent Database
 

@@ -103,13 +103,23 @@ NODE_ENV=production npm start
 
 ## Configuration
 
-Environment variables:
+All service-specific configuration uses the `THINGFACTORY_` prefix. Standard platform variables (`NODE_ENV`, `PORT`) are also supported.
 
 | Variable | Default | Description |
 |---|---|---|
-| `PORT` | `3000` | Web server port |
+| `THINGFACTORY_DATABASE_PATH` | `./db/thingfactory.db` | SQLite database file path |
+| `THINGFACTORY_PORT` | `3000` | Web server port (also read from `PORT`) |
 | `NODE_ENV` | `development` | Node environment (`production` for deployed) |
-| `DATABASE_PATH` | `./db/thingfactory.db` | SQLite database file path |
+
+These variables map directly to the `ServiceConfig` typed datamodel in `web/lib/config.ts`:
+
+```typescript
+interface ServiceConfig {
+  databasePath: string;   // THINGFACTORY_DATABASE_PATH
+  port: number;           // THINGFACTORY_PORT or PORT
+  nodeEnv: "development" | "production" | "test";  // NODE_ENV
+}
+```
 
 ## Database
 

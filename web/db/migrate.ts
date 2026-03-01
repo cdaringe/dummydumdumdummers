@@ -2,9 +2,10 @@ import Database from "better-sqlite3";
 import { readFileSync, readdirSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
+import { getConfig } from "../lib/config";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const dbPath = process.env.DATABASE_PATH ?? "./db/thingfactory.db";
+const dbPath = getConfig().databasePath;
 const db = new Database(dbPath);
 
 // Enable WAL mode for better performance

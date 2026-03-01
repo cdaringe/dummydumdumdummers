@@ -1,6 +1,7 @@
 import Database from "better-sqlite3";
 import { Generated, Kysely, SqliteDialect } from "kysely";
 import { seedFixturesIfEmpty } from "./seed-fixtures";
+import { config } from "./config";
 
 interface PipelineDefinitionsTable {
   id: string;
@@ -52,7 +53,7 @@ interface ThingfactoryDB {
   artifacts: ArtifactsTable;
 }
 
-const dbPath = process.env.DATABASE_PATH ?? "./db/thingfactory.db";
+const dbPath = config.databasePath;
 
 export const rawDb = new Database(dbPath);
 rawDb.pragma("journal_mode = WAL");
