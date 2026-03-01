@@ -7,6 +7,7 @@ import gleam/dynamic.{type Dynamic}
 import gleam/int
 import gleam/list
 import gleam/option.{None, Some}
+import gleam/string
 import thingfactory/artifact_store
 import thingfactory/dependency_injector
 import thingfactory/message_store
@@ -115,6 +116,7 @@ fn run_steps_with_progress(
 
           case step_result {
             Ok(#(output, updated_ctx)) -> {
+              let step_output = format_step_output(output)
               let trace =
                 StepTrace(
                   step_name: step.name,
@@ -127,6 +129,7 @@ fn run_steps_with_progress(
                 total: total,
                 status: StepOk,
                 duration_ms: duration_ms,
+                output: step_output,
               ))
               run_steps_with_progress(
                 rest,
@@ -152,6 +155,7 @@ fn run_steps_with_progress(
                 total: total,
                 status: StepFailed(step_err),
                 duration_ms: duration_ms,
+                output: "",
               ))
               let skipped_traces = mark_skipped(rest)
               let all_traces =
@@ -173,6 +177,7 @@ fn run_steps_with_progress(
           let loop_result = run_loop(step, loop_config, current_input, ctx, [])
           case loop_result {
             Ok(#(output, loop_traces)) -> {
+              let step_output = format_step_output(output)
               let total_duration =
                 list.fold(loop_traces, 0, fn(acc, t: StepTrace) {
                   acc + t.duration_ms
@@ -183,6 +188,7 @@ fn run_steps_with_progress(
                 total: total,
                 status: StepOk,
                 duration_ms: total_duration,
+                output: step_output,
               ))
               run_steps_with_progress(
                 rest,
@@ -206,6 +212,7 @@ fn run_steps_with_progress(
                 total: total,
                 status: StepFailed(step_err),
                 duration_ms: total_duration,
+                output: "",
               ))
               let trace =
                 StepTrace(
@@ -230,6 +237,10 @@ fn run_steps_with_progress(
       }
     }
   }
+}
+
+fn format_step_output(output: Dynamic) -> String {
+  string.inspect(output) |> string.trim()
 }
 
 fn run_steps(

@@ -154,6 +154,7 @@ pub type StepEvent {
     total: Int,
     status: StepStatus,
     duration_ms: Int,
+    output: String,
   )
 }
 

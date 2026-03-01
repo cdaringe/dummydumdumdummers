@@ -345,7 +345,7 @@ fn progress_fn(mode: OutputMode) -> fn(StepEvent) -> Nil {
 fn compact_progress(event: StepEvent) -> Nil {
   case event {
     types.StepStarting(_, _, _) -> Nil
-    types.StepFinished(name, index, total, status, duration_ms) -> {
+    types.StepFinished(name, index, total, status, duration_ms, _output) -> {
       let icon = case status {
         types.StepOk -> "✓"
         types.StepFailed(_) -> "✗"
@@ -379,7 +379,7 @@ fn verbose_progress(event: StepEvent) -> Nil {
         <> "] "
         <> name,
       )
-    types.StepFinished(_, _, _, status, duration_ms) -> {
+    types.StepFinished(_, _, _, status, duration_ms, output) -> {
       let status_str = case status {
         types.StepOk -> "✓ OK"
         types.StepFailed(_) -> "✗ FAILED"
@@ -388,6 +388,10 @@ fn verbose_progress(event: StepEvent) -> Nil {
       io.println(
         "   " <> status_str <> " (" <> format_duration_ms(duration_ms) <> ")",
       )
+      case string.trim(output) {
+        "" -> Nil
+        trimmed -> io.println(trimmed)
+      }
       io.println("")
     }
   }

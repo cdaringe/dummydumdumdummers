@@ -9,6 +9,7 @@
 import gleam/dict.{type Dict}
 import gleam/dynamic.{type Dynamic}
 import gleam/list
+import gleam/string
 import thingfactory/artifact_store
 import thingfactory/dependency_injector
 import thingfactory/message_store
@@ -361,6 +362,7 @@ fn execute_with_deps_progress(
                 total: total,
                 status: StepFailed(types.StepFailure("dependency failed")),
                 duration_ms: 0,
+                output: "",
               ))
               let updated_status =
                 dict.insert(
@@ -388,7 +390,7 @@ fn execute_with_deps_progress(
               let #(duration_ms, step_result) =
                 timing.measure(fn() { step.run(ctx, initial_input) })
 
-              let #(updated_status, step_status_event) = case step_result {
+              let #(updated_status, step_status_event, step_output) = case step_result {
                 Ok(#(output, _updated_ctx)) -> #(
                   dict.insert(
                     step_status,
@@ -396,10 +398,12 @@ fn execute_with_deps_progress(
                     Completed(Ok(output), duration_ms),
                   ),
                   StepOk,
+                  format_step_output(output),
                 )
                 Error(err) -> #(
                   dict.insert(step_status, step.name, Failed(err, duration_ms)),
                   StepFailed(err),
+                  "",
                 )
               }
 
@@ -409,6 +413,7 @@ fn execute_with_deps_progress(
                 total: total,
                 status: step_status_event,
                 duration_ms: duration_ms,
+                output: step_output,
               ))
 
               execute_with_deps_progress(
@@ -434,6 +439,10 @@ fn execute_with_deps_progress(
       }
     }
   }
+}
+
+fn format_step_output(output: Dynamic) -> String {
+  string.inspect(output) |> string.trim()
 }
 
 /// Find the next step that is ready to run:
