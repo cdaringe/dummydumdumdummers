@@ -1,13 +1,13 @@
-import { test, expect } from "./fixtures";
+import { expect, test } from "./fixtures";
 
 test.describe("Statistics Page", () => {
   test("loads and shows page heading", async ({ page }) => {
     await page.goto("/stats");
     await expect(
-      page.getByRole("heading", { name: "Statistics", exact: true })
+      page.getByRole("heading", { name: "Statistics", exact: true }),
     ).toBeVisible();
     await expect(
-      page.getByText("Pipeline performance and execution metrics")
+      page.getByText("Pipeline performance and execution metrics"),
     ).toBeVisible();
   });
 
@@ -16,9 +16,12 @@ test.describe("Statistics Page", () => {
     // Use locator scoped to the card divs (not table headers)
     const cards = page.locator(".card");
     await expect(cards.filter({ hasText: "Total Runs" }).first()).toBeVisible();
-    await expect(cards.filter({ hasText: "Success Rate" }).first()).toBeVisible();
-    await expect(cards.filter({ hasText: "Avg Duration" }).first()).toBeVisible();
-    await expect(cards.filter({ hasText: "Total Duration" }).first()).toBeVisible();
+    await expect(cards.filter({ hasText: "Success Rate" }).first())
+      .toBeVisible();
+    await expect(cards.filter({ hasText: "Avg Duration" }).first())
+      .toBeVisible();
+    await expect(cards.filter({ hasText: "Total Duration" }).first())
+      .toBeVisible();
   });
 
   test("shows run count cards", async ({ page }) => {
@@ -30,39 +33,37 @@ test.describe("Statistics Page", () => {
   test("shows fastest pipelines table", async ({ page }) => {
     await page.goto("/stats");
     await expect(
-      page.getByRole("heading", { name: "Fastest Pipelines" })
+      page.getByRole("heading", { name: "Fastest Pipelines" }),
     ).toBeVisible();
   });
 
   test("shows slowest pipelines table", async ({ page }) => {
     await page.goto("/stats");
     await expect(
-      page.getByRole("heading", { name: "Slowest Pipelines" })
+      page.getByRole("heading", { name: "Slowest Pipelines" }),
     ).toBeVisible();
   });
 
   test("shows pipeline statistics table with columns", async ({ page }) => {
     await page.goto("/stats");
     await expect(
-      page.getByRole("heading", { name: "Pipeline Statistics" })
+      page.getByRole("heading", { name: "Pipeline Statistics" }),
     ).toBeVisible();
     await expect(
-      page.getByRole("columnheader", { name: "Pipeline" }).first()
+      page.getByRole("columnheader", { name: "Pipeline" }).first(),
     ).toBeVisible();
     await expect(
-      page.getByRole("columnheader", { name: "Total Runs" }).first()
+      page.getByRole("columnheader", { name: "Total Runs" }).first(),
     ).toBeVisible();
     await expect(
-      page.getByRole("columnheader", { name: "Success Rate" }).first()
+      page.getByRole("columnheader", { name: "Success Rate" }).first(),
     ).toBeVisible();
     await expect(
-      page.getByRole("columnheader", { name: "Avg Duration" }).first()
+      page.getByRole("columnheader", { name: "Avg Duration" }).first(),
     ).toBeVisible();
   });
 
-  test("displays seeded pipeline data in statistics table", async ({
-    page,
-  }) => {
+  test("displays seeded pipeline data in statistics table", async ({ page }) => {
     await page.goto("/stats");
     // Wait for data to load (client-side fetch)
     await page.waitForLoadState("networkidle");
@@ -80,14 +81,12 @@ test.describe("Statistics Page", () => {
     await expect(page.url()).toContain("/pipelines/");
   });
 
-  test("has navigation sidebar with Statistics link active", async ({
-    page,
-  }) => {
+  test("has navigation sidebar with Statistics link active", async ({ page }) => {
     await page.goto("/stats");
     await expect(page.getByText("Thingfactory")).toBeVisible();
     const nav = page.locator("nav");
     await expect(
-      nav.getByRole("link", { name: /Statistics/ })
+      nav.getByRole("link", { name: /Statistics/ }),
     ).toBeVisible();
   });
 });

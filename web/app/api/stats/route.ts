@@ -40,7 +40,9 @@ export async function GET() {
         "p.name",
         "p.version",
         sql<number>`count(r.id)`.as("total_runs"),
-        sql<number>`count(CASE WHEN r.status = 'success' THEN 1 END)`.as("success_count"),
+        sql<number>`count(CASE WHEN r.status = 'success' THEN 1 END)`.as(
+          "success_count",
+        ),
         sql<number>`avg(r.duration_ms)`.as("avg_duration"),
         sql<number>`min(r.duration_ms)`.as("min_duration"),
         sql<number>`max(r.duration_ms)`.as("max_duration"),
@@ -67,13 +69,13 @@ export async function GET() {
         db
           .selectFrom("pipeline_runs as r2")
           .select(sql<string>`MAX(r2.id)`.as("id"))
-          .groupBy("r2.pipeline_id")
+          .groupBy("r2.pipeline_id"),
       )
       .orderBy("p.name")
       .execute();
 
     const latestRunMap = new Map(
-      latestRuns.map((r: any) => [`${r.name}@${r.version}`, r])
+      latestRuns.map((r: any) => [`${r.name}@${r.version}`, r]),
     );
 
     // Trends: last 30 days of runs grouped by date
@@ -141,10 +143,10 @@ export async function GET() {
         totalRuns: Number(totalRuns?.count || 0),
         successfulRuns: Number(successfulRuns?.count || 0),
         failedRuns: Number(failedRuns?.count || 0),
-        successRate:
-          Number(totalRuns?.count || 0) > 0
-            ? (Number(successfulRuns?.count || 0) / Number(totalRuns?.count || 0)) * 100
-            : 0,
+        successRate: Number(totalRuns?.count || 0) > 0
+          ? (Number(successfulRuns?.count || 0) /
+            Number(totalRuns?.count || 0)) * 100
+          : 0,
         avgDuration: Number(avgDuration?.avg_duration || 0),
         totalDuration: Number(totalDuration?.total_duration || 0),
       },
@@ -162,7 +164,7 @@ export async function GET() {
     console.error("Error fetching statistics:", error);
     return Response.json(
       { error: "Failed to fetch statistics" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

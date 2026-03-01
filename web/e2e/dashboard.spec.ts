@@ -1,9 +1,10 @@
-import { test, expect } from "./fixtures";
+import { expect, test } from "./fixtures";
 
 test.describe("Dashboard", () => {
   test("loads and shows pipeline stats", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Dashboard" }))
+      .toBeVisible();
   });
 
   test("shows stat cards", async ({ page }) => {
@@ -16,7 +17,8 @@ test.describe("Dashboard", () => {
 
   test("shows recent runs table", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("heading", { name: "Recent Runs" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Recent Runs" }))
+      .toBeVisible();
     // Seeded data should populate at least one row
     const rows = page.locator("table tbody tr");
     await expect(rows.first()).toBeVisible();
@@ -24,7 +26,8 @@ test.describe("Dashboard", () => {
 
   test("navigates to pipeline detail from recent runs", async ({ page }) => {
     await page.goto("/");
-    const pipelineLink = page.locator("table tbody tr").first().locator("a").first();
+    const pipelineLink = page.locator("table tbody tr").first().locator("a")
+      .first();
     await pipelineLink.click();
     await page.waitForLoadState("networkidle");
     await expect(page.url()).toContain("/pipelines/");

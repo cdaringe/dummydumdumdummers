@@ -8,7 +8,7 @@ export async function GET() {
   } catch {
     return NextResponse.json(
       { status: "error", db: "disconnected" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

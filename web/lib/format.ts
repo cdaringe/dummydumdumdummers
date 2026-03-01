@@ -1,5 +1,5 @@
 export function formatDate(
-  dateStr: string | null | undefined
+  dateStr: string | null | undefined,
 ): string {
   if (!dateStr) return "—";
   const d = new Date(dateStr);
@@ -13,7 +13,7 @@ export function formatDate(
 }
 
 export function formatDuration(
-  ms: number | null | undefined
+  ms: number | null | undefined,
 ): string {
   if (ms == null || ms === 0) return "—";
   if (ms < 1000) return `${Math.round(ms)}ms`;
@@ -24,12 +24,20 @@ export function formatDuration(
 }
 
 export function formatSchedule(scheduleStr: string): string {
-  if (!scheduleStr || scheduleStr === "NoSchedule" || scheduleStr === '"NoSchedule"')
+  if (
+    !scheduleStr || scheduleStr === "NoSchedule" ||
+    scheduleStr === '"NoSchedule"'
+  ) {
     return "None";
+  }
   try {
-    const s = typeof scheduleStr === "string" ? JSON.parse(scheduleStr) : scheduleStr;
+    const s = typeof scheduleStr === "string"
+      ? JSON.parse(scheduleStr)
+      : scheduleStr;
     if (s === "NoSchedule") return "None";
-    if (s.Daily) return `Daily ${s.Daily.hour}:${String(s.Daily.minute).padStart(2, "0")}`;
+    if (s.Daily) {
+      return `Daily ${s.Daily.hour}:${String(s.Daily.minute).padStart(2, "0")}`;
+    }
     if (s.Weekly) return `Weekly (day ${s.Weekly.day})`;
     if (s.Monthly) return `Monthly (day ${s.Monthly.day})`;
     if (s.Interval) return `Every ${s.Interval.seconds}s`;
@@ -41,10 +49,15 @@ export function formatSchedule(scheduleStr: string): string {
 }
 
 export function formatTrigger(triggerStr: string): string {
-  if (!triggerStr || triggerStr === "NoTrigger" || triggerStr === '"NoTrigger"')
+  if (
+    !triggerStr || triggerStr === "NoTrigger" || triggerStr === '"NoTrigger"'
+  ) {
     return "None";
+  }
   try {
-    const t = typeof triggerStr === "string" ? JSON.parse(triggerStr) : triggerStr;
+    const t = typeof triggerStr === "string"
+      ? JSON.parse(triggerStr)
+      : triggerStr;
     if (t === "NoTrigger") return "None";
     if (t.Webhook) return "Webhook";
     if (t.GitHub) return `GitHub (${t.GitHub.repo})`;

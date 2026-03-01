@@ -45,12 +45,11 @@ function StatusIndicator({ status }: { status: string }) {
       />
     );
   }
-  const color =
-    status === "ok"
-      ? "var(--color-status-ok)"
-      : status === "failed"
-        ? "var(--color-status-failed)"
-        : "var(--color-status-skipped)";
+  const color = status === "ok"
+    ? "var(--color-status-ok)"
+    : status === "failed"
+    ? "var(--color-status-failed)"
+    : "var(--color-status-skipped)";
   return (
     <span
       style={{
@@ -99,10 +98,9 @@ export function StepLogViewer({ stepTraces }: Props) {
           <div
             key={trace.id}
             style={{
-              borderBottom:
-                i < stepTraces.length - 1
-                  ? "1px solid var(--color-gray-200)"
-                  : "none",
+              borderBottom: i < stepTraces.length - 1
+                ? "1px solid var(--color-gray-200)"
+                : "none",
               opacity: isPending ? 0.45 : 1,
             }}
           >
@@ -111,7 +109,8 @@ export function StepLogViewer({ stepTraces }: Props) {
               onClick={() => hasLogs && toggleStep(trace.id)}
               style={{
                 display: "grid",
-                gridTemplateColumns: "var(--step-number-width) var(--step-name-width) var(--step-status-width) var(--step-duration-width) 1fr 24px",
+                gridTemplateColumns:
+                  "var(--step-number-width) var(--step-name-width) var(--step-status-width) var(--step-duration-width) 1fr 24px",
                 alignItems: "center",
                 gap: "var(--spacing-md)",
                 padding: "var(--step-row-padding) 0",
@@ -151,8 +150,8 @@ export function StepLogViewer({ stepTraces }: Props) {
                     color: isRunning
                       ? "var(--color-primary-light)"
                       : isPending
-                        ? "var(--color-gray-400)"
-                        : "var(--color-gray-600)",
+                      ? "var(--color-gray-400)"
+                      : "var(--color-gray-600)",
                     textTransform: "uppercase",
                     letterSpacing: "0.05em",
                     fontWeight: isRunning ? 600 : undefined,
@@ -171,29 +170,30 @@ export function StepLogViewer({ stepTraces }: Props) {
                 {isRunning
                   ? "..."
                   : isPending
-                    ? "-"
-                    : formatDuration(trace.duration_ms)}
+                  ? "-"
+                  : formatDuration(trace.duration_ms)}
               </span>
               <div>
                 {!isPending &&
                   !isRunning &&
                   trace.status !== "skipped" &&
                   trace.duration_ms > 0 && (
-                    <div
-                      style={{
-                        height: 6,
-                        borderRadius: 3,
-                        background:
-                          trace.status === "ok"
-                            ? "var(--color-status-ok)"
-                            : trace.status === "failed"
-                              ? "var(--color-status-failed)"
-                              : "var(--color-status-skipped)",
-                        width: `${Math.max(2, (trace.duration_ms / maxDuration) * 100)}%`,
-                        opacity: 0.7,
-                      }}
-                    />
-                  )}
+                  <div
+                    style={{
+                      height: 6,
+                      borderRadius: 3,
+                      background: trace.status === "ok"
+                        ? "var(--color-status-ok)"
+                        : trace.status === "failed"
+                        ? "var(--color-status-failed)"
+                        : "var(--color-status-skipped)",
+                      width: `${
+                        Math.max(2, (trace.duration_ms / maxDuration) * 100)
+                      }%`,
+                      opacity: 0.7,
+                    }}
+                  />
+                )}
                 {isRunning && (
                   <div
                     style={{

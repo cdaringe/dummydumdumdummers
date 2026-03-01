@@ -1,4 +1,4 @@
-import { test, expect } from "./fixtures";
+import { expect, test } from "./fixtures";
 
 test.describe("Run Detail", () => {
   test("loads run detail page for seeded run", async ({ page }) => {
@@ -21,7 +21,9 @@ test.describe("Run Detail", () => {
     await firstDetailLink.click();
 
     // Should show run metadata - look for in the summary card section
-    const summaryCard = page.locator("div").filter({ hasText: /Status.*Total Duration.*Started.*Finished/ });
+    const summaryCard = page.locator("div").filter({
+      hasText: /Status.*Total Duration.*Started.*Finished/,
+    });
     await expect(summaryCard.first()).toBeVisible({ timeout: 5000 });
   });
 
@@ -31,7 +33,8 @@ test.describe("Run Detail", () => {
     await firstDetailLink.click();
 
     // Should display a status badge - check in the summary card
-    const statusSection = page.locator("div").filter({ hasText: /Status/ }).first();
+    const statusSection = page.locator("div").filter({ hasText: /Status/ })
+      .first();
     await expect(statusSection).toBeVisible({ timeout: 5000 });
   });
 
@@ -50,9 +53,11 @@ test.describe("Run Detail", () => {
     await firstDetailLink.click();
 
     // Should have step traces with proper columns
-    const stepTraceRows = page.locator("text=Step Traces").first().locator("..").locator("div");
+    const stepTraceRows = page.locator("text=Step Traces").first().locator("..")
+      .locator("div");
     // At least one trace should exist (seeded data)
-    const traceElements = page.locator("[data-testid='step-trace'], div").filter({ hasText: /Step Traces/ });
+    const traceElements = page.locator("[data-testid='step-trace'], div")
+      .filter({ hasText: /Step Traces/ });
     await expect(traceElements.first()).toBeVisible({ timeout: 5000 });
   });
 
@@ -103,7 +108,9 @@ test.describe("Run Detail", () => {
       // Navigate to run detail and look for error messages
       await page.waitForTimeout(500);
       // Error messages would show in step traces if they exist
-      const errorElements = page.locator("div").filter({ hasText: /error|failed|Error|Failed/ });
+      const errorElements = page.locator("div").filter({
+        hasText: /error|failed|Error|Failed/,
+      });
       // May or may not have errors depending on seeded data
     }
   });
@@ -177,7 +184,8 @@ test.describe("Run Detail", () => {
     // Click to expand
     const firstStepRow = page.locator("[data-testid^='step-row-']").first();
     await firstStepRow.click();
-    await expect(page.locator("[data-testid^='step-log-']").first()).toBeVisible();
+    await expect(page.locator("[data-testid^='step-log-']").first())
+      .toBeVisible();
 
     // Click again to collapse
     await firstStepRow.click();

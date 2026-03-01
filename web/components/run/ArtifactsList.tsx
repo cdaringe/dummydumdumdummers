@@ -32,7 +32,9 @@ export function ArtifactsList({ runId }: Props) {
   }, [runId]);
 
   if (loading) {
-    return <div style={{ color: "var(--color-gray-500)" }}>Loading artifacts...</div>;
+    return (
+      <div style={{ color: "var(--color-gray-500)" }}>Loading artifacts...</div>
+    );
   }
 
   if (error) {
@@ -41,7 +43,13 @@ export function ArtifactsList({ runId }: Props) {
 
   if (artifacts.length === 0) {
     return (
-      <div style={{ color: "var(--color-gray-500)", textAlign: "center", padding: "var(--spacing-2xl)" }}>
+      <div
+        style={{
+          color: "var(--color-gray-500)",
+          textAlign: "center",
+          padding: "var(--spacing-2xl)",
+        }}
+      >
         No artifacts produced
       </div>
     );
@@ -58,8 +66,9 @@ export function ArtifactsList({ runId }: Props) {
             alignItems: "center",
             gap: "var(--spacing-md)",
             padding: "var(--spacing-md) 0",
-            borderBottom:
-              i < artifacts.length - 1 ? "1px solid var(--color-gray-200)" : "none",
+            borderBottom: i < artifacts.length - 1
+              ? "1px solid var(--color-gray-200)"
+              : "none",
           }}
         >
           <span

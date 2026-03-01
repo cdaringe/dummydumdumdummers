@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { GanttTimeline } from "@/components/run/GanttTimeline";
@@ -62,7 +62,7 @@ export function RunDetailClient({ run: initialRun, initialTraces }: Props) {
       setTraces((prev) => {
         // Remove any existing trace for this step, add running one
         const filtered = prev.filter(
-          (t) => t.step_name !== data.step_name
+          (t) => t.step_name !== data.step_name,
         );
         return [
           ...filtered,
@@ -83,7 +83,7 @@ export function RunDetailClient({ run: initialRun, initialTraces }: Props) {
       const data = JSON.parse(e.data);
       setTraces((prev) => {
         const filtered = prev.filter(
-          (t) => t.step_name !== data.step_name
+          (t) => t.step_name !== data.step_name,
         );
         return [
           ...filtered,
@@ -144,19 +144,22 @@ export function RunDetailClient({ run: initialRun, initialTraces }: Props) {
   });
 
   const completedTraces = allSteps.filter(
-    (t) => t.status === "ok" || t.status === "failed"
+    (t) => t.status === "ok" || t.status === "failed",
   );
-  const displayDuration =
-    durationMs ?? elapsedMs ?? completedTraces.reduce((s, t) => s + t.duration_ms, 0);
-  const timelineDuration =
-    durationMs ?? completedTraces.reduce((s, t) => s + t.duration_ms, 0);
+  const displayDuration = durationMs ?? elapsedMs ??
+    completedTraces.reduce((s, t) => s + t.duration_ms, 0);
+  const timelineDuration = durationMs ??
+    completedTraces.reduce((s, t) => s + t.duration_ms, 0);
 
   return (
     <div>
       <div style={{ marginBottom: "var(--spacing-sm)" }}>
         <Link
           href={`/pipelines/${initialRun.pipeline_name}/${initialRun.pipeline_version}`}
-          style={{ fontSize: "var(--font-size-base)", color: "var(--color-gray-600)" }}
+          style={{
+            fontSize: "var(--font-size-base)",
+            color: "var(--color-gray-600)",
+          }}
         >
           &larr; {initialRun.pipeline_name} v{initialRun.pipeline_version}
         </Link>
@@ -166,7 +169,11 @@ export function RunDetailClient({ run: initialRun, initialTraces }: Props) {
         <h1>
           Run{" "}
           <span
-            style={{ fontFamily: "monospace", fontSize: "var(--font-size-lg)", color: "var(--color-gray-600)" }}
+            style={{
+              fontFamily: "monospace",
+              fontSize: "var(--font-size-lg)",
+              color: "var(--color-gray-600)",
+            }}
           >
             {initialRun.id?.substring(0, 8)}...
           </span>
@@ -189,27 +196,47 @@ export function RunDetailClient({ run: initialRun, initialTraces }: Props) {
         }}
       >
         <div>
-          <div style={{ fontSize: "var(--font-size-sm)", color: "var(--color-gray-600)", marginBottom: "var(--spacing-xs)" }}>
+          <div
+            style={{
+              fontSize: "var(--font-size-sm)",
+              color: "var(--color-gray-600)",
+              marginBottom: "var(--spacing-xs)",
+            }}
+          >
             Status
           </div>
           <StatusBadge status={status} />
         </div>
         <div>
-          <div style={{ fontSize: "var(--font-size-sm)", color: "var(--color-gray-600)", marginBottom: "var(--spacing-xs)" }}>
+          <div
+            style={{
+              fontSize: "var(--font-size-sm)",
+              color: "var(--color-gray-600)",
+              marginBottom: "var(--spacing-xs)",
+            }}
+          >
             {status === "running" ? "Elapsed" : "Total Duration"}
           </div>
           <div
             style={{
               fontWeight: 600,
               fontFamily: "monospace",
-              color: status === "running" ? "var(--color-primary-light)" : undefined,
+              color: status === "running"
+                ? "var(--color-primary-light)"
+                : undefined,
             }}
           >
             {formatDuration(displayDuration)}
           </div>
         </div>
         <div>
-          <div style={{ fontSize: "var(--font-size-sm)", color: "var(--color-gray-600)", marginBottom: "var(--spacing-xs)" }}>
+          <div
+            style={{
+              fontSize: "var(--font-size-sm)",
+              color: "var(--color-gray-600)",
+              marginBottom: "var(--spacing-xs)",
+            }}
+          >
             Started
           </div>
           <div style={{ fontSize: "var(--font-size-base)" }}>
@@ -217,10 +244,18 @@ export function RunDetailClient({ run: initialRun, initialTraces }: Props) {
           </div>
         </div>
         <div>
-          <div style={{ fontSize: "var(--font-size-sm)", color: "var(--color-gray-600)", marginBottom: "var(--spacing-xs)" }}>
+          <div
+            style={{
+              fontSize: "var(--font-size-sm)",
+              color: "var(--color-gray-600)",
+              marginBottom: "var(--spacing-xs)",
+            }}
+          >
             Finished
           </div>
-          <div style={{ fontSize: "var(--font-size-base)" }}>{formatDate(finishedAt)}</div>
+          <div style={{ fontSize: "var(--font-size-base)" }}>
+            {formatDate(finishedAt)}
+          </div>
         </div>
       </div>
 
@@ -278,42 +313,51 @@ export function RunDetailClient({ run: initialRun, initialTraces }: Props) {
             alignItems: "center",
           }}
         >
-          <span>Step Traces ({allSteps.filter((t) => t.status !== "pending").length})</span>
-          {status === "running" ? (
-            <span
-              style={{
-                fontSize: "var(--font-size-xs)",
-                color: "var(--color-primary-light)",
-                fontWeight: 400,
-                animation: "pulse 2s infinite",
-              }}
-            >
-              executing...
-            </span>
-          ) : (
-            allSteps.some((t) => t.log_output) && (
+          <span>
+            Step Traces ({allSteps.filter((t) => t.status !== "pending")
+              .length})
+          </span>
+          {status === "running"
+            ? (
               <span
                 style={{
                   fontSize: "var(--font-size-xs)",
-                  color: "var(--color-gray-500)",
+                  color: "var(--color-primary-light)",
                   fontWeight: 400,
+                  animation: "pulse 2s infinite",
                 }}
               >
-                click a step to view logs
+                executing...
               </span>
             )
-          )}
+            : (
+              allSteps.some((t) => t.log_output) && (
+                <span
+                  style={{
+                    fontSize: "var(--font-size-xs)",
+                    color: "var(--color-gray-500)",
+                    fontWeight: 400,
+                  }}
+                >
+                  click a step to view logs
+                </span>
+              )
+            )}
         </div>
         <div style={{ padding: "var(--spacing-lg)" }}>
-          {allSteps.length === 0 ? (
-            <div
-              style={{ color: "var(--color-gray-500)", textAlign: "center", padding: "var(--spacing-2xl)" }}
-            >
-              No steps defined
-            </div>
-          ) : (
-            <StepLogViewer stepTraces={allSteps as any} />
-          )}
+          {allSteps.length === 0
+            ? (
+              <div
+                style={{
+                  color: "var(--color-gray-500)",
+                  textAlign: "center",
+                  padding: "var(--spacing-2xl)",
+                }}
+              >
+                No steps defined
+              </div>
+            )
+            : <StepLogViewer stepTraces={allSteps as any} />}
         </div>
       </div>
 

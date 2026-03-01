@@ -71,7 +71,7 @@ export function GanttTimeline({ stepTraces, totalDuration }: Props) {
           {stepsWithTiming.map((trace) => {
             const barWidth = Math.max(
               4,
-              trace.duration_ms * pixelsPerMs
+              trace.duration_ms * pixelsPerMs,
             );
             const offsetLeft = trace.startTime * pixelsPerMs;
 
@@ -102,9 +102,12 @@ export function GanttTimeline({ stepTraces, totalDuration }: Props) {
                     textOverflow: "ellipsis",
                     whiteSpace: "nowrap",
                     paddingRight: "var(--spacing-sm)",
-                    color: trace.status === "skipped" ? "var(--color-gray-500)" : "var(--color-gray-900)",
-                    textDecoration:
-                      trace.status === "skipped" ? "line-through" : "none",
+                    color: trace.status === "skipped"
+                      ? "var(--color-gray-500)"
+                      : "var(--color-gray-900)",
+                    textDecoration: trace.status === "skipped"
+                      ? "line-through"
+                      : "none",
                   }}
                   title={trace.step_name}
                 >
@@ -144,7 +147,9 @@ export function GanttTimeline({ stepTraces, totalDuration }: Props) {
                     onMouseLeave={(e) => {
                       e.currentTarget.style.opacity = "0.85";
                     }}
-                    title={`${trace.step_name}: ${formatDuration(trace.duration_ms)}`}
+                    title={`${trace.step_name}: ${
+                      formatDuration(trace.duration_ms)
+                    }`}
                   >
                     {barWidth > 50 && (
                       <span
@@ -192,7 +197,13 @@ export function GanttTimeline({ stepTraces, totalDuration }: Props) {
           borderTop: "1px solid var(--color-gray-300)",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "var(--spacing-sm)" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "var(--spacing-sm)",
+          }}
+        >
           <div
             style={{
               width: 12,
@@ -203,7 +214,13 @@ export function GanttTimeline({ stepTraces, totalDuration }: Props) {
           />
           <span>Success</span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "var(--spacing-sm)" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "var(--spacing-sm)",
+          }}
+        >
           <div
             style={{
               width: 12,
@@ -214,7 +231,13 @@ export function GanttTimeline({ stepTraces, totalDuration }: Props) {
           />
           <span>Failed</span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "var(--spacing-sm)" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "var(--spacing-sm)",
+          }}
+        >
           <div
             style={{
               width: 12,

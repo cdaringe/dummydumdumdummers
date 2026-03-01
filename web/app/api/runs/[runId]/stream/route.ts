@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { runEvents, type RunEvent } from "@/lib/run-events";
+import { type RunEvent, runEvents } from "@/lib/run-events";
 
 type Params = { params: Promise<{ runId: string }> };
 
@@ -23,7 +23,7 @@ export async function GET(req: Request, { params }: Params) {
     start(controller) {
       const send = (event: string, data: unknown) => {
         controller.enqueue(
-          encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)
+          encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`),
         );
       };
 

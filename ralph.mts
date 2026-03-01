@@ -181,7 +181,9 @@ const buildCommandSpec = ({ agent, model, prompt }: {
   agent === "claude"
     ? {
         command: "claude",
-        args: ["--dangerously-skip-permissions", "--model", model, "-p", prompt],
+        args: ["--dangerously-skip-permissions", "--model", model,
+          //  "-p",
+           prompt],
       }
     : {
         command: "codex",
@@ -295,6 +297,7 @@ const runIteration = async ({ iterationNum, agent, signal, log, validationFailur
   try {
     const child = new Deno.Command(spec.command, {
       args: spec.args,
+      stdin: "null",
       stdout: "piped",
       stderr: "piped",
       signal: combinedSignal,

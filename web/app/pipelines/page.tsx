@@ -93,27 +93,50 @@ export default async function PipelinesPage() {
                     </div>
                   )}
                 </td>
-                <td style={{ color: "var(--color-gray-600)" }}>{p.steps.length}</td>
-                <td style={{ fontSize: "var(--font-size-sm)", color: "var(--color-gray-600)" }}>
+                <td style={{ color: "var(--color-gray-600)" }}>
+                  {p.steps.length}
+                </td>
+                <td
+                  style={{
+                    fontSize: "var(--font-size-sm)",
+                    color: "var(--color-gray-600)",
+                  }}
+                >
                   {formatSchedule(p.schedule)}
                 </td>
-                <td style={{ fontSize: "var(--font-size-sm)", color: "var(--color-gray-600)" }}>
+                <td
+                  style={{
+                    fontSize: "var(--font-size-sm)",
+                    color: "var(--color-gray-600)",
+                  }}
+                >
                   {formatTrigger(p.trigger)}
                 </td>
                 <td>
-                  {p.last_run ? (
-                    <StatusBadge status={p.last_run.status} />
-                  ) : (
-                    <span style={{ color: "var(--color-gray-500)", fontSize: "var(--font-size-sm)" }}>
-                      Never
-                    </span>
-                  )}
+                  {p.last_run
+                    ? <StatusBadge status={p.last_run.status} />
+                    : (
+                      <span
+                        style={{
+                          color: "var(--color-gray-500)",
+                          fontSize: "var(--font-size-sm)",
+                        }}
+                      >
+                        Never
+                      </span>
+                    )}
                 </td>
                 <td>
                   <DurationBadge ms={p.last_run?.duration_ms} />
                 </td>
                 <td>
-                  <div style={{ display: "flex", gap: "var(--spacing-sm)", alignItems: "center" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "var(--spacing-sm)",
+                      alignItems: "center",
+                    }}
+                  >
                     <Link
                       href={`/pipelines/${p.name}/${p.version}`}
                       className="btn btn-sm"

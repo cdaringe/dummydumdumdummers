@@ -1,5 +1,5 @@
 import Database from "better-sqlite3";
-import { join, dirname } from "path";
+import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 import { seedFixtures } from "../lib/seed-fixtures";
 import { getConfig } from "../lib/config";

@@ -14,7 +14,9 @@ export async function GET(req: NextRequest, { params }: Props) {
       .executeTakeFirst();
 
     if (!artifact) {
-      return NextResponse.json({ error: "Artifact not found" }, { status: 404 });
+      return NextResponse.json({ error: "Artifact not found" }, {
+        status: 404,
+      });
     }
 
     // Return as downloadable file
@@ -27,7 +29,7 @@ export async function GET(req: NextRequest, { params }: Props) {
   } catch (error) {
     return NextResponse.json(
       { error: "Failed to fetch artifact" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

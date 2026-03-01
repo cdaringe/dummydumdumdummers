@@ -6,7 +6,11 @@ import { DurationBadge } from "@/components/ui/DurationBadge";
 import { PipelineDag } from "@/components/pipeline/PipelineDag";
 import { buildDagGraph } from "@/lib/dag";
 import { formatDate, formatSchedule, formatTrigger } from "@/lib/format";
-import type { StepDefinition, ScheduleConfig, TriggerConfig } from "@/lib/types";
+import type {
+  ScheduleConfig,
+  StepDefinition,
+  TriggerConfig,
+} from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -62,24 +66,40 @@ export default async function PipelineDetailPage({ params }: Props) {
   return (
     <div>
       <div style={{ marginBottom: "var(--spacing-sm)" }}>
-        <Link href="/pipelines" style={{ fontSize: "var(--font-size-base)", color: "var(--color-gray-600)" }}>
+        <Link
+          href="/pipelines"
+          style={{
+            fontSize: "var(--font-size-base)",
+            color: "var(--color-gray-600)",
+          }}
+        >
           ← Pipelines
         </Link>
       </div>
 
       <div
         className="page-header"
-        style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+        }}
       >
         <div>
           <h1>{name}</h1>
           <p>
             v{version} &nbsp;·&nbsp; {steps.length} steps &nbsp;·&nbsp;{" "}
-            {formatSchedule(JSON.stringify(schedule))} &nbsp;·&nbsp; Trigger:{" "}
+            {formatSchedule(JSON.stringify(schedule))} &nbsp;·&nbsp; Trigger:
+            {" "}
             {formatTrigger(JSON.stringify(trigger))}
           </p>
           {pipeline.description && (
-            <p style={{ marginTop: "var(--spacing-xs)", color: "var(--color-gray-800)" }}>
+            <p
+              style={{
+                marginTop: "var(--spacing-xs)",
+                color: "var(--color-gray-800)",
+              }}
+            >
               {pipeline.description}
             </p>
           )}
@@ -95,7 +115,13 @@ export default async function PipelineDetailPage({ params }: Props) {
       </div>
 
       {/* DAG Visualization */}
-      <div className="card" style={{ marginBottom: "var(--spacing-xl)", padding: "var(--spacing-lg)" }}>
+      <div
+        className="card"
+        style={{
+          marginBottom: "var(--spacing-xl)",
+          padding: "var(--spacing-lg)",
+        }}
+      >
         <div
           style={{
             fontWeight: 600,
@@ -117,14 +143,27 @@ export default async function PipelineDetailPage({ params }: Props) {
           }}
         >
           {(["ok", "failed", "skipped", "pending"] as const).map((s) => (
-            <span key={s} style={{ display: "flex", alignItems: "center", gap: "var(--spacing-xs)" }}>
+            <span
+              key={s}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "var(--spacing-xs)",
+              }}
+            >
               <span
                 style={{
                   display: "inline-block",
                   width: 8,
                   height: 8,
                   borderRadius: "50%",
-                  background: s === "ok" ? "var(--color-primary)" : s === "failed" ? "var(--color-gray-800)" : s === "skipped" ? "var(--color-gray-500)" : "var(--color-gray-400)",
+                  background: s === "ok"
+                    ? "var(--color-primary)"
+                    : s === "failed"
+                    ? "var(--color-gray-800)"
+                    : s === "skipped"
+                    ? "var(--color-gray-500)"
+                    : "var(--color-gray-400)",
                 }}
               />
               {s}
@@ -158,21 +197,37 @@ export default async function PipelineDetailPage({ params }: Props) {
           <tbody>
             {steps.map((step, i) => (
               <tr key={step.name}>
-                <td style={{ color: "var(--color-gray-500)", width: 40 }}>{i + 1}</td>
+                <td style={{ color: "var(--color-gray-500)", width: 40 }}>
+                  {i + 1}
+                </td>
                 <td style={{ fontWeight: 500, fontFamily: "monospace" }}>
                   {step.name}
                 </td>
                 <td>
                   <DurationBadge ms={step.timeout_ms} />
                 </td>
-                <td style={{ fontSize: "var(--font-size-sm)", color: "var(--color-gray-600)" }}>
+                <td
+                  style={{
+                    fontSize: "var(--font-size-sm)",
+                    color: "var(--color-gray-600)",
+                  }}
+                >
                   {step.depends_on.length > 0
                     ? step.depends_on.join(", ")
                     : "—"}
                 </td>
-                <td style={{ fontSize: "var(--font-size-sm)", color: "var(--color-gray-600)" }}>
+                <td
+                  style={{
+                    fontSize: "var(--font-size-sm)",
+                    color: "var(--color-gray-600)",
+                  }}
+                >
                   {step.loop
-                    ? `${step.loop.type}(${"count" in step.loop ? step.loop.count : step.loop.max_attempts})`
+                    ? `${step.loop.type}(${
+                      "count" in step.loop
+                        ? step.loop.count
+                        : step.loop.max_attempts
+                    })`
                     : "—"}
                 </td>
               </tr>
@@ -205,54 +260,69 @@ export default async function PipelineDetailPage({ params }: Props) {
             </tr>
           </thead>
           <tbody>
-            {recentRuns.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={6}
-                  style={{
-                    textAlign: "center",
-                    color: "var(--color-gray-500)",
-                    padding: "var(--spacing-2xl)",
-                  }}
-                >
-                  No runs yet
-                </td>
-              </tr>
-            ) : (
-              recentRuns.map((run) => (
-                <tr key={run.id}>
+            {recentRuns.length === 0
+              ? (
+                <tr>
                   <td
+                    colSpan={6}
                     style={{
-                      fontFamily: "monospace",
-                      fontSize: "var(--font-size-sm)",
-                      color: "var(--color-gray-600)",
+                      textAlign: "center",
+                      color: "var(--color-gray-500)",
+                      padding: "var(--spacing-2xl)",
                     }}
                   >
-                    {run.id?.substring(0, 8)}...
-                  </td>
-                  <td>
-                    <StatusBadge status={run.status} />
-                  </td>
-                  <td>
-                    <DurationBadge ms={run.duration_ms} />
-                  </td>
-                  <td style={{ fontSize: "var(--font-size-sm)", color: "var(--color-gray-600)" }}>
-                    {run.trigger_type}
-                  </td>
-                  <td style={{ fontSize: "var(--font-size-sm)", color: "var(--color-gray-600)" }}>
-                    {formatDate(run.started_at)}
-                  </td>
-                  <td>
-                    <Link
-                      href={`/runs/${run.id}`}
-                      style={{ fontSize: "var(--font-size-sm)", color: "var(--color-primary)" }}
-                    >
-                      Details →
-                    </Link>
+                    No runs yet
                   </td>
                 </tr>
-              ))
-            )}
+              )
+              : (
+                recentRuns.map((run) => (
+                  <tr key={run.id}>
+                    <td
+                      style={{
+                        fontFamily: "monospace",
+                        fontSize: "var(--font-size-sm)",
+                        color: "var(--color-gray-600)",
+                      }}
+                    >
+                      {run.id?.substring(0, 8)}...
+                    </td>
+                    <td>
+                      <StatusBadge status={run.status} />
+                    </td>
+                    <td>
+                      <DurationBadge ms={run.duration_ms} />
+                    </td>
+                    <td
+                      style={{
+                        fontSize: "var(--font-size-sm)",
+                        color: "var(--color-gray-600)",
+                      }}
+                    >
+                      {run.trigger_type}
+                    </td>
+                    <td
+                      style={{
+                        fontSize: "var(--font-size-sm)",
+                        color: "var(--color-gray-600)",
+                      }}
+                    >
+                      {formatDate(run.started_at)}
+                    </td>
+                    <td>
+                      <Link
+                        href={`/runs/${run.id}`}
+                        style={{
+                          fontSize: "var(--font-size-sm)",
+                          color: "var(--color-primary)",
+                        }}
+                      >
+                        Details →
+                      </Link>
+                    </td>
+                  </tr>
+                ))
+              )}
           </tbody>
         </table>
       </div>

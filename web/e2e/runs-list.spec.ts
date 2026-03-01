@@ -1,4 +1,4 @@
-import { test, expect } from "./fixtures";
+import { expect, test } from "./fixtures";
 
 test.describe("Runs List", () => {
   test("loads and shows runs table", async ({ page }) => {
@@ -9,11 +9,16 @@ test.describe("Runs List", () => {
 
   test("shows runs with proper columns", async ({ page }) => {
     await page.goto("/runs");
-    await expect(page.getByRole("columnheader", { name: "Run ID" })).toBeVisible();
-    await expect(page.getByRole("columnheader", { name: "Pipeline" })).toBeVisible();
-    await expect(page.getByRole("columnheader", { name: "Status" })).toBeVisible();
-    await expect(page.getByRole("columnheader", { name: "Duration" })).toBeVisible();
-    await expect(page.getByRole("columnheader", { name: "Started" })).toBeVisible();
+    await expect(page.getByRole("columnheader", { name: "Run ID" }))
+      .toBeVisible();
+    await expect(page.getByRole("columnheader", { name: "Pipeline" }))
+      .toBeVisible();
+    await expect(page.getByRole("columnheader", { name: "Status" }))
+      .toBeVisible();
+    await expect(page.getByRole("columnheader", { name: "Duration" }))
+      .toBeVisible();
+    await expect(page.getByRole("columnheader", { name: "Started" }))
+      .toBeVisible();
   });
 
   test("displays seeded runs in the table", async ({ page }) => {
@@ -26,7 +31,9 @@ test.describe("Runs List", () => {
   test("shows status badges for runs", async ({ page }) => {
     await page.goto("/runs");
     // Should show at least one status badge
-    const badges = page.locator("table tbody tr td").filter({ hasText: /Success|Failed|Running/ });
+    const badges = page.locator("table tbody tr td").filter({
+      hasText: /Success|Failed|Running/,
+    });
     const count = await badges.count();
     expect(count).toBeGreaterThan(0);
   });
@@ -92,7 +99,9 @@ test.describe("Runs List", () => {
 
     // Check if clear link exists (it should when filters are applied)
     const clearLink = page.locator("a", { hasText: "Clear filters" });
-    const isVisible = await clearLink.isVisible({ timeout: 2000 }).catch(() => false);
+    const isVisible = await clearLink.isVisible({ timeout: 2000 }).catch(() =>
+      false
+    );
 
     // Test passes if clear link is present (feature is implemented)
     if (isVisible) {

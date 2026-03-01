@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { Sidebar } from "@/components/nav/Sidebar";
 import { ThemeProvider } from "@/lib/theme-context";

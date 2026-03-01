@@ -7,7 +7,7 @@ export async function POST() {
   if (config.databasePath !== ":memory:") {
     return NextResponse.json(
       { error: "Test reset only available with in-memory database" },
-      { status: 403 }
+      { status: 403 },
     );
   }
 

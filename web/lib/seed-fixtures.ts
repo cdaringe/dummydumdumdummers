@@ -19,7 +19,7 @@ export function seedFixturesIfEmpty(db: Database.Database) {
 function generateStepLog(
   stepName: string,
   status: string,
-  durationMs: number
+  durationMs: number,
 ): string {
   const ts = new Date().toISOString().replace("T", " ").substring(0, 19);
   const lines: string[] = [];
@@ -34,7 +34,7 @@ function generateStepLog(
     lines.push("[ERROR] Step failed with exit code 1");
   } else {
     lines.push(
-      `[${ts}] Step ${stepName} completed successfully (${durationMs}ms)`
+      `[${ts}] Step ${stepName} completed successfully (${durationMs}ms)`,
     );
   }
   return lines.join("\n");
@@ -72,14 +72,43 @@ const pipelines: PipelineFixture[] = [
       { name: "lint", timeout_ms: 30000, depends_on: ["install-deps"] },
       { name: "compile", timeout_ms: 60000, depends_on: ["install-deps"] },
       { name: "unit_tests", timeout_ms: 120000, depends_on: ["compile"] },
-      { name: "package", timeout_ms: 30000, depends_on: ["lint", "unit_tests"] },
+      {
+        name: "package",
+        timeout_ms: 30000,
+        depends_on: ["lint", "unit_tests"],
+      },
     ],
     runs: [
-      { status: "success", trigger_type: "manual", duration_ms: 12500, daysAgo: 0 },
-      { status: "success", trigger_type: "webhook", duration_ms: 13200, daysAgo: 1 },
-      { status: "failed", trigger_type: "manual", duration_ms: 8400, daysAgo: 2 },
-      { status: "success", trigger_type: "schedule", duration_ms: 11800, daysAgo: 3 },
-      { status: "success", trigger_type: "manual", duration_ms: 12100, daysAgo: 5 },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 12500,
+        daysAgo: 0,
+      },
+      {
+        status: "success",
+        trigger_type: "webhook",
+        duration_ms: 13200,
+        daysAgo: 1,
+      },
+      {
+        status: "failed",
+        trigger_type: "manual",
+        duration_ms: 8400,
+        daysAgo: 2,
+      },
+      {
+        status: "success",
+        trigger_type: "schedule",
+        duration_ms: 11800,
+        daysAgo: 3,
+      },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 12100,
+        daysAgo: 5,
+      },
     ],
     artifacts: [
       { name: "dist.tar.gz", content: "typescript build output" },
@@ -97,9 +126,24 @@ const pipelines: PipelineFixture[] = [
       { name: "cargo-clippy", timeout_ms: 60000, depends_on: ["cargo-check"] },
     ],
     runs: [
-      { status: "success", trigger_type: "manual", duration_ms: 45000, daysAgo: 0 },
-      { status: "success", trigger_type: "webhook", duration_ms: 47500, daysAgo: 1 },
-      { status: "success", trigger_type: "manual", duration_ms: 43200, daysAgo: 4 },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 45000,
+        daysAgo: 0,
+      },
+      {
+        status: "success",
+        trigger_type: "webhook",
+        duration_ms: 47500,
+        daysAgo: 1,
+      },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 43200,
+        daysAgo: 4,
+      },
     ],
     artifacts: [
       { name: "librust.so", content: "rust binary output" },
@@ -116,10 +160,30 @@ const pipelines: PipelineFixture[] = [
     ],
     schedule: { Daily: { hour: 3, minute: 0 } },
     runs: [
-      { status: "success", trigger_type: "schedule", duration_ms: 8200, daysAgo: 0 },
-      { status: "failed", trigger_type: "schedule", duration_ms: 5100, daysAgo: 1 },
-      { status: "success", trigger_type: "manual", duration_ms: 7800, daysAgo: 2 },
-      { status: "success", trigger_type: "schedule", duration_ms: 8500, daysAgo: 3 },
+      {
+        status: "success",
+        trigger_type: "schedule",
+        duration_ms: 8200,
+        daysAgo: 0,
+      },
+      {
+        status: "failed",
+        trigger_type: "schedule",
+        duration_ms: 5100,
+        daysAgo: 1,
+      },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 7800,
+        daysAgo: 2,
+      },
+      {
+        status: "success",
+        trigger_type: "schedule",
+        duration_ms: 8500,
+        daysAgo: 3,
+      },
     ],
     artifacts: [
       { name: "go-binary", content: "go build output" },
@@ -137,25 +201,55 @@ const pipelines: PipelineFixture[] = [
     ],
     trigger: { Webhook: { url: "/hooks/deploy" } },
     runs: [
-      { status: "success", trigger_type: "webhook", duration_ms: 95000, daysAgo: 0 },
-      { status: "success", trigger_type: "webhook", duration_ms: 88000, daysAgo: 2 },
-      { status: "failed", trigger_type: "manual", duration_ms: 42000, daysAgo: 5 },
+      {
+        status: "success",
+        trigger_type: "webhook",
+        duration_ms: 95000,
+        daysAgo: 0,
+      },
+      {
+        status: "success",
+        trigger_type: "webhook",
+        duration_ms: 88000,
+        daysAgo: 2,
+      },
+      {
+        status: "failed",
+        trigger_type: "manual",
+        duration_ms: 42000,
+        daysAgo: 5,
+      },
     ],
   },
   {
     name: "parallel_build",
     version: "1.0.0",
-    description: "Parallel multi-platform build demonstrating DAG fan-out/fan-in",
+    description:
+      "Parallel multi-platform build demonstrating DAG fan-out/fan-in",
     steps: [
       { name: "setup", timeout_ms: 20000, depends_on: [] },
       { name: "build-frontend", timeout_ms: 90000, depends_on: ["setup"] },
       { name: "build-backend", timeout_ms: 120000, depends_on: ["setup"] },
-      { name: "run-tests", timeout_ms: 180000, depends_on: ["build-frontend", "build-backend"] },
+      {
+        name: "run-tests",
+        timeout_ms: 180000,
+        depends_on: ["build-frontend", "build-backend"],
+      },
       { name: "deploy", timeout_ms: 60000, depends_on: ["run-tests"] },
     ],
     runs: [
-      { status: "success", trigger_type: "manual", duration_ms: 220000, daysAgo: 0 },
-      { status: "success", trigger_type: "webhook", duration_ms: 215000, daysAgo: 1 },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 220000,
+        daysAgo: 0,
+      },
+      {
+        status: "success",
+        trigger_type: "webhook",
+        duration_ms: 215000,
+        daysAgo: 1,
+      },
     ],
   },
   {
@@ -169,8 +263,18 @@ const pipelines: PipelineFixture[] = [
     ],
     schedule: { Daily: { hour: 6, minute: 0 } },
     runs: [
-      { status: "success", trigger_type: "schedule", duration_ms: 9800, daysAgo: 0 },
-      { status: "success", trigger_type: "manual", duration_ms: 10200, daysAgo: 1 },
+      {
+        status: "success",
+        trigger_type: "schedule",
+        duration_ms: 9800,
+        daysAgo: 0,
+      },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 10200,
+        daysAgo: 1,
+      },
     ],
   },
   {
@@ -184,8 +288,18 @@ const pipelines: PipelineFixture[] = [
       { name: "publish", timeout_ms: 45000, depends_on: ["package"] },
     ],
     runs: [
-      { status: "success", trigger_type: "webhook", duration_ms: 320000, daysAgo: 0 },
-      { status: "failed", trigger_type: "webhook", duration_ms: 180000, daysAgo: 2 },
+      {
+        status: "success",
+        trigger_type: "webhook",
+        duration_ms: 320000,
+        daysAgo: 0,
+      },
+      {
+        status: "failed",
+        trigger_type: "webhook",
+        duration_ms: 180000,
+        daysAgo: 2,
+      },
     ],
   },
   {
@@ -198,9 +312,24 @@ const pipelines: PipelineFixture[] = [
       { name: "lint", timeout_ms: 30000, depends_on: ["install"] },
     ],
     runs: [
-      { status: "success", trigger_type: "webhook", duration_ms: 15000, daysAgo: 0 },
-      { status: "success", trigger_type: "webhook", duration_ms: 14500, daysAgo: 1 },
-      { status: "success", trigger_type: "webhook", duration_ms: 16200, daysAgo: 2 },
+      {
+        status: "success",
+        trigger_type: "webhook",
+        duration_ms: 15000,
+        daysAgo: 0,
+      },
+      {
+        status: "success",
+        trigger_type: "webhook",
+        duration_ms: 14500,
+        daysAgo: 1,
+      },
+      {
+        status: "success",
+        trigger_type: "webhook",
+        duration_ms: 16200,
+        daysAgo: 2,
+      },
     ],
   },
   {
@@ -214,8 +343,18 @@ const pipelines: PipelineFixture[] = [
     ],
     trigger: { Webhook: { url: "/hooks/docker" } },
     runs: [
-      { status: "success", trigger_type: "webhook", duration_ms: 48000, daysAgo: 0 },
-      { status: "success", trigger_type: "webhook", duration_ms: 52000, daysAgo: 3 },
+      {
+        status: "success",
+        trigger_type: "webhook",
+        duration_ms: 48000,
+        daysAgo: 0,
+      },
+      {
+        status: "success",
+        trigger_type: "webhook",
+        duration_ms: 52000,
+        daysAgo: 3,
+      },
     ],
   },
   {
@@ -229,8 +368,18 @@ const pipelines: PipelineFixture[] = [
     ],
     schedule: { Daily: { hour: 2, minute: 30 } },
     runs: [
-      { status: "success", trigger_type: "schedule", duration_ms: 520000, daysAgo: 0 },
-      { status: "failed", trigger_type: "schedule", duration_ms: 310000, daysAgo: 1 },
+      {
+        status: "success",
+        trigger_type: "schedule",
+        duration_ms: 520000,
+        daysAgo: 0,
+      },
+      {
+        status: "failed",
+        trigger_type: "schedule",
+        duration_ms: 310000,
+        daysAgo: 1,
+      },
     ],
   },
   {
@@ -246,8 +395,18 @@ const pipelines: PipelineFixture[] = [
     ],
     trigger: { Webhook: { url: "/hooks/production" } },
     runs: [
-      { status: "success", trigger_type: "webhook", duration_ms: 340000, daysAgo: 0 },
-      { status: "success", trigger_type: "manual", duration_ms: 360000, daysAgo: 7 },
+      {
+        status: "success",
+        trigger_type: "webhook",
+        duration_ms: 340000,
+        daysAgo: 0,
+      },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 360000,
+        daysAgo: 7,
+      },
     ],
   },
   {
@@ -262,8 +421,18 @@ const pipelines: PipelineFixture[] = [
     ],
     schedule: { Daily: { hour: 1, minute: 0 } },
     runs: [
-      { status: "success", trigger_type: "schedule", duration_ms: 1100000, daysAgo: 0 },
-      { status: "success", trigger_type: "schedule", duration_ms: 980000, daysAgo: 1 },
+      {
+        status: "success",
+        trigger_type: "schedule",
+        duration_ms: 1100000,
+        daysAgo: 0,
+      },
+      {
+        status: "success",
+        trigger_type: "schedule",
+        duration_ms: 980000,
+        daysAgo: 1,
+      },
     ],
   },
   {
@@ -277,8 +446,18 @@ const pipelines: PipelineFixture[] = [
     ],
     schedule: { Daily: { hour: 4, minute: 0 } },
     runs: [
-      { status: "success", trigger_type: "schedule", duration_ms: 720000, daysAgo: 0 },
-      { status: "success", trigger_type: "schedule", duration_ms: 680000, daysAgo: 1 },
+      {
+        status: "success",
+        trigger_type: "schedule",
+        duration_ms: 720000,
+        daysAgo: 0,
+      },
+      {
+        status: "success",
+        trigger_type: "schedule",
+        duration_ms: 680000,
+        daysAgo: 1,
+      },
     ],
   },
   {
@@ -292,7 +471,12 @@ const pipelines: PipelineFixture[] = [
     ],
     schedule: { Daily: { hour: 3, minute: 30 } },
     runs: [
-      { status: "success", trigger_type: "schedule", duration_ms: 980000, daysAgo: 0 },
+      {
+        status: "success",
+        trigger_type: "schedule",
+        duration_ms: 980000,
+        daysAgo: 0,
+      },
     ],
   },
   {
@@ -305,8 +489,18 @@ const pipelines: PipelineFixture[] = [
       { name: "teardown", timeout_ms: 30000, depends_on: ["run"] },
     ],
     runs: [
-      { status: "success", trigger_type: "webhook", duration_ms: 280000, daysAgo: 0 },
-      { status: "failed", trigger_type: "webhook", duration_ms: 145000, daysAgo: 1 },
+      {
+        status: "success",
+        trigger_type: "webhook",
+        duration_ms: 280000,
+        daysAgo: 0,
+      },
+      {
+        status: "failed",
+        trigger_type: "webhook",
+        duration_ms: 145000,
+        daysAgo: 1,
+      },
     ],
   },
   {
@@ -321,8 +515,18 @@ const pipelines: PipelineFixture[] = [
     ],
     trigger: { Webhook: { url: "/hooks/release" } },
     runs: [
-      { status: "success", trigger_type: "webhook", duration_ms: 185000, daysAgo: 0 },
-      { status: "success", trigger_type: "manual", duration_ms: 190000, daysAgo: 14 },
+      {
+        status: "success",
+        trigger_type: "webhook",
+        duration_ms: 185000,
+        daysAgo: 0,
+      },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 190000,
+        daysAgo: 14,
+      },
     ],
   },
   {
@@ -335,8 +539,18 @@ const pipelines: PipelineFixture[] = [
       { name: "verify", timeout_ms: 60000, depends_on: ["run"] },
     ],
     runs: [
-      { status: "success", trigger_type: "manual", duration_ms: 95000, daysAgo: 0 },
-      { status: "success", trigger_type: "manual", duration_ms: 88000, daysAgo: 7 },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 95000,
+        daysAgo: 0,
+      },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 88000,
+        daysAgo: 7,
+      },
     ],
   },
   {
@@ -350,9 +564,24 @@ const pipelines: PipelineFixture[] = [
       { name: "deploy", timeout_ms: 45000, depends_on: ["build", "lint"] },
     ],
     runs: [
-      { status: "success", trigger_type: "webhook", duration_ms: 145000, daysAgo: 0 },
-      { status: "success", trigger_type: "webhook", duration_ms: 138000, daysAgo: 1 },
-      { status: "failed", trigger_type: "webhook", duration_ms: 78000, daysAgo: 3 },
+      {
+        status: "success",
+        trigger_type: "webhook",
+        duration_ms: 145000,
+        daysAgo: 0,
+      },
+      {
+        status: "success",
+        trigger_type: "webhook",
+        duration_ms: 138000,
+        daysAgo: 1,
+      },
+      {
+        status: "failed",
+        trigger_type: "webhook",
+        duration_ms: 78000,
+        daysAgo: 3,
+      },
     ],
   },
   {
@@ -366,7 +595,12 @@ const pipelines: PipelineFixture[] = [
       { name: "notify", timeout_ms: 10000, depends_on: ["verify"] },
     ],
     runs: [
-      { status: "success", trigger_type: "manual", duration_ms: 385000, daysAgo: 0 },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 385000,
+        daysAgo: 0,
+      },
     ],
   },
   {
@@ -381,8 +615,18 @@ const pipelines: PipelineFixture[] = [
     ],
     schedule: { Daily: { hour: 0, minute: 0 } },
     runs: [
-      { status: "success", trigger_type: "schedule", duration_ms: 4200000, daysAgo: 0 },
-      { status: "success", trigger_type: "schedule", duration_ms: 4350000, daysAgo: 1 },
+      {
+        status: "success",
+        trigger_type: "schedule",
+        duration_ms: 4200000,
+        daysAgo: 0,
+      },
+      {
+        status: "success",
+        trigger_type: "schedule",
+        duration_ms: 4350000,
+        daysAgo: 1,
+      },
     ],
     artifacts: [
       { name: "model.pkl", content: "trained model weights" },
@@ -400,8 +644,18 @@ const pipelines: PipelineFixture[] = [
     ],
     schedule: { Daily: { hour: 8, minute: 0 } },
     runs: [
-      { status: "success", trigger_type: "schedule", duration_ms: 245000, daysAgo: 0 },
-      { status: "success", trigger_type: "schedule", duration_ms: 232000, daysAgo: 1 },
+      {
+        status: "success",
+        trigger_type: "schedule",
+        duration_ms: 245000,
+        daysAgo: 0,
+      },
+      {
+        status: "success",
+        trigger_type: "schedule",
+        duration_ms: 232000,
+        daysAgo: 1,
+      },
     ],
   },
   {
@@ -412,14 +666,33 @@ const pipelines: PipelineFixture[] = [
       { name: "checkout", timeout_ms: 15000, depends_on: [] },
       { name: "build", timeout_ms: 180000, depends_on: ["checkout"] },
       { name: "unit-test", timeout_ms: 120000, depends_on: ["build"] },
-      { name: "integration-test", timeout_ms: 300000, depends_on: ["unit-test"] },
+      {
+        name: "integration-test",
+        timeout_ms: 300000,
+        depends_on: ["unit-test"],
+      },
       { name: "report", timeout_ms: 30000, depends_on: ["integration-test"] },
     ],
     schedule: { Daily: { hour: 23, minute: 0 } },
     runs: [
-      { status: "success", trigger_type: "schedule", duration_ms: 520000, daysAgo: 0 },
-      { status: "failed", trigger_type: "schedule", duration_ms: 410000, daysAgo: 1 },
-      { status: "success", trigger_type: "schedule", duration_ms: 510000, daysAgo: 2 },
+      {
+        status: "success",
+        trigger_type: "schedule",
+        duration_ms: 520000,
+        daysAgo: 0,
+      },
+      {
+        status: "failed",
+        trigger_type: "schedule",
+        duration_ms: 410000,
+        daysAgo: 1,
+      },
+      {
+        status: "success",
+        trigger_type: "schedule",
+        duration_ms: 510000,
+        daysAgo: 2,
+      },
     ],
   },
   {
@@ -432,8 +705,18 @@ const pipelines: PipelineFixture[] = [
       { name: "cleanup", timeout_ms: 15000, depends_on: ["test"] },
     ],
     runs: [
-      { status: "success", trigger_type: "webhook", duration_ms: 185000, daysAgo: 0 },
-      { status: "success", trigger_type: "webhook", duration_ms: 192000, daysAgo: 1 },
+      {
+        status: "success",
+        trigger_type: "webhook",
+        duration_ms: 185000,
+        daysAgo: 0,
+      },
+      {
+        status: "success",
+        trigger_type: "webhook",
+        duration_ms: 192000,
+        daysAgo: 1,
+      },
     ],
   },
   {
@@ -447,8 +730,18 @@ const pipelines: PipelineFixture[] = [
       { name: "distribute", timeout_ms: 120000, depends_on: ["sign"] },
     ],
     runs: [
-      { status: "success", trigger_type: "manual", duration_ms: 720000, daysAgo: 0 },
-      { status: "success", trigger_type: "webhook", duration_ms: 680000, daysAgo: 3 },
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 720000,
+        daysAgo: 0,
+      },
+      {
+        status: "success",
+        trigger_type: "webhook",
+        duration_ms: 680000,
+        daysAgo: 3,
+      },
     ],
     artifacts: [
       { name: "app.ipa", content: "iOS app bundle" },
@@ -476,19 +769,19 @@ export function seedFixtures(db: Database.Database) {
   let artifactCounter = 0;
 
   const insertPipeline = db.prepare(
-    `INSERT INTO pipeline_definitions (id, name, version, description, schedule, trigger, steps) VALUES (?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO pipeline_definitions (id, name, version, description, schedule, trigger, steps) VALUES (?, ?, ?, ?, ?, ?, ?)`,
   );
 
   const insertRun = db.prepare(
-    `INSERT INTO pipeline_runs (id, pipeline_id, status, trigger_type, started_at, finished_at, duration_ms) VALUES (?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO pipeline_runs (id, pipeline_id, status, trigger_type, started_at, finished_at, duration_ms) VALUES (?, ?, ?, ?, ?, ?, ?)`,
   );
 
   const insertTrace = db.prepare(
-    `INSERT INTO step_traces (id, run_id, step_name, status, duration_ms, error_msg, log_output, sequence) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO step_traces (id, run_id, step_name, status, duration_ms, error_msg, log_output, sequence) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
   );
 
   const insertArtifact = db.prepare(
-    `INSERT INTO artifacts (id, run_id, name, content) VALUES (?, ?, ?, ?)`
+    `INSERT INTO artifacts (id, run_id, name, content) VALUES (?, ?, ?, ?)`,
   );
 
   for (const p of pipelines) {
@@ -501,16 +794,16 @@ export function seedFixtures(db: Database.Database) {
       p.description,
       JSON.stringify(p.schedule ?? "NoSchedule"),
       JSON.stringify(p.trigger ?? "NoTrigger"),
-      JSON.stringify(p.steps)
+      JSON.stringify(p.steps),
     );
 
     for (const run of p.runs) {
       const runId = makeId("0000aa00", ++runCounter);
       const startedAt = new Date(
-        Date.now() - run.daysAgo * 86_400_000
+        Date.now() - run.daysAgo * 86_400_000,
       ).toISOString();
       const finishedAt = new Date(
-        Date.now() - run.daysAgo * 86_400_000 + run.duration_ms
+        Date.now() - run.daysAgo * 86_400_000 + run.duration_ms,
       ).toISOString();
 
       insertRun.run(
@@ -520,7 +813,7 @@ export function seedFixtures(db: Database.Database) {
         run.trigger_type,
         startedAt,
         finishedAt,
-        run.duration_ms
+        run.duration_ms,
       );
 
       // Create step traces for each run
@@ -529,10 +822,9 @@ export function seedFixtures(db: Database.Database) {
         const step = p.steps[i]!;
         const isFailed = run.status === "failed" && i === p.steps.length - 1;
         const isSkipped = run.status === "failed" && i > p.steps.length - 1;
-        const stepDuration =
-          i < p.steps.length - 1
-            ? Math.round(remaining / (p.steps.length - i))
-            : remaining;
+        const stepDuration = i < p.steps.length - 1
+          ? Math.round(remaining / (p.steps.length - i))
+          : remaining;
         remaining -= stepDuration;
 
         const stepStatus = isSkipped ? "skipped" : isFailed ? "failed" : "ok";
@@ -546,7 +838,7 @@ export function seedFixtures(db: Database.Database) {
           stepDuration,
           isFailed ? "Step failed with exit code 1" : null,
           logOutput,
-          i
+          i,
         );
       }
 
@@ -557,7 +849,7 @@ export function seedFixtures(db: Database.Database) {
             makeId("0000cc00", ++artifactCounter),
             runId,
             artifact.name,
-            artifact.content
+            artifact.content,
           );
         }
       }

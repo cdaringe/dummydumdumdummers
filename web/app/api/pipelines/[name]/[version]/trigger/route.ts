@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { v4 as uuidv4 } from "uuid";
-import { runEvents, type RunEvent } from "@/lib/run-events";
+import { type RunEvent, runEvents } from "@/lib/run-events";
 import type { StepDefinition } from "@/lib/types";
 
 type Params = { params: Promise<{ name: string; version: string }> };
@@ -9,7 +9,7 @@ type Params = { params: Promise<{ name: string; version: string }> };
 function generateStepLog(
   stepName: string,
   status: string,
-  durationMs: number
+  durationMs: number,
 ): string {
   const ts = () => new Date().toISOString().replace("T", " ").substring(0, 19);
   const lines: string[] = [];
@@ -24,7 +24,7 @@ function generateStepLog(
     lines.push(`[ERROR] Step failed with exit code 1`);
   } else {
     lines.push(
-      `[${ts()}] Step ${stepName} completed successfully (${durationMs}ms)`
+      `[${ts()}] Step ${stepName} completed successfully (${durationMs}ms)`,
     );
   }
   return lines.join("\n");
@@ -32,7 +32,7 @@ function generateStepLog(
 
 async function executeStepsInBackground(
   runId: string,
-  steps: StepDefinition[]
+  steps: StepDefinition[],
 ) {
   // Brief pause to let the client connect to the SSE stream
   await new Promise((resolve) => setTimeout(resolve, 500));

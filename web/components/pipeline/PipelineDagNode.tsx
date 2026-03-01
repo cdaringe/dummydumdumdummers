@@ -43,7 +43,13 @@ export function PipelineDagNode({ data }: Props) {
         {data.label}
       </div>
       {loop && (
-        <div style={{ fontSize: "var(--font-size-xs)", color: "var(--color-gray-600)", marginTop: "var(--spacing-xs)" }}>
+        <div
+          style={{
+            fontSize: "var(--font-size-xs)",
+            color: "var(--color-gray-600)",
+            marginTop: "var(--spacing-xs)",
+          }}
+        >
           {loop}
         </div>
       )}
@@ -64,7 +70,14 @@ export function PipelineDagNode({ data }: Props) {
             background: color,
           }}
         />
-        <span style={{ fontSize: "var(--font-size-xs)", color: "var(--color-gray-600)" }}>{data.status}</span>
+        <span
+          style={{
+            fontSize: "var(--font-size-xs)",
+            color: "var(--color-gray-600)",
+          }}
+        >
+          {data.status}
+        </span>
       </div>
       <Handle type="source" position={Position.Right} />
     </div>

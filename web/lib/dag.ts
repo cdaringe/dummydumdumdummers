@@ -1,5 +1,5 @@
-import type { Node, Edge } from "@xyflow/react";
-import type { StepDefinition, LoopConfig } from "./types";
+import type { Edge, Node } from "@xyflow/react";
+import type { LoopConfig, StepDefinition } from "./types";
 
 export interface StepNodeData {
   label: string;
@@ -15,7 +15,7 @@ export interface DagGraph {
 
 export function buildDagGraph(
   steps: StepDefinition[],
-  traceStatuses: Record<string, "ok" | "failed" | "skipped">
+  traceStatuses: Record<string, "ok" | "failed" | "skipped">,
 ): DagGraph {
   const xGap = 260;
   const yGap = 100;

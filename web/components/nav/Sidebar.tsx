@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import Link from "next/link";
 import { useTheme } from "@/lib/theme-context";
@@ -20,7 +20,7 @@ export function Sidebar() {
   }, []);
 
   const toggleMode = () => {
-    setMode(mode === 'standard' ? 'compact' : 'standard');
+    setMode(mode === "standard" ? "compact" : "standard");
   };
 
   return (
@@ -43,10 +43,23 @@ export function Sidebar() {
           marginBottom: "var(--spacing-lg)",
         }}
       >
-        <div style={{ fontWeight: 700, fontSize: "var(--font-size-lg)", color: "var(--color-gray-100)", fontFamily: "monospace" }}>
+        <div
+          style={{
+            fontWeight: 700,
+            fontSize: "var(--font-size-lg)",
+            color: "var(--color-gray-100)",
+            fontFamily: "monospace",
+          }}
+        >
           thingfactory
         </div>
-        <div style={{ fontSize: "var(--font-size-xs)", color: "var(--color-gray-600)", marginTop: "var(--spacing-xs)" }}>
+        <div
+          style={{
+            fontSize: "var(--font-size-xs)",
+            color: "var(--color-gray-600)",
+            marginTop: "var(--spacing-xs)",
+          }}
+        >
           Pipeline Dashboard
         </div>
       </div>
@@ -79,7 +92,15 @@ export function Sidebar() {
               target.style.color = "var(--color-gray-400)";
             }}
           >
-            <span style={{ fontFamily: "monospace", fontSize: "var(--font-size-sm)", minWidth: 20 }}>{item.icon}</span>
+            <span
+              style={{
+                fontFamily: "monospace",
+                fontSize: "var(--font-size-sm)",
+                minWidth: 20,
+              }}
+            >
+              {item.icon}
+            </span>
             {item.label}
           </Link>
         ))}
@@ -119,7 +140,7 @@ export function Sidebar() {
               target.style.borderColor = "var(--color-gray-700)";
             }}
           >
-            {mode === 'standard' ? '[-] compact' : '[+] standard'}
+            {mode === "standard" ? "[-] compact" : "[+] standard"}
           </button>
         </div>
       )}

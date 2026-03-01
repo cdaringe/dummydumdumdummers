@@ -7,8 +7,8 @@ import { formatDate } from "@/lib/format";
 export const dynamic = "force-dynamic";
 
 async function getStats() {
-  const [totalPipelines, totalRuns, recentRuns, statusCounts] =
-    await Promise.all([
+  const [totalPipelines, totalRuns, recentRuns, statusCounts] = await Promise
+    .all([
       db
         .selectFrom("pipeline_definitions")
         .select(db.fn.count("id").as("count"))
@@ -46,7 +46,7 @@ export default async function DashboardPage() {
     await getStats();
 
   const statusMap = Object.fromEntries(
-    statusCounts.map((s) => [s.status, Number(s.count)])
+    statusCounts.map((s) => [s.status, Number(s.count)]),
   );
 
   return (
@@ -66,7 +66,10 @@ export default async function DashboardPage() {
         }}
       >
         {[
-          { label: "Total Pipelines", value: Number(totalPipelines?.count ?? 0) },
+          {
+            label: "Total Pipelines",
+            value: Number(totalPipelines?.count ?? 0),
+          },
           { label: "Total Runs", value: Number(totalRuns?.count ?? 0) },
           { label: "Successful Runs", value: statusMap["success"] ?? 0 },
           { label: "Failed Runs", value: statusMap["failed"] ?? 0 },
@@ -76,10 +79,22 @@ export default async function DashboardPage() {
             className="card"
             style={{ padding: "var(--spacing-xl)" }}
           >
-            <div style={{ fontSize: "var(--font-size-2xl)", fontWeight: 700, color: "var(--color-gray-950)" }}>
+            <div
+              style={{
+                fontSize: "var(--font-size-2xl)",
+                fontWeight: 700,
+                color: "var(--color-gray-950)",
+              }}
+            >
               {stat.value}
             </div>
-            <div style={{ fontSize: "var(--font-size-sm)", color: "var(--color-gray-600)", marginTop: "var(--spacing-xs)" }}>
+            <div
+              style={{
+                fontSize: "var(--font-size-sm)",
+                color: "var(--color-gray-600)",
+                marginTop: "var(--spacing-xs)",
+              }}
+            >
               {stat.label}
             </div>
           </div>
@@ -95,24 +110,72 @@ export default async function DashboardPage() {
           marginBottom: "var(--spacing-2xl)",
         }}
       >
-        <div className="card" style={{ padding: "var(--spacing-xl)", textAlign: "center" }}>
-          <div style={{ fontSize: "var(--font-size-md)", marginBottom: "var(--spacing-sm)", fontFamily: "monospace", color: "var(--color-primary)" }}>[#=]</div>
-          <h3 style={{ fontSize: "var(--font-size-base)", fontWeight: 600, marginBottom: "var(--spacing-sm)" }}>
+        <div
+          className="card"
+          style={{ padding: "var(--spacing-xl)", textAlign: "center" }}
+        >
+          <div
+            style={{
+              fontSize: "var(--font-size-md)",
+              marginBottom: "var(--spacing-sm)",
+              fontFamily: "monospace",
+              color: "var(--color-primary)",
+            }}
+          >
+            [#=]
+          </div>
+          <h3
+            style={{
+              fontSize: "var(--font-size-base)",
+              fontWeight: 600,
+              marginBottom: "var(--spacing-sm)",
+            }}
+          >
             Performance Metrics
           </h3>
-          <p style={{ fontSize: "var(--font-size-sm)", color: "var(--color-gray-600)", marginBottom: "var(--spacing-lg)" }}>
+          <p
+            style={{
+              fontSize: "var(--font-size-sm)",
+              color: "var(--color-gray-600)",
+              marginBottom: "var(--spacing-lg)",
+            }}
+          >
             View detailed statistics and performance trends
           </p>
           <Link href="/stats" className="btn btn-sm btn-primary">
             View Statistics
           </Link>
         </div>
-        <div className="card" style={{ padding: "var(--spacing-xl)", textAlign: "center" }}>
-          <div style={{ fontSize: "var(--font-size-md)", marginBottom: "var(--spacing-sm)", fontFamily: "monospace", color: "var(--color-primary)" }}>{"[|>]"}</div>
-          <h3 style={{ fontSize: "var(--font-size-base)", fontWeight: 600, marginBottom: "var(--spacing-sm)" }}>
+        <div
+          className="card"
+          style={{ padding: "var(--spacing-xl)", textAlign: "center" }}
+        >
+          <div
+            style={{
+              fontSize: "var(--font-size-md)",
+              marginBottom: "var(--spacing-sm)",
+              fontFamily: "monospace",
+              color: "var(--color-primary)",
+            }}
+          >
+            {"[|>]"}
+          </div>
+          <h3
+            style={{
+              fontSize: "var(--font-size-base)",
+              fontWeight: 600,
+              marginBottom: "var(--spacing-sm)",
+            }}
+          >
             All Pipelines
           </h3>
-          <p style={{ fontSize: "var(--font-size-sm)", color: "var(--color-gray-600)", marginBottom: "var(--spacing-lg)" }}>
+          <p
+            style={{
+              fontSize: "var(--font-size-sm)",
+              color: "var(--color-gray-600)",
+              marginBottom: "var(--spacing-lg)",
+            }}
+          >
             Browse and manage all registered pipelines
           </p>
           <Link href="/pipelines" className="btn btn-sm btn-primary">
@@ -132,8 +195,14 @@ export default async function DashboardPage() {
             alignItems: "center",
           }}
         >
-          <h2 style={{ fontSize: "var(--font-size-md)", fontWeight: 600 }}>Recent Runs</h2>
-          <Link href="/runs" className="btn btn-sm" style={{ color: "var(--color-primary)" }}>
+          <h2 style={{ fontSize: "var(--font-size-md)", fontWeight: 600 }}>
+            Recent Runs
+          </h2>
+          <Link
+            href="/runs"
+            className="btn btn-sm"
+            style={{ color: "var(--color-primary)" }}
+          >
             View all →
           </Link>
         </div>
@@ -148,46 +217,69 @@ export default async function DashboardPage() {
             </tr>
           </thead>
           <tbody>
-            {recentRuns.length === 0 ? (
-              <tr>
-                <td colSpan={5} style={{ textAlign: "center", color: "var(--color-gray-500)", padding: "var(--spacing-2xl)" }}>
-                  No runs yet
-                </td>
-              </tr>
-            ) : (
-              recentRuns.map((run) => (
-                <tr key={run.id}>
-                  <td>
-                    <Link
-                      href={`/pipelines/${run.pipeline_name}/${run.pipeline_version}`}
-                      style={{ fontWeight: 500 }}
-                    >
-                      {run.pipeline_name}
-                    </Link>
-                    <span style={{ color: "var(--color-gray-500)", marginLeft: "var(--spacing-sm)", fontSize: "var(--font-size-sm)" }}>
-                      v{run.pipeline_version}
-                    </span>
-                  </td>
-                  <td>
-                    <StatusBadge status={run.status} />
-                  </td>
-                  <td>
-                    <DurationBadge ms={run.duration_ms} />
-                  </td>
-                  <td style={{ color: "var(--color-gray-600)", fontSize: "var(--font-size-sm)" }}>
-                    {formatDate(run.started_at)}
-                  </td>
-                  <td>
-                    <Link
-                      href={`/runs/${run.id}`}
-                      style={{ fontSize: "var(--font-size-sm)", color: "var(--color-primary)" }}
-                    >
-                      Details →
-                    </Link>
+            {recentRuns.length === 0
+              ? (
+                <tr>
+                  <td
+                    colSpan={5}
+                    style={{
+                      textAlign: "center",
+                      color: "var(--color-gray-500)",
+                      padding: "var(--spacing-2xl)",
+                    }}
+                  >
+                    No runs yet
                   </td>
                 </tr>
-              ))
-            )}
+              )
+              : (
+                recentRuns.map((run) => (
+                  <tr key={run.id}>
+                    <td>
+                      <Link
+                        href={`/pipelines/${run.pipeline_name}/${run.pipeline_version}`}
+                        style={{ fontWeight: 500 }}
+                      >
+                        {run.pipeline_name}
+                      </Link>
+                      <span
+                        style={{
+                          color: "var(--color-gray-500)",
+                          marginLeft: "var(--spacing-sm)",
+                          fontSize: "var(--font-size-sm)",
+                        }}
+                      >
+                        v{run.pipeline_version}
+                      </span>
+                    </td>
+                    <td>
+                      <StatusBadge status={run.status} />
+                    </td>
+                    <td>
+                      <DurationBadge ms={run.duration_ms} />
+                    </td>
+                    <td
+                      style={{
+                        color: "var(--color-gray-600)",
+                        fontSize: "var(--font-size-sm)",
+                      }}
+                    >
+                      {formatDate(run.started_at)}
+                    </td>
+                    <td>
+                      <Link
+                        href={`/runs/${run.id}`}
+                        style={{
+                          fontSize: "var(--font-size-sm)",
+                          color: "var(--color-primary)",
+                        }}
+                      >
+                        Details →
+                      </Link>
+                    </td>
+                  </tr>
+                ))
+              )}
           </tbody>
         </table>
       </div>

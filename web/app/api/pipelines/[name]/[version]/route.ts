@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import type { StepDefinition, ScheduleConfig, TriggerConfig } from "@/lib/types";
+import type {
+  ScheduleConfig,
+  StepDefinition,
+  TriggerConfig,
+} from "@/lib/types";
 
 type Params = { params: Promise<{ name: string; version: string }> };
 

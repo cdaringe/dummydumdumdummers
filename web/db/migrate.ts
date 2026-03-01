@@ -1,6 +1,6 @@
 import Database from "better-sqlite3";
-import { readFileSync, readdirSync } from "fs";
-import { join, dirname } from "path";
+import { readdirSync, readFileSync } from "fs";
+import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 import { getConfig } from "../lib/config";
 
@@ -29,7 +29,7 @@ const applied = new Set(
   db
     .prepare("SELECT filename FROM _migrations")
     .all()
-    .map((r) => (r as { filename: string }).filename)
+    .map((r) => (r as { filename: string }).filename),
 );
 
 let count = 0;

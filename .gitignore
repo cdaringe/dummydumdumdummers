@@ -1,3 +1,5 @@
 build
 *.tsbuildinfo
 erl_crash.dump
+.ralph
+.last-run.json

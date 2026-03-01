@@ -2,24 +2,24 @@ import { EventEmitter } from "events";
 
 export type RunEvent =
   | {
-      type: "step_started";
-      step_name: string;
-      sequence: number;
-    }
+    type: "step_started";
+    step_name: string;
+    sequence: number;
+  }
   | {
-      type: "step_completed";
-      step_name: string;
-      sequence: number;
-      status: string;
-      duration_ms: number;
-      log_output: string;
-    }
+    type: "step_completed";
+    step_name: string;
+    sequence: number;
+    status: string;
+    duration_ms: number;
+    log_output: string;
+  }
   | {
-      type: "run_completed";
-      status: string;
-      duration_ms: number;
-      finished_at: string;
-    };
+    type: "run_completed";
+    status: string;
+    duration_ms: number;
+    finished_at: string;
+  };
 
 // Singleton event bus shared across API routes for SSE streaming.
 // Using globalThis to survive hot-module-reload in dev.

@@ -1,9 +1,10 @@
-import { test, expect } from "./fixtures";
+import { expect, test } from "./fixtures";
 
 test.describe("Pipelines List", () => {
   test("loads and shows pipeline table", async ({ page }) => {
     await page.goto("/pipelines");
-    await expect(page.getByRole("heading", { name: "Pipelines" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Pipelines" }))
+      .toBeVisible();
     await expect(page.locator("table")).toBeVisible();
   });
 
@@ -34,7 +35,9 @@ test.describe("Pipelines List", () => {
   test("shows last run status in table", async ({ page }) => {
     await page.goto("/pipelines");
     // Should show at least one status badge (seeded runs exist)
-    const badges = page.locator("table tbody tr td").filter({ hasText: /Success|Failed|Running/ });
+    const badges = page.locator("table tbody tr td").filter({
+      hasText: /Success|Failed|Running/,
+    });
     const count = await badges.count();
     expect(count).toBeGreaterThan(0);
   });
@@ -50,7 +53,9 @@ test.describe("Pipelines List", () => {
     await page.goto("/pipelines");
     // Several pipelines have schedules - at least one should show non-"On demand"
     // Look for schedule info in table cells
-    const scheduleCell = page.locator("table tbody tr td").filter({ hasText: /Daily \d|Weekly|Monthly|Every|Cron/ }).first();
+    const scheduleCell = page.locator("table tbody tr td").filter({
+      hasText: /Daily \d|Weekly|Monthly|Every|Cron/,
+    }).first();
     await expect(scheduleCell).toBeVisible();
   });
 });

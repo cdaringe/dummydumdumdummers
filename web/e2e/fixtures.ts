@@ -12,7 +12,7 @@ export const test = base.extend({
     const response = await page.request.post("/api/test/reset");
     if (!response.ok()) {
       throw new Error(
-        `DB reset failed: ${response.status()} ${await response.text()}`
+        `DB reset failed: ${response.status()} ${await response.text()}`,
       );
     }
     await use(page);

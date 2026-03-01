@@ -18,7 +18,7 @@ type Props = { searchParams: Promise<SearchParams> };
 async function getRuns(
   status: string | undefined,
   pipelineId: string | undefined,
-  page: number
+  page: number,
 ) {
   const limit = 25;
   const offset = (page - 1) * limit;
@@ -51,7 +51,7 @@ async function getRuns(
       .$if(!!pipelineId, (q) => q.where("pipeline_id", "=", pipelineId!))
       .$if(
         !!(status && ["running", "success", "failed"].includes(status)),
-        (q) => q.where("status", "=", status!)
+        (q) => q.where("status", "=", status!),
       )
       .select(db.fn.count("id").as("count"))
       .executeTakeFirst(),
@@ -80,7 +80,7 @@ export default async function RunsPage({ searchParams }: Props) {
   const { runs, total, pipelines, limit } = await getRuns(
     status,
     pipelineId,
-    page
+    page,
   );
   const totalPages = Math.ceil(total / limit);
 
@@ -133,11 +133,24 @@ export default async function RunsPage({ searchParams }: Props) {
             </option>
           ))}
         </select>
-        <button type="submit" className="btn" style={{ background: "var(--color-gray-200)", color: "var(--color-gray-800)" }}>
+        <button
+          type="submit"
+          className="btn"
+          style={{
+            background: "var(--color-gray-200)",
+            color: "var(--color-gray-800)",
+          }}
+        >
           Filter
         </button>
         {(status || pipelineId) && (
-          <Link href="/runs" style={{ fontSize: "var(--font-size-base)", color: "var(--color-gray-600)" }}>
+          <Link
+            href="/runs"
+            style={{
+              fontSize: "var(--font-size-base)",
+              color: "var(--color-gray-600)",
+            }}
+          >
             Clear filters
           </Link>
         )}
@@ -157,65 +170,80 @@ export default async function RunsPage({ searchParams }: Props) {
             </tr>
           </thead>
           <tbody>
-            {runs.length === 0 ? (
-              <tr>
-                <td colSpan={7}>
-                  <EmptyState message="No runs found" />
-                </td>
-              </tr>
-            ) : (
-              runs.map((run) => (
-                <tr key={run.id}>
-                  <td
-                    style={{
-                      fontFamily: "monospace",
-                      fontSize: "var(--font-size-sm)",
-                      color: "var(--color-gray-600)",
-                    }}
-                  >
-                    {run.id?.substring(0, 8)}...
-                  </td>
-                  <td>
-                    <Link
-                      href={`/pipelines/${run.pipeline_name}/${run.pipeline_version}`}
-                      style={{ fontWeight: 500 }}
-                    >
-                      {run.pipeline_name}
-                    </Link>
-                    <span
-                      style={{
-                        marginLeft: "var(--spacing-sm)",
-                        fontSize: "var(--font-size-xs)",
-                        color: "var(--color-gray-500)",
-                        fontFamily: "monospace",
-                      }}
-                    >
-                      v{run.pipeline_version}
-                    </span>
-                  </td>
-                  <td>
-                    <StatusBadge status={run.status} />
-                  </td>
-                  <td>
-                    <DurationBadge ms={run.duration_ms} />
-                  </td>
-                  <td style={{ fontSize: "var(--font-size-sm)", color: "var(--color-gray-600)" }}>
-                    {run.trigger_type}
-                  </td>
-                  <td style={{ fontSize: "var(--font-size-sm)", color: "var(--color-gray-600)" }}>
-                    {formatDate(run.started_at)}
-                  </td>
-                  <td>
-                    <Link
-                      href={`/runs/${run.id}`}
-                      style={{ fontSize: "var(--font-size-sm)", color: "var(--color-primary)" }}
-                    >
-                      Details →
-                    </Link>
+            {runs.length === 0
+              ? (
+                <tr>
+                  <td colSpan={7}>
+                    <EmptyState message="No runs found" />
                   </td>
                 </tr>
-              ))
-            )}
+              )
+              : (
+                runs.map((run) => (
+                  <tr key={run.id}>
+                    <td
+                      style={{
+                        fontFamily: "monospace",
+                        fontSize: "var(--font-size-sm)",
+                        color: "var(--color-gray-600)",
+                      }}
+                    >
+                      {run.id?.substring(0, 8)}...
+                    </td>
+                    <td>
+                      <Link
+                        href={`/pipelines/${run.pipeline_name}/${run.pipeline_version}`}
+                        style={{ fontWeight: 500 }}
+                      >
+                        {run.pipeline_name}
+                      </Link>
+                      <span
+                        style={{
+                          marginLeft: "var(--spacing-sm)",
+                          fontSize: "var(--font-size-xs)",
+                          color: "var(--color-gray-500)",
+                          fontFamily: "monospace",
+                        }}
+                      >
+                        v{run.pipeline_version}
+                      </span>
+                    </td>
+                    <td>
+                      <StatusBadge status={run.status} />
+                    </td>
+                    <td>
+                      <DurationBadge ms={run.duration_ms} />
+                    </td>
+                    <td
+                      style={{
+                        fontSize: "var(--font-size-sm)",
+                        color: "var(--color-gray-600)",
+                      }}
+                    >
+                      {run.trigger_type}
+                    </td>
+                    <td
+                      style={{
+                        fontSize: "var(--font-size-sm)",
+                        color: "var(--color-gray-600)",
+                      }}
+                    >
+                      {formatDate(run.started_at)}
+                    </td>
+                    <td>
+                      <Link
+                        href={`/runs/${run.id}`}
+                        style={{
+                          fontSize: "var(--font-size-sm)",
+                          color: "var(--color-primary)",
+                        }}
+                      >
+                        Details →
+                      </Link>
+                    </td>
+                  </tr>
+                ))
+              )}
           </tbody>
         </table>
       </div>
@@ -233,11 +261,17 @@ export default async function RunsPage({ searchParams }: Props) {
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
             <Link
               key={p}
-              href={`/runs?page=${p}${status ? `&status=${status}` : ""}${pipelineId ? `&pipeline_id=${pipelineId}` : ""}`}
+              href={`/runs?page=${p}${status ? `&status=${status}` : ""}${
+                pipelineId ? `&pipeline_id=${pipelineId}` : ""
+              }`}
               className="btn btn-sm"
               style={{
-                background: p === page ? "var(--color-primary)" : "var(--color-gray-200)",
-                color: p === page ? "var(--color-gray-100)" : "var(--color-gray-800)",
+                background: p === page
+                  ? "var(--color-primary)"
+                  : "var(--color-gray-200)",
+                color: p === page
+                  ? "var(--color-gray-100)"
+                  : "var(--color-gray-800)",
               }}
             >
               {p}

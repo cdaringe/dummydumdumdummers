@@ -18,7 +18,7 @@ export async function GET(req: NextRequest, { params }: Props) {
   } catch (error) {
     return NextResponse.json(
       { error: "Failed to fetch artifacts" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

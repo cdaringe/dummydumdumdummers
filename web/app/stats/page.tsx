@@ -71,7 +71,13 @@ export default function StatsPage() {
 
   if (loading) {
     return (
-      <div style={{ padding: "var(--spacing-2xl)", textAlign: "center", color: "var(--color-gray-500)" }}>
+      <div
+        style={{
+          padding: "var(--spacing-2xl)",
+          textAlign: "center",
+          color: "var(--color-gray-500)",
+        }}
+      >
         Loading statistics...
       </div>
     );
@@ -79,7 +85,13 @@ export default function StatsPage() {
 
   if (!stats) {
     return (
-      <div style={{ padding: "var(--spacing-2xl)", textAlign: "center", color: "var(--color-gray-500)" }}>
+      <div
+        style={{
+          padding: "var(--spacing-2xl)",
+          textAlign: "center",
+          color: "var(--color-gray-500)",
+        }}
+      >
         Failed to load statistics
       </div>
     );
@@ -102,37 +114,85 @@ export default function StatsPage() {
         }}
       >
         <div className="card" style={{ padding: "var(--spacing-xl)" }}>
-          <div style={{ fontSize: "var(--font-size-2xl)", fontWeight: 700, color: "var(--color-gray-950)" }}>
+          <div
+            style={{
+              fontSize: "var(--font-size-2xl)",
+              fontWeight: 700,
+              color: "var(--color-gray-950)",
+            }}
+          >
             {stats.overall.totalRuns}
           </div>
-          <div style={{ fontSize: "var(--font-size-base)", color: "var(--color-gray-600)", marginTop: "var(--spacing-xs)" }}>
+          <div
+            style={{
+              fontSize: "var(--font-size-base)",
+              color: "var(--color-gray-600)",
+              marginTop: "var(--spacing-xs)",
+            }}
+          >
             Total Runs
           </div>
         </div>
 
         <div className="card" style={{ padding: "var(--spacing-xl)" }}>
-          <div style={{ fontSize: "var(--font-size-2xl)", fontWeight: 700, color: "var(--color-primary)" }}>
+          <div
+            style={{
+              fontSize: "var(--font-size-2xl)",
+              fontWeight: 700,
+              color: "var(--color-primary)",
+            }}
+          >
             {Math.round(stats.overall.successRate)}%
           </div>
-          <div style={{ fontSize: "var(--font-size-base)", color: "var(--color-gray-600)", marginTop: "var(--spacing-xs)" }}>
+          <div
+            style={{
+              fontSize: "var(--font-size-base)",
+              color: "var(--color-gray-600)",
+              marginTop: "var(--spacing-xs)",
+            }}
+          >
             Success Rate
           </div>
         </div>
 
         <div className="card" style={{ padding: "var(--spacing-xl)" }}>
-          <div style={{ fontSize: "var(--font-size-2xl)", fontWeight: 700, color: "var(--color-gray-950)" }}>
+          <div
+            style={{
+              fontSize: "var(--font-size-2xl)",
+              fontWeight: 700,
+              color: "var(--color-gray-950)",
+            }}
+          >
             {Math.round(stats.overall.avgDuration)}ms
           </div>
-          <div style={{ fontSize: "var(--font-size-base)", color: "var(--color-gray-600)", marginTop: "var(--spacing-xs)" }}>
+          <div
+            style={{
+              fontSize: "var(--font-size-base)",
+              color: "var(--color-gray-600)",
+              marginTop: "var(--spacing-xs)",
+            }}
+          >
             Avg Duration
           </div>
         </div>
 
         <div className="card" style={{ padding: "var(--spacing-xl)" }}>
-          <div style={{ fontSize: "var(--font-size-2xl)", fontWeight: 700, color: "var(--color-gray-950)" }}>
+          <div
+            style={{
+              fontSize: "var(--font-size-2xl)",
+              fontWeight: 700,
+              color: "var(--color-gray-950)",
+            }}
+          >
             {Math.round(stats.overall.totalDuration / 1000)}s
           </div>
-          <div style={{ fontSize: "var(--font-size-base)", color: "var(--color-gray-600)", marginTop: "var(--spacing-xs)" }}>
+          <div
+            style={{
+              fontSize: "var(--font-size-base)",
+              color: "var(--color-gray-600)",
+              marginTop: "var(--spacing-xs)",
+            }}
+          >
             Total Duration
           </div>
         </div>
@@ -148,19 +208,43 @@ export default function StatsPage() {
         }}
       >
         <div className="card" style={{ padding: "var(--spacing-xl)" }}>
-          <div style={{ fontSize: "var(--font-size-2xl)", fontWeight: 700, color: "var(--color-primary)" }}>
+          <div
+            style={{
+              fontSize: "var(--font-size-2xl)",
+              fontWeight: 700,
+              color: "var(--color-primary)",
+            }}
+          >
             {stats.overall.successfulRuns}
           </div>
-          <div style={{ fontSize: "var(--font-size-base)", color: "var(--color-gray-600)", marginTop: "var(--spacing-xs)" }}>
+          <div
+            style={{
+              fontSize: "var(--font-size-base)",
+              color: "var(--color-gray-600)",
+              marginTop: "var(--spacing-xs)",
+            }}
+          >
             Successful Runs
           </div>
         </div>
 
         <div className="card" style={{ padding: "var(--spacing-xl)" }}>
-          <div style={{ fontSize: "var(--font-size-2xl)", fontWeight: 700, color: "var(--color-gray-800)" }}>
+          <div
+            style={{
+              fontSize: "var(--font-size-2xl)",
+              fontWeight: 700,
+              color: "var(--color-gray-800)",
+            }}
+          >
             {stats.overall.failedRuns}
           </div>
-          <div style={{ fontSize: "var(--font-size-base)", color: "var(--color-gray-600)", marginTop: "var(--spacing-xs)" }}>
+          <div
+            style={{
+              fontSize: "var(--font-size-base)",
+              color: "var(--color-gray-600)",
+              marginTop: "var(--spacing-xs)",
+            }}
+          >
             Failed Runs
           </div>
         </div>
@@ -175,7 +259,9 @@ export default function StatsPage() {
               borderBottom: "1px solid var(--color-gray-300)",
             }}
           >
-            <h2 style={{ fontSize: "var(--font-size-md)", fontWeight: 600 }}>Fastest Pipelines</h2>
+            <h2 style={{ fontSize: "var(--font-size-md)", fontWeight: 600 }}>
+              Fastest Pipelines
+            </h2>
           </div>
           <table>
             <thead>
@@ -205,9 +291,11 @@ export default function StatsPage() {
                     </Link>
                   </td>
                   <td>{p.totalRuns}</td>
-                  <td style={{ color: "var(--color-primary)", fontWeight: 500 }}>
+                  <td
+                    style={{ color: "var(--color-primary)", fontWeight: 500 }}
+                  >
                     {Math.round(
-                      (p.successCount / p.totalRuns) * 100
+                      (p.successCount / p.totalRuns) * 100,
                     )}%
                   </td>
                   <td>
@@ -229,7 +317,9 @@ export default function StatsPage() {
               borderBottom: "1px solid var(--color-gray-300)",
             }}
           >
-            <h2 style={{ fontSize: "var(--font-size-md)", fontWeight: 600 }}>Slowest Pipelines</h2>
+            <h2 style={{ fontSize: "var(--font-size-md)", fontWeight: 600 }}>
+              Slowest Pipelines
+            </h2>
           </div>
           <table>
             <thead>
@@ -259,9 +349,16 @@ export default function StatsPage() {
                     </Link>
                   </td>
                   <td>{p.totalRuns}</td>
-                  <td style={{ color: Number(p.successCount / p.totalRuns) < 0.5 ? "var(--color-gray-800)" : "var(--color-primary)", fontWeight: 500 }}>
+                  <td
+                    style={{
+                      color: Number(p.successCount / p.totalRuns) < 0.5
+                        ? "var(--color-gray-800)"
+                        : "var(--color-primary)",
+                      fontWeight: 500,
+                    }}
+                  >
                     {Math.round(
-                      (p.successCount / p.totalRuns) * 100
+                      (p.successCount / p.totalRuns) * 100,
                     )}%
                   </td>
                   <td>
@@ -282,7 +379,9 @@ export default function StatsPage() {
             borderBottom: "1px solid var(--color-gray-300)",
           }}
         >
-          <h2 style={{ fontSize: "var(--font-size-md)", fontWeight: 600 }}>Pipeline Statistics</h2>
+          <h2 style={{ fontSize: "var(--font-size-md)", fontWeight: 600 }}>
+            Pipeline Statistics
+          </h2>
         </div>
         <div style={{ overflowX: "auto" }}>
           <table>
@@ -318,12 +417,11 @@ export default function StatsPage() {
                   <td>{p.totalRuns}</td>
                   <td
                     style={{
-                      color:
-                        p.successRate >= 80
-                          ? "var(--color-primary)"
-                          : p.successRate >= 50
-                            ? "var(--color-gray-600)"
-                            : "var(--color-gray-800)",
+                      color: p.successRate >= 80
+                        ? "var(--color-primary)"
+                        : p.successRate >= 50
+                        ? "var(--color-gray-600)"
+                        : "var(--color-gray-800)",
                       fontWeight: 500,
                     }}
                   >
@@ -332,13 +430,28 @@ export default function StatsPage() {
                   <td>
                     <DurationBadge ms={p.avgDuration} />
                   </td>
-                  <td style={{ fontSize: "var(--font-size-sm)", color: "var(--color-gray-600)" }}>
+                  <td
+                    style={{
+                      fontSize: "var(--font-size-sm)",
+                      color: "var(--color-gray-600)",
+                    }}
+                  >
                     {Math.round(p.minDuration)}ms
                   </td>
-                  <td style={{ fontSize: "var(--font-size-sm)", color: "var(--color-gray-600)" }}>
+                  <td
+                    style={{
+                      fontSize: "var(--font-size-sm)",
+                      color: "var(--color-gray-600)",
+                    }}
+                  >
                     {Math.round(p.maxDuration)}ms
                   </td>
-                  <td style={{ fontSize: "var(--font-size-sm)", color: "var(--color-gray-600)" }}>
+                  <td
+                    style={{
+                      fontSize: "var(--font-size-sm)",
+                      color: "var(--color-gray-600)",
+                    }}
+                  >
                     {p.latestRun ? formatDate(p.latestRun.started_at) : "Never"}
                   </td>
                 </tr>
@@ -357,7 +470,9 @@ export default function StatsPage() {
               borderBottom: "1px solid var(--color-gray-300)",
             }}
           >
-            <h2 style={{ fontSize: "var(--font-size-md)", fontWeight: 600 }}>Last 30 Days Trends</h2>
+            <h2 style={{ fontSize: "var(--font-size-md)", fontWeight: 600 }}>
+              Last 30 Days Trends
+            </h2>
           </div>
           <table>
             <thead>
@@ -372,24 +487,30 @@ export default function StatsPage() {
             <tbody>
               {stats.trends.map((t) => (
                 <tr key={t.date}>
-                  <td style={{ fontFamily: "monospace", fontSize: "var(--font-size-base)" }}>
+                  <td
+                    style={{
+                      fontFamily: "monospace",
+                      fontSize: "var(--font-size-base)",
+                    }}
+                  >
                     {t.date}
                   </td>
                   <td>{t.totalRuns}</td>
-                  <td style={{ color: "var(--color-primary)", fontWeight: 500 }}>
+                  <td
+                    style={{ color: "var(--color-primary)", fontWeight: 500 }}
+                  >
                     {t.successCount}
                   </td>
                   <td
                     style={{
-                      color:
-                        (t.successCount / t.totalRuns) * 100 >= 80
-                          ? "var(--color-primary)"
-                          : "var(--color-gray-800)",
+                      color: (t.successCount / t.totalRuns) * 100 >= 80
+                        ? "var(--color-primary)"
+                        : "var(--color-gray-800)",
                       fontWeight: 500,
                     }}
                   >
                     {Math.round(
-                      (t.successCount / t.totalRuns) * 100
+                      (t.successCount / t.totalRuns) * 100,
                     )}%
                   </td>
                   <td>

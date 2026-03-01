@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import type { StepDefinition, ScheduleConfig, TriggerConfig } from "@/lib/types";
+import type {
+  ScheduleConfig,
+  StepDefinition,
+  TriggerConfig,
+} from "@/lib/types";
 
 export async function GET() {
   const pipelines = await db
@@ -37,11 +41,11 @@ export async function GET() {
       created_at: p.created_at,
       last_run: lastRun
         ? {
-            id: lastRun.id,
-            status: lastRun.status,
-            started_at: lastRun.started_at,
-            duration_ms: lastRun.duration_ms,
-          }
+          id: lastRun.id,
+          status: lastRun.status,
+          started_at: lastRun.started_at,
+          duration_ms: lastRun.duration_ms,
+        }
         : null,
     };
   });
