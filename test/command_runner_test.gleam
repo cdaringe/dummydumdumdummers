@@ -75,3 +75,29 @@ pub fn step_not_found_test() {
   let result = step_fn(ctx, dynamic.nil())
   result |> should.be_error()
 }
+
+pub fn sh_wrapper_success_test() {
+  let step_fn = command_runner.sh("echo wrapped")
+  let ctx =
+    types.Context(
+      artifact_store: dict.new(),
+      message_store: message_store.new(),
+      deps: dict.new(),
+      secret_store: secret_manager.new(),
+    )
+  let result = step_fn(ctx, dynamic.nil())
+  result |> should.be_ok()
+}
+
+pub fn sh_in_dir_success_test() {
+  let step_fn = command_runner.sh_in_dir("echo wrapped_dir", ".")
+  let ctx =
+    types.Context(
+      artifact_store: dict.new(),
+      message_store: message_store.new(),
+      deps: dict.new(),
+      secret_store: secret_manager.new(),
+    )
+  let result = step_fn(ctx, dynamic.nil())
+  result |> should.be_ok()
+}
