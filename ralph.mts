@@ -24,18 +24,20 @@ Deno.addSignalListener("SIGINT", () => {
 });
 
 const prompt = `@specification.md @progress.md
-1. Read the specification.md and progress file.
-2. Find the next highest leverage incomplete task and implement it.
-3. Commit your changes.
-4. Update progress.md with what you did.
 ONLY DO ONE TASK AT A TIME.
-If the specification fully completed, revisit each claim ONE BY ONE in progress
-file CHALLENGE if the INTENT of the work is done, not if the claims are literally done.
-If the intent is done, mark the claim VERIFIED and proceed. Every referenced
-document or module should be verified, and not trusted to exist. If the work is not
-verified, remove claims in progress.md and re-visit the work.
 
-Once all claims are verified, output <promise>COMPLETE</promise>."`;
+1. Read the specification.md and progress file.
+2. Find the next highest leverage uninmplemented scenario and implement it.
+3. Document your scenario implementation in docs/scenarios/:name.md. Write maximally concise detail, justifying how the scenario is fully completed. Reference key details & files as evidence for a reviewer.
+4. Commit your changes.
+5. Update progress.md scenario table with status and add a pointer to your docs/scenario/* summary.
+6. If all scenarios are completed, revisit each claim ONE BY ONE in the progress
+file CRITIQUE if the INTENT of the work is done.
+  6.1 Review if the user's desires are met--not if the tasks are completed.
+  6.2 Every referenced document or module should be verified, and not trusted to exist.
+  6.3 Update status to VERIFIED or NEEDS_REWORK with rework notes.
+
+Once all claims are VERIFIED, output <promise>COMPLETE</promise>."`;
 
 const TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes
 

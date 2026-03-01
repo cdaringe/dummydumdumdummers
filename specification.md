@@ -34,6 +34,7 @@ spirit of concourseci, buildkite, or argo, with improvements on the DevUX of eac
 - The default runner host should optimistically SHALL try to initialize default allow one worker per available core for ease of use.
 - The runner host SHALL allow kubernetes as a runner backend, but SHOULD be able to run on a single machine for ease of use.
 - The pipeline system SHALL provide secrets management for Pipelines.
+- The pipeline tasks SHALL NOT be stringly typed or referenced. Stringly typing in general is to be minimized across the system.
 - The Pipeline GUI SHALL allow for the viewing of logs efficiently, streaming from the providing agents.
 - The system SHALL offer a CLI to run pipelines locally, exactly as they would run in production, for ease of development and testing. This includes running in docker containers, as should be the default case.
 - The project shall host examples that are runable with the CLI (e.g. `cli run -f <file> <pipeline-name> .`) and demonstrate the same pipelines running in the GUI, showing logs, results, and artifacts.
