@@ -23,6 +23,20 @@ test.describe("Pipeline Detail", () => {
     await expect(rfWrapper.first()).toBeVisible({ timeout: 10000 });
   });
 
+  test("draws an edge for every declared dependency", async ({ page }) => {
+    await page.goto("/pipelines/typescript_build/1.0.0");
+    await page.waitForTimeout(500);
+
+    // typescript_build has 6 dependency edges:
+    // checkout->install-deps, install-deps->lint, install-deps->compile,
+    // compile->unit_tests, lint->package, unit_tests->package
+    const edges = page.locator("[data-testid='pipeline-dag-edges'] span");
+    await expect(edges).toHaveCount(6);
+
+    // Spot-check a specific edge id to ensure wiring is correct (div is hidden, use toBeAttached)
+    await expect(page.locator('[data-testid="edge-install-deps->lint"]')).toBeAttached();
+  });
+
   test("shows step nodes in the DAG", async ({ page }) => {
     await page.goto("/pipelines/typescript_build/1.0.0");
     // Wait for React Flow to hydrate
@@ -36,8 +50,8 @@ test.describe("Pipeline Detail", () => {
   test("shows steps table with correct step count", async ({ page }) => {
     await page.goto("/pipelines/typescript_build/1.0.0");
     await expect(page.getByText("Steps (6)")).toBeVisible();
-    await expect(page.getByRole("cell", { name: "checkout" })).toBeVisible();
-    await expect(page.getByRole("cell", { name: "unit_tests" })).toBeVisible();
+    await expect(page.getByRole("cell", { name: "checkout" }).first()).toBeVisible();
+    await expect(page.getByRole("cell", { name: "unit_tests" }).first()).toBeVisible();
   });
 
   test("shows run history table", async ({ page }) => {

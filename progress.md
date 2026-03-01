@@ -64,3 +64,4 @@ END_DEMO
 | 47 | VERIFIED | docs/scenarios/47.md | work_queue.gleam with enqueue/pull_all, push via step args, pull via queue. |
 | 48 | VERIFIED | docs/scenarios/48.md | `command_runner.sh/1` + `sh_in_dir/2` provide single-string external calls with shared error handling; tests added. |
 | 49 | VERIFIED | docs/scenarios/49.md | |
+| 50 | VERIFIED | docs/scenarios/50.md | |

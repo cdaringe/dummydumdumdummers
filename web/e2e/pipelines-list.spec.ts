@@ -50,7 +50,7 @@ test.describe("Pipelines List", () => {
     await page.goto("/pipelines");
     // Several pipelines have schedules - at least one should show non-"On demand"
     // Look for schedule info in table cells
-    const scheduleCell = page.locator("table tbody tr td").filter({ hasText: /Daily at|Weekly on|Monthly|Every|Cron/ }).first();
+    const scheduleCell = page.locator("table tbody tr td").filter({ hasText: /Daily \d|Weekly|Monthly|Every|Cron/ }).first();
     await expect(scheduleCell).toBeVisible();
   });
 });

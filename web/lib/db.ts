@@ -1,5 +1,6 @@
 import Database from "better-sqlite3";
 import { Generated, Kysely, SqliteDialect } from "kysely";
+import { seedFixturesIfEmpty } from "./seed-fixtures";
 
 interface PipelineDefinitionsTable {
   id: string;
@@ -111,3 +112,10 @@ if (dbPath === ":memory:") {
 export const db = new Kysely<ThingfactoryDB>({
   dialect: new SqliteDialect({ database: rawDb }),
 });
+
+// For in-memory test databases, auto-seed so all module instances have data.
+// Turbopack dev mode uses separate module instances for API routes vs pages,
+// so seeding only via the reset API wouldn't reach page-renderer module instances.
+if (dbPath === ":memory:") {
+  seedFixturesIfEmpty(rawDb);
+}
