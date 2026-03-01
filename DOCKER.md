@@ -19,14 +19,14 @@ Thingfactory ships with Docker support for both the CLI pipeline runner and the 
 # Build the CLI image
 docker build -t thingfactory .
 
-# Run a pipeline
-docker run --rm thingfactory run basic
-
-# Run with compact output
-docker run --rm thingfactory run parallel -c
-
 # List available pipelines
 docker run --rm thingfactory list
+
+# Run a pipeline (local isolation — no Docker socket required)
+docker run --rm thingfactory run thingfactory@examples:basic_pipeline --isolator local
+
+# Run with compact output
+docker run --rm thingfactory run thingfactory@examples:basic_pipeline --isolator local -c
 ```
 
 ### Full Stack (CLI + Web GUI)
@@ -37,8 +37,8 @@ docker-compose up web
 
 # Open http://localhost:3000
 
-# Run a pipeline with the CLI
-docker-compose run --rm cli run basic
+# Run a pipeline with the CLI (socket mounted — docker isolation works)
+docker-compose run --rm cli run thingfactory@examples:basic_pipeline --isolator local
 ```
 
 ## CLI Container
@@ -62,7 +62,7 @@ To run TypeScript or Go build pipelines, mount the examples directory:
 ```bash
 docker run --rm \
   -v $(pwd)/examples:/app/examples \
-  thingfactory run typescript
+  thingfactory run thingfactory@examples:typescript_build_pipeline --isolator local
 ```
 
 ## Web GUI Container
@@ -89,10 +89,10 @@ The `docker-compose.yml` defines two services:
 docker-compose up web
 
 # Run a CLI pipeline (one-off)
-docker-compose run --rm cli run basic
+docker-compose run --rm cli run thingfactory@examples:basic_pipeline --isolator local
 
 # Run with examples mounted
-docker-compose run --rm cli run typescript
+docker-compose run --rm cli run thingfactory@examples:typescript_build_pipeline --isolator local
 ```
 
 ## Configuration
