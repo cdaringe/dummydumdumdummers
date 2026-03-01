@@ -4,13 +4,19 @@ Install Thingfactory and run your first pipeline.
 
 ## Table of Contents
 
-- [Prerequisites](#prerequisites)
-- [Installation](#installation)
-- [Run an Example Pipeline](#run-an-example-pipeline)
-- [List Available Pipelines](#list-available-pipelines)
-- [Define Your Own Pipeline](#define-your-own-pipeline)
-- [Testing Pipelines](#testing-pipelines)
-- [Next Steps](#next-steps)
+- [Getting Started](#getting-started)
+  - [Table of Contents](#table-of-contents)
+  - [Prerequisites](#prerequisites)
+  - [Installation](#installation)
+  - [Run an Example Pipeline](#run-an-example-pipeline)
+  - [List Available Pipelines](#list-available-pipelines)
+  - [Define Your Own Pipeline](#define-your-own-pipeline)
+    - [Parallel Steps with Dependencies](#parallel-steps-with-dependencies)
+    - [Steps with Loops](#steps-with-loops)
+    - [Scheduled Pipelines](#scheduled-pipelines)
+    - [Secrets](#secrets)
+  - [Testing Pipelines](#testing-pipelines)
+  - [Next Steps](#next-steps)
 
 ## Prerequisites
 
@@ -25,7 +31,7 @@ Clone and build:
 ```bash
 git clone <repo-url> thingfactory
 cd thingfactory
-gleam build
+gleam build --warnings-as-errors
 ```
 
 For the web GUI:

@@ -14,7 +14,7 @@ Common issues and solutions when using Thingfactory.
 
 ## Build Issues
 
-### `gleam build` fails with version error
+### `gleam build --warnings-as-errors` fails with version error
 
 **Problem**: Gleam version mismatch.
 

@@ -7,6 +7,7 @@
 /// - Artifact sharing between steps
 /// - Dependency injection
 import gleam/dynamic.{type Dynamic}
+import gleam/io
 import thingfactory/command_runner
 import thingfactory/executor
 import thingfactory/kubernetes_runner
@@ -823,11 +824,15 @@ pub fn dogfood_pipeline() -> pipeline.Pipeline(Dynamic) {
     [],
   )
   // Gleam build steps (depend on validation passing)
-  |> pipeline.add_step_with_deps(
-    "gleam_build_js",
-    command_runner.step("gleam", ["build", "--target", "javascript"]),
-    ["gleam_check", "gleam_format"],
-  )
+  |> fn(pl) {
+    io.println("[DEBUG]: " <> pl.id.name)
+    pipeline.add_step_with_deps(
+      pl,
+      "gleam_build_js",
+      command_runner.step("gleam", ["build", "--target", "javascript"]),
+      ["gleam_check", "gleam_format"],
+    )
+  }
   |> pipeline.add_step_with_deps(
     "gleam_build_erl",
     command_runner.step("gleam", ["build", "--target", "erlang"]),

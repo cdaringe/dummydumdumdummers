@@ -1,19 +1,39 @@
 #!/usr/bin/env -S deno run --allow-run --allow-read --allow-write --allow-env
 
+/**
+ * Sample usage:
+ * deno run -A ralph.mts --iterations 10 --agent codex
+ * deno run -A ralph.mts --iterations 10 --agent claude
+ */
+
 import { parse } from "https://deno.land/std@0.208.0/flags/mod.ts";
 
 const args = parse(Deno.args, {
-  positional: ["iterations"],
+  string: ["agent", "iterations"],
+  alias: {
+    a: "agent",
+    i: "iterations",
+  },
+  default: {
+    agent: "claude",
+  },
 });
 
-const iterations = parseInt(args.iterations?.[0] || args._?.[0] || "10", 10);
+const iterationsRaw = args.iterations;
+const iterations = parseInt(String(iterationsRaw ?? ""), 10);
+const agent = String(args.agent).toLowerCase();
 
-if (!iterations || isNaN(iterations) || iterations < 1) {
-  console.error("Usage: deno run ralph.mts <iterations>");
+if (agent !== "claude" && agent !== "codex") {
+  console.error("Usage: deno run ralph.mts --iterations <n> [--agent claude|codex]");
   Deno.exit(1);
 }
 
-console.log(`Starting ralph loop for ${iterations} iterations...`);
+if (!iterationsRaw || !iterations || isNaN(iterations) || iterations < 1) {
+  console.error("Usage: deno run ralph.mts --iterations <n> [--agent claude|codex]");
+  Deno.exit(1);
+}
+
+console.log(`Starting ralph loop for ${iterations} iterations with ${agent}...`);
 
 let shouldStop = false;
 
@@ -23,7 +43,7 @@ Deno.addSignalListener("SIGINT", () => {
   shouldStop = true;
 });
 
-const prompt = `@specification.md @progress.md
+const BASE_PROMPT = `@specification.md @progress.md
 ONLY DO ONE TASK AT A TIME.
 
 1. Read the specification.md and progress file.
@@ -40,25 +60,68 @@ file CRITIQUE if the INTENT of the work is done.
 Once all claims are VERIFIED, output <promise>COMPLETE</promise>."`;
 
 const TIMEOUT_MS = 60 * 60 * 1000; // 60 minutes
-const FAST_MODEL = "sonnet";
-const STRONG_MODEL = "opus";
 const REWORK_THRESHOLD = 1;
 
-async function pickModel(): Promise<string> {
+function detectScenarioFromProgress(content: string): number | null {
+  const lines = content.split("\n");
+  for (const line of lines) {
+    const match = line.match(/^\|\s*(\d+)\s*\|\s*NEEDS_REWORK\s*\|/);
+    if (match) {
+      const scenario = parseInt(match[1], 10);
+      if (isNaN(scenario)) {
+        throw new Error(`Failed to parse scenario number from progress.md line: ${line}`);
+      }
+      return scenario;
+    }
+  }
+  return null;
+}
+
+function buildPrompt(targetScenario: number | null, useStrongModel: boolean): string {
+  if (!useStrongModel || targetScenario === null) {
+    return BASE_PROMPT;
+  }
+
+  return `${BASE_PROMPT}
+
+ACTUALLY:
+- You must work ONLY on scenario ${targetScenario}.
+- Do not work on any other scenario in this iteration.`;
+}
+
+async function pickModel(): Promise<{ model: string; useStrongModel: boolean; targetScenario: number | null }> {
+  const fastModel = agent === "claude"
+    ? Deno.env.get("CLAUDE_FAST_MODEL") ?? "sonnet"
+    : Deno.env.get("CODEX_FAST_MODEL") ?? "gpt-5.1-codex-max";
+  const strongModel = agent === "claude"
+    ? Deno.env.get("CLAUDE_STRONG_MODEL") ?? "opus"
+    : Deno.env.get("CODEX_STRONG_MODEL") ?? "gpt-5.3-codex";
+
+  let reworkCount = 0;
+  let targetScenario: number | null = null;
+
   try {
     const content = await Deno.readTextFile("progress.md");
-    const reworkCount = (content.match(/NEEDS_REWORK/g) || []).length;
-    const model = reworkCount > REWORK_THRESHOLD ? STRONG_MODEL : FAST_MODEL;
-    console.log(`[model] ${reworkCount} NEEDS_REWORK entries → using ${model}`);
-    return model;
+    reworkCount = (content.match(/NEEDS_REWORK/g) || []).length;
+    targetScenario = detectScenarioFromProgress(content);
   } catch {
-    return FAST_MODEL;
+    // Fall through to model defaults when progress.md can't be read.
   }
+
+  const useStrongModel = reworkCount > REWORK_THRESHOLD;
+  const model = useStrongModel ? strongModel : fastModel;
+  console.log(`[model] ${reworkCount} NEEDS_REWORK entries → using ${model}`);
+  if (useStrongModel && targetScenario !== null) {
+    console.log(`[scenario] strong-model pass scoped to scenario ${targetScenario}`);
+  }
+
+  return { model, useStrongModel, targetScenario };
 }
 
 async function runIteration(iterationNum: number): Promise<boolean> {
-  const model = await pickModel();
-  console.log(`[${new Date().toISOString()}] Starting iteration ${iterationNum} (${model})...`);
+  const { model, useStrongModel, targetScenario } = await pickModel();
+  const prompt = buildPrompt(targetScenario, useStrongModel);
+  console.log(`[${new Date().toISOString()}] Starting iteration ${iterationNum}${model ? ` (${model})` : ""}...`);
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
@@ -66,8 +129,23 @@ async function runIteration(iterationNum: number): Promise<boolean> {
   try {
     let isComplete = false;
 
-    const process = new Deno.Command("claude", {
-      args: ["--dangerously-skip-permissions", "--model", model, "-p", prompt],
+    const command = agent === "claude" ? "claude" : "codex";
+    const commandArgs = agent === "claude"
+      ? [
+        "--dangerously-skip-permissions",
+        ...(model ? ["--model", model] : []),
+        "-p",
+        prompt,
+      ]
+      : [
+        "exec",
+        "--dangerously-bypass-approvals-and-sandbox",
+        ...(model ? ["--model", model] : []),
+        prompt,
+      ];
+
+    const process = new Deno.Command(command, {
+      args: commandArgs,
       stdout: "piped",
       stderr: "piped",
       signal: controller.signal,
@@ -121,7 +199,7 @@ async function runIteration(iterationNum: number): Promise<boolean> {
     clearTimeout(timeoutId);
 
     if (error instanceof DOMException && error.name === "AbortError") {
-      console.error(`[${new Date().toISOString()}] TIMEOUT: iteration ${iterationNum} exceeded 15 minutes`);
+      console.error(`[${new Date().toISOString()}] TIMEOUT: iteration ${iterationNum} exceeded 60 minutes`);
       console.error("specification did not complete - timeout after " + iterationNum + " iterations.");
       return false;
     }

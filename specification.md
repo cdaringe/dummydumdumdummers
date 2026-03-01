@@ -54,6 +54,7 @@ spirit of concourseci, buildkite, or argo, with improvements on the DevUX of eac
 45. The Pipeline GUI SHALL provide statistics about prior runs.
 46. The Pipeline GUI SHALL stylistically focus on minimalism with theme very focused on light grays, some whites, and tonal grays. All highlights should be primarily light & dark greens, including text. It should offer a compact and standard mode. It should feel flat, simple, mechanical, and not cookie-cutter like often seen with tailwind styles. Backgrounds should be textured with very subtle patterns to add visual interest and depth.
 47. Pipelines SHALL be easy to express work in both an imperative (PUSH model) as well as workers in the pipeline PULLing work from a queue (PULL model). This shall be enabled by the substrate, but because it's a common pattern, pipeline tools SHOULD be considered for offering this to users as a first class feature.
+48. Pipelines SHALL enable users to call other programs succinctly with minimal boilerplate.
 
 ## Requirements
 
@@ -68,3 +69,4 @@ spirit of concourseci, buildkite, or argo, with improvements on the DevUX of eac
 9. Outdated documentation SHALL be removed.
 10. The system SHALL NOT accept YAML or JSON based flows.
 11. Features SHALL NOT be duplicated--DRY code is a must.
+12. Gleam code compilation SHALL NOT have any errors or warnings.

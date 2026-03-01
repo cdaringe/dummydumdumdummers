@@ -15,7 +15,7 @@ COPY src src
 COPY test test
 
 # Build JavaScript target
-RUN gleam build --target javascript
+RUN gleam build --warnings-as-errors --target javascript
 
 # Runtime stage
 FROM node:22-alpine

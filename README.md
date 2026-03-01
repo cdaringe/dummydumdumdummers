@@ -20,7 +20,7 @@ A best-in-class task runner for CI/CD with type-safe pipeline definitions in [Gl
 ```bash
 git clone <repo-url> thingfactory
 cd thingfactory
-gleam build
+gleam build --warnings-as-errors
 ```
 
 ### Run a Pipeline
@@ -126,7 +126,7 @@ gleam test                               # run all tests including examples
 ## Development
 
 ```bash
-gleam build                  # compile
+gleam build --warnings-as-errors # compile
 gleam test                   # run tests
 gleam format                 # format code
 cd web && npm run dev        # start web GUI

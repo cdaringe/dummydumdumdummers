@@ -4,14 +4,23 @@ Deploy and run the Thingfactory web service in production.
 
 ## Table of Contents
 
-- [Deployment Options](#deployment-options)
-- [Docker Deployment](#docker-deployment)
-- [Manual Deployment](#manual-deployment)
-- [Configuration](#configuration)
-- [Database](#database)
-- [Reverse Proxy](#reverse-proxy)
-- [Kubernetes](#kubernetes)
-- [Self-Hosting Tips](#self-hosting-tips)
+- [Hosting the Service](#hosting-the-service)
+  - [Table of Contents](#table-of-contents)
+  - [Deployment Options](#deployment-options)
+  - [Docker Deployment](#docker-deployment)
+    - [Build the Image](#build-the-image)
+    - [Run the Container](#run-the-container)
+    - [Persistent Storage](#persistent-storage)
+    - [Docker-in-Docker](#docker-in-docker)
+  - [Manual Deployment](#manual-deployment)
+    - [Build](#build)
+    - [Run](#run)
+  - [Configuration](#configuration)
+  - [Database](#database)
+    - [Backup](#backup)
+  - [Reverse Proxy](#reverse-proxy)
+  - [Kubernetes](#kubernetes)
+  - [Self-Hosting Tips](#self-hosting-tips)
 
 ## Deployment Options
 
@@ -77,7 +86,7 @@ docker run -p 3000:3000 \
 
 ```bash
 # Build Gleam core
-gleam build --target javascript
+gleam build --warnings-as-errors --target javascript
 
 # Build web GUI
 cd web
