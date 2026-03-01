@@ -1,13 +1,16 @@
 version: "3.9"
 
 services:
-  # CLI pipeline runner - runs pipelines in an isolated container
+  # CLI pipeline runner - runs pipelines in an isolated container.
+  # Docker socket is mounted so --isolator docker spawns containers via the
+  # host daemon (Docker-socket approach; no privileged DinD daemon required).
   cli:
     build:
       context: .
       dockerfile: Dockerfile
     volumes:
       - ./examples:/app/examples:ro
+      - /var/run/docker.sock:/var/run/docker.sock
     profiles:
       - cli
 

@@ -9,6 +9,7 @@ Thingfactory ships with Docker support for both the CLI pipeline runner and the 
 - [Web GUI Container](#web-gui-container)
 - [Docker Compose](#docker-compose)
 - [Configuration](#configuration)
+- [Self-Hosting](#self-hosting)
 
 ## Quick Start
 
@@ -112,16 +113,32 @@ docker run -p 3000:3000 \
 
 ## Self-Hosting
 
-For hobbyist self-hosting with a single container:
+### Web GUI + Pipeline Execution (Hobbyist Setup)
+
+Start the full stack with one command:
 
 ```bash
 docker-compose up -d web
 ```
 
-This starts the web GUI with a persistent SQLite database. Use the CLI to run pipelines against the same machine:
+This starts the web GUI with a persistent SQLite database on port 3000.
+
+To run pipelines with Docker isolation from inside the container (Docker-socket approach), the CLI service mounts the host Docker socket. No privileged DinD daemon is required — pipeline containers are spawned via the host daemon:
 
 ```bash
-docker-compose run --rm cli run dogfood
+# Run a pipeline inside a Gleam Docker container (uses host Docker daemon)
+docker-compose run --rm cli run --isolator docker thingfactory@examples:basic_pipeline
+
+# Run with local isolation (no Docker spawn)
+docker-compose run --rm cli run --isolator local thingfactory@examples:basic_pipeline
 ```
+
+The `docker-compose.yml` CLI service mounts `/var/run/docker.sock` automatically. Ensure the host Docker daemon is running and the socket is accessible.
+
+### Requirements for Docker Isolation Inside Container
+
+- Host must have Docker daemon running
+- `/var/run/docker.sock` must be accessible (default on Linux/macOS)
+- Docker socket is mounted read-write by default in `docker-compose.yml`
 
 See [docs/HOSTING_SERVICE.md](docs/HOSTING_SERVICE.md) for production deployment.

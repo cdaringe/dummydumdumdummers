@@ -20,6 +20,9 @@ RUN gleam build --warnings-as-errors --target javascript
 # Runtime stage
 FROM node:22-alpine
 
+# Install Docker CLI so --isolator docker can spawn containers via host socket
+RUN apk add --no-cache docker-cli
+
 WORKDIR /app
 
 # Copy only the compiled JavaScript from builder
