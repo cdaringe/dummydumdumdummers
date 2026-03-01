@@ -46,7 +46,7 @@ END_DEMO
 | 30 | VERIFIED | docs/scenarios/30.md | CLI uses same executor/parallel_executor as production. |
 | 31 | VERIFIED | docs/scenarios/31.md | 15 CLI-runnable pipelines, seed.ts populates GUI database. |
 | 32 | VERIFIED | docs/scenarios/32.md | CLI no longer embeds hardcoded example pipeline mappings; `run` resolves runtime `module:function` refs via FFI loader. |
-| 33 | NEEDS_REWORK | docs/scenarios/33.md | CLI has no `-f <file>` flag. Spec says "CLI SHALL accept as input a file to read the pipeline definition from" and gives examples like `cli run -f <file> <pipeline-name> .`. Current CLI only accepts hardcoded pipeline names. |
+| 33 | VERIFIED | docs/scenarios/33.md | CLI now supports `run -f <file.gleam> <pipeline_function>` and auto-runs `gleam build --target erlang --warnings-as-errors` when needed, so no manual pre-compilation step is required. |
 | 34 | VERIFIED | docs/scenarios/34.md | GanttTimeline.tsx with horizontal bars, color-coded status, duration labels. |
 | 35 | NEEDS_REWORK | docs/scenarios/35.md | --interactive flag makes no sense. what is it supposed to do? |
 | 36 | NEEDS_REWORK | docs/scenarios/36.md | The dogfood pipeline uses io.println, but no output is shown when running the CLI. |

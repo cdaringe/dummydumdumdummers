@@ -25,7 +25,8 @@ import thingfactory/types.{type ExecutionResult, type StepEvent}
 /// CLI command variants
 pub type CliCommand {
   Run(
-    pipeline_ref: String,
+    pipeline_selector: String,
+    source_file: Result(String, Nil),
     compact: Bool,
     interactive: Bool,
     output_dir: Result(String, Nil),
@@ -43,12 +44,14 @@ pub type OutputMode {
 /// Build the "run" subcommand parser
 fn run_command() -> clip.Command(CliCommand) {
   clip.command({
-    use pipeline_ref <- clip.parameter
+    use pipeline_selector <- clip.parameter
+    use source_file <- clip.parameter
     use compact <- clip.parameter
     use interactive <- clip.parameter
     use output_dir <- clip.parameter
     Run(
-      pipeline_ref: pipeline_ref,
+      pipeline_selector: pipeline_selector,
+      source_file: source_file,
       compact: compact,
       interactive: interactive,
       output_dir: output_dir,
@@ -57,8 +60,16 @@ fn run_command() -> clip.Command(CliCommand) {
   |> clip.arg(
     arg.new("pipeline")
     |> arg.help(
-      "Pipeline reference in module:function format (e.g. thingfactory@examples:basic_pipeline)",
+      "Pipeline selector: module:function, or function name when -f/--file is used",
     ),
+  )
+  |> clip.opt(
+    opt.new("file")
+    |> opt.short("f")
+    |> opt.help(
+      "Gleam file to load pipeline from at runtime (no pre-compilation needed)",
+    )
+    |> opt.optional(),
   )
   |> clip.flag(
     flag.new("compact")
@@ -76,7 +87,10 @@ fn run_command() -> clip.Command(CliCommand) {
     |> opt.help("Extract artifacts to this directory after execution")
     |> opt.optional(),
   )
-  |> clip.help(help.simple("thingfactory run", "Run a pipeline by module:function"))
+  |> clip.help(help.simple(
+    "thingfactory run",
+    "Run a pipeline by module:function",
+  ))
 }
 
 /// Build the "list" subcommand parser
@@ -118,6 +132,27 @@ pub fn execute_pipeline(
       }
     }
     Error(err) -> Error(err)
+  }
+}
+
+/// Execute a pipeline loaded from a Gleam source file at runtime.
+pub fn execute_pipeline_from_file(
+  file_path: String,
+  function_name: String,
+  mode: OutputMode,
+) -> Result(ExecutionResult(Dynamic), String) {
+  case string.trim(function_name) {
+    "" -> Error("Pipeline function name cannot be empty when using --file")
+    trimmed_name -> {
+      case load_pipeline_from_file(file_path, trimmed_name) {
+        Ok(loaded_pipeline) -> {
+          let pipeline_display = file_path <> ":" <> trimmed_name
+          print_header(pipeline_display, mode)
+          Ok(execute_loaded_pipeline(loaded_pipeline, mode))
+        }
+        Error(err) -> Error(err)
+      }
+    }
   }
 }
 
@@ -385,15 +420,21 @@ fn format_duration_ms(ms: Int) -> String {
 }
 
 fn list_pipelines() -> Result(String, String) {
-  Ok(string.join([
-    "No embedded pipelines are shipped with the CLI.",
-    "",
-    "Run a pipeline by passing a runtime reference:",
-    "  thingfactory run <module:function>",
-    "",
-    "Example:",
-    "  thingfactory run thingfactory@examples:basic_pipeline",
-  ], "\n"))
+  Ok(string.join(
+    [
+      "No embedded pipelines are shipped with the CLI.",
+      "",
+      "Run by runtime reference:",
+      "  thingfactory run <module:function>",
+      "",
+      "Or run by source file:",
+      "  thingfactory run -f <file.gleam> <pipeline_function>",
+      "",
+      "Example:",
+      "  thingfactory run -f src/thingfactory/examples.gleam basic_pipeline",
+    ],
+    "\n",
+  ))
 }
 
 /// Main entry point for CLI
@@ -401,11 +442,21 @@ pub fn main() {
   let result = cli() |> clip.run(argv.load().arguments)
 
   case result {
-    Ok(Run(pipeline_ref, compact, interactive, output_dir)) -> {
+    Ok(Run(pipeline_selector, source_file, compact, interactive, output_dir)) -> {
       let mode = resolve_mode(compact, interactive)
-      case execute_pipeline(pipeline_ref, mode) {
+      let pipeline_label = case source_file {
+        Ok(file_path) -> file_path <> ":" <> pipeline_selector
+        Error(Nil) -> pipeline_selector
+      }
+      let execution_result = case source_file {
+        Ok(file_path) ->
+          execute_pipeline_from_file(file_path, pipeline_selector, mode)
+        Error(Nil) -> execute_pipeline(pipeline_selector, mode)
+      }
+
+      case execution_result {
         Ok(exec_result) -> {
-          case format_summary(pipeline_ref, exec_result, mode) {
+          case format_summary(pipeline_label, exec_result, mode) {
             Ok(output) -> {
               case output {
                 "" -> Nil
@@ -465,6 +516,13 @@ fn run_interactive_loop(state: interactive_cli.InteractiveState) -> Nil {
 @external(javascript, "./cli_ffi.mjs", "load_pipeline")
 fn load_pipeline(
   module_name: String,
+  function_name: String,
+) -> Result(pipeline.Pipeline(Dynamic), String)
+
+@external(erlang, "thingfactory_erlang_cli", "load_pipeline_from_file")
+@external(javascript, "./cli_ffi.mjs", "load_pipeline_from_file")
+fn load_pipeline_from_file(
+  file_path: String,
   function_name: String,
 ) -> Result(pipeline.Pipeline(Dynamic), String)
 

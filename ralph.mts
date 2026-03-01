@@ -50,7 +50,7 @@ ONLY DO ONE TASK AT A TIME.
 2. Find the next highest leverage uninmplemented scenario and implement it.
 3. Document your scenario implementation in docs/scenarios/:name.md. Write maximally concise detail, justifying how the scenario is fully completed. Reference key details & files as evidence for a reviewer.
 4. Commit your changes.
-5. Update progress.md scenario table with status and add a pointer to your docs/scenario/* summary.
+5. Update progress.md scenario table with status and add a pointer to your docs/scenario/* summary. Do NOT fill in rework notes column--leave that for the reviewer.
 6. If all scenarios are completed, revisit each claim ONE BY ONE in the progress
 file CRITIQUE if the INTENT of the work is done.
   6.1 Review if the user's desires are met--not if the tasks are completed.
