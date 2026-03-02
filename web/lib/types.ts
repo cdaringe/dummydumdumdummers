@@ -22,6 +22,7 @@ export type TriggerConfig =
   | "NoTrigger"
   | { Webhook: { url: string } }
   | { GitHub: { repo: string; events: string[] } }
+  | { Gitea: { repo: string; events: string[] } }
   | { GitLab: { project: string; events: string[] } }
   | { Custom: { name: string } };
 
