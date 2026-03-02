@@ -429,6 +429,11 @@ evidencing completion of every scenario.
 1. For user scenarios with e2e tests a receipt SHALL include a video of the playwright test passing and a description of how the test evidences completion.
 2. For requirements that do not have an e2e test a receipt SHALL include a markdown write-up with snippets of code evidence on how the requirement is met.
 3. A status SHALL be placed at the top of each receipt indicating if the scenario is VERIFIED or NEEDS_REWORK based on the validation results and your review of the evidence.
+
+Requirements:
+
+1. Markdown SHALL be rendered
+2. Videos SHALL be embedded and playable from the receipt.
 `.trim();
   const spec = buildCommandSpec({
     agent,
