@@ -45,5 +45,9 @@ export async function POST(req: Request) {
     }
   }
 
-  return NextResponse.json({ ok: true, triggered: runIds.length, run_ids: runIds });
+  return NextResponse.json({
+    ok: true,
+    triggered: runIds.length,
+    run_ids: runIds,
+  });
 }

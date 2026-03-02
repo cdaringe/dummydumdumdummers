@@ -21,8 +21,9 @@ export async function GET(req: NextRequest) {
     "User-Agent": "thingfactory",
   };
 
-  const url =
-    `https://api.github.com/repos/${encodeURIComponent(org)}/${encodeURIComponent(repo)}/branches?per_page=100`;
+  const url = `https://api.github.com/repos/${encodeURIComponent(org)}/${
+    encodeURIComponent(repo)
+  }/branches?per_page=100`;
   const res = await fetch(url, { headers });
   if (!res.ok) {
     return NextResponse.json(

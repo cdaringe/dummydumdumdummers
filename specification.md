@@ -128,6 +128,18 @@ each.
 55. The GUI SHALL show the node state when a pipeline is running, such as
     "pending", "running", "failed", "succeeded", etc. It should also show the
     duration of each node, and the overall pipeline in the flow diagram itself.
+56. The user SHALL be able to select a select a GitHub organization and
+    repository to connect to in the GUI, and select an autopopulated branch from
+    a dropdown to register for Pipelines.
+57. The user SHALL be able to select a gittea instance and repository to connect
+    to in the GUI, and select an autopopulated branch from a dropdown to
+    register for Pipelines.
+58. The pipeline SHALL allow in code specifying execution on key trigger, such
+    as Trigger.BranchUpdate("main") or Trigger.Schedule("0 0 * * *").
+59. The system SHALL make events from GitHub & Gittea work so as to activate
+    triggers.
+60. The project SHALL host a pipline file in the root such that a deployed
+    instance of the project can build itself.
 
 ## Requirements
 

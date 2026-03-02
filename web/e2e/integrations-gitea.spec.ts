@@ -88,10 +88,14 @@ test.describe("Gitea Integrations", () => {
     await page.getByTestId("gitea-url-input").fill("https://gitea.example.com");
     await page.getByTestId("gitea-token-input").fill("gitea-token-abc123");
     await page.getByTestId("fetch-gitea-repos-btn").click();
-    await page.getByTestId("gitea-repo-select").selectOption("alice/my-service");
+    await page.getByTestId("gitea-repo-select").selectOption(
+      "alice/my-service",
+    );
 
     await page.getByTestId("gitea-branch-select").selectOption("develop");
-    await expect(page.getByTestId("gitea-branch-select")).toHaveValue("develop");
+    await expect(page.getByTestId("gitea-branch-select")).toHaveValue(
+      "develop",
+    );
   });
 
   test("shows pipeline selector and register button after branch selection", async ({ page }) => {
@@ -106,7 +110,9 @@ test.describe("Gitea Integrations", () => {
     await page.getByTestId("gitea-url-input").fill("https://gitea.example.com");
     await page.getByTestId("gitea-token-input").fill("gitea-token-abc123");
     await page.getByTestId("fetch-gitea-repos-btn").click();
-    await page.getByTestId("gitea-repo-select").selectOption("alice/my-service");
+    await page.getByTestId("gitea-repo-select").selectOption(
+      "alice/my-service",
+    );
 
     await expect(page.getByTestId("gitea-pipeline-select")).toBeVisible();
     await expect(page.getByTestId("gitea-register-btn")).toBeVisible();
@@ -124,7 +130,9 @@ test.describe("Gitea Integrations", () => {
     await page.getByTestId("gitea-url-input").fill("https://gitea.example.com");
     await page.getByTestId("gitea-token-input").fill("gitea-token-abc123");
     await page.getByTestId("fetch-gitea-repos-btn").click();
-    await page.getByTestId("gitea-repo-select").selectOption("alice/my-service");
+    await page.getByTestId("gitea-repo-select").selectOption(
+      "alice/my-service",
+    );
     await page.getByTestId("gitea-branch-select").selectOption("main");
 
     await page.getByTestId("gitea-register-btn").click();

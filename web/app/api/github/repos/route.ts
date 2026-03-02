@@ -22,8 +22,12 @@ export async function GET(req: NextRequest) {
   };
 
   const url = type === "User"
-    ? `https://api.github.com/users/${encodeURIComponent(org)}/repos?per_page=100&sort=updated`
-    : `https://api.github.com/orgs/${encodeURIComponent(org)}/repos?per_page=100&sort=updated`;
+    ? `https://api.github.com/users/${
+      encodeURIComponent(org)
+    }/repos?per_page=100&sort=updated`
+    : `https://api.github.com/orgs/${
+      encodeURIComponent(org)
+    }/repos?per_page=100&sort=updated`;
 
   const res = await fetch(url, { headers });
   if (!res.ok) {

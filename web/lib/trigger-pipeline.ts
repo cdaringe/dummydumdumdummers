@@ -1,6 +1,6 @@
 import { db } from "./db";
 import { v4 as uuidv4 } from "uuid";
-import { runEvents, type RunEvent } from "./run-events";
+import { type RunEvent, runEvents } from "./run-events";
 import type { StepDefinition } from "./types";
 
 function generateStepLog(

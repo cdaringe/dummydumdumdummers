@@ -270,7 +270,9 @@ export default function IntegrationsPage() {
         }`,
       );
       if (!res.ok) {
-        setGiteaError("Failed to fetch repositories. Check your URL and token.");
+        setGiteaError(
+          "Failed to fetch repositories. Check your URL and token.",
+        );
         return;
       }
       const data: GiteaRepo[] = await res.json();
@@ -388,9 +390,7 @@ export default function IntegrationsPage() {
       ? "var(--color-status-failed-bg, #1a0505)"
       : "var(--color-status-ok-bg, #051a0a)",
     border: `1px solid ${
-      type === "error"
-        ? "var(--color-status-failed)"
-        : "var(--color-status-ok)"
+      type === "error" ? "var(--color-status-failed)" : "var(--color-status-ok)"
     }`,
     borderRadius: "var(--border-radius-md)",
     color: type === "error"
@@ -680,9 +680,8 @@ export default function IntegrationsPage() {
         </h2>
 
         {giteaError && <div style={alertStyle("error")}>{giteaError}</div>}
-        {giteaSuccess && (
-          <div style={alertStyle("success")}>{giteaSuccess}</div>
-        )}
+        {giteaSuccess && <div style={alertStyle("success")}>{giteaSuccess}
+        </div>}
 
         {/* Step 1: Instance URL */}
         <div style={fieldStyle}>

@@ -4,18 +4,14 @@ import { expect, test } from "./fixtures";
 const SEED_PIPELINE_ID = "basic_example@1.0.0";
 
 test.describe("GitHub webhook receiver", () => {
-  test("returns 400 when payload is missing required fields", async ({
-    page,
-  }) => {
+  test("returns 400 when payload is missing required fields", async ({ page }) => {
     const res = await page.request.post("/api/webhooks/github", {
       data: {},
     });
     expect(res.status()).toBe(400);
   });
 
-  test("returns 0 triggered when no matching connection exists", async ({
-    page,
-  }) => {
+  test("returns 0 triggered when no matching connection exists", async ({ page }) => {
     const res = await page.request.post("/api/webhooks/github", {
       data: {
         ref: "refs/heads/main",
@@ -28,9 +24,7 @@ test.describe("GitHub webhook receiver", () => {
     expect(body.triggered).toBe(0);
   });
 
-  test("triggers pipeline when matching connection with pipeline_id exists", async ({
-    page,
-  }) => {
+  test("triggers pipeline when matching connection with pipeline_id exists", async ({ page }) => {
     // Create a connection linked to a seed pipeline
     await page.request.post("/api/github/connections", {
       data: {
@@ -79,9 +73,7 @@ test.describe("GitHub webhook receiver", () => {
     expect(body.triggered).toBe(0);
   });
 
-  test("does not trigger connection without a linked pipeline", async ({
-    page,
-  }) => {
+  test("does not trigger connection without a linked pipeline", async ({ page }) => {
     await page.request.post("/api/github/connections", {
       data: {
         token: "ghp_test",
@@ -106,18 +98,14 @@ test.describe("GitHub webhook receiver", () => {
 });
 
 test.describe("Gitea webhook receiver", () => {
-  test("returns 400 when payload is missing required fields", async ({
-    page,
-  }) => {
+  test("returns 400 when payload is missing required fields", async ({ page }) => {
     const res = await page.request.post("/api/webhooks/gitea", {
       data: {},
     });
     expect(res.status()).toBe(400);
   });
 
-  test("returns 0 triggered when no matching connection exists", async ({
-    page,
-  }) => {
+  test("returns 0 triggered when no matching connection exists", async ({ page }) => {
     const res = await page.request.post("/api/webhooks/gitea", {
       data: {
         ref: "refs/heads/main",
@@ -130,9 +118,7 @@ test.describe("Gitea webhook receiver", () => {
     expect(body.triggered).toBe(0);
   });
 
-  test("triggers pipeline when matching connection with pipeline_id exists", async ({
-    page,
-  }) => {
+  test("triggers pipeline when matching connection with pipeline_id exists", async ({ page }) => {
     await page.request.post("/api/gitea/connections", {
       data: {
         url: "https://gitea.example.com",
@@ -180,9 +166,7 @@ test.describe("Gitea webhook receiver", () => {
     expect(body.triggered).toBe(0);
   });
 
-  test("does not trigger connection without a linked pipeline", async ({
-    page,
-  }) => {
+  test("does not trigger connection without a linked pipeline", async ({ page }) => {
     await page.request.post("/api/gitea/connections", {
       data: {
         url: "https://gitea.example.com",
