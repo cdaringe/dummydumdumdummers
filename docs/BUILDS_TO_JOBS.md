@@ -1,8 +1,8 @@
 # Getting Builds Into Jobs
 
 This guide covers the complete workflow for deploying Thingfactory with Docker
-and connecting your VCS repositories so that pushes automatically create pipeline
-runs.
+and connecting your VCS repositories so that pushes automatically create
+pipeline runs.
 
 ## Table of Contents
 
@@ -58,7 +58,8 @@ docker run -d \
   thingfactory-web
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to verify the GUI is running.
+Open [http://localhost:3000](http://localhost:3000) to verify the GUI is
+running.
 
 ### Docker Compose (Recommended)
 
@@ -102,8 +103,7 @@ Webhooks from GitHub or Gitea must be able to reach the service. Options:
 - **Production server**: deploy behind nginx (see
   [HOSTING_SERVICE.md](HOSTING_SERVICE.md#reverse-proxy)) with a public DNS
   record.
-- **Local development**: use a tunnel tool such as
-  [ngrok](https://ngrok.com):
+- **Local development**: use a tunnel tool such as [ngrok](https://ngrok.com):
   ```bash
   ngrok http 3000
   # Exposes: https://abc123.ngrok.io → localhost:3000
@@ -141,8 +141,8 @@ Open the **Integrations** page at `http://<your-host>:3000/integrations`.
 
 ### GitHub
 
-1. Enter a **Personal Access Token** with `repo` scope and click
-   **Load Organizations**.
+1. Enter a **Personal Access Token** with `repo` scope and click **Load
+   Organizations**.
 2. Select the **Organization** (or your personal account).
 3. Select the **Repository** — branches auto-populate.
 4. Select the **Branch** to watch (e.g. `main`).
@@ -190,8 +190,7 @@ GitHub will send a ping to verify the endpoint; the service returns `200`.
 ## Step 5: Verify the Flow
 
 1. Push a commit to the watched branch.
-2. Open `http://<your-host>:3000/runs` — a new run should appear within
-   seconds.
+2. Open `http://<your-host>:3000/runs` — a new run should appear within seconds.
 3. Click the run to see live step progress, logs, and artifacts.
 
 To test without a real push, send a synthetic payload:
@@ -222,13 +221,13 @@ A successful response includes the triggered run IDs:
 
 ## Troubleshooting
 
-| Symptom                         | Cause                              | Fix                                                     |
-| ------------------------------- | ---------------------------------- | ------------------------------------------------------- |
-| `triggered: 0` on webhook POST  | No matching connection in database | Register the repo/branch connection on /integrations    |
-| `400 Bad Request`               | Missing required JSON fields       | Verify webhook payload format matches expected schema   |
-| Webhook not reaching service    | Firewall / tunnel not running      | Check `ngrok` or public DNS; test with `curl` locally   |
-| Pipeline not in selector        | Pipeline not registered in DB      | Run `factory run -f <file> <fn>` or seed the database   |
-| Steps fail with Docker error    | Docker socket not mounted          | Add `-v /var/run/docker.sock:/var/run/docker.sock`      |
+| Symptom                        | Cause                              | Fix                                                   |
+| ------------------------------ | ---------------------------------- | ----------------------------------------------------- |
+| `triggered: 0` on webhook POST | No matching connection in database | Register the repo/branch connection on /integrations  |
+| `400 Bad Request`              | Missing required JSON fields       | Verify webhook payload format matches expected schema |
+| Webhook not reaching service   | Firewall / tunnel not running      | Check `ngrok` or public DNS; test with `curl` locally |
+| Pipeline not in selector       | Pipeline not registered in DB      | Run `factory run -f <file> <fn>` or seed the database |
+| Steps fail with Docker error   | Docker socket not mounted          | Add `-v /var/run/docker.sock:/var/run/docker.sock`    |
 
 For more deployment options see [HOSTING_SERVICE.md](HOSTING_SERVICE.md). For
 Docker-specific details see [../DOCKER.md](../DOCKER.md).
