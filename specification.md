@@ -140,6 +140,7 @@ each.
     triggers.
 60. The project SHALL host a pipline file in the root such that a deployed
     instance of the project can build itself.
+61. The project SHALL host docker deployment documentation and instructions on how to get builds into jobs into the system.
 
 ## Requirements
 

@@ -1,16 +1,22 @@
-/// Build pipeline for Thingfactory itself
+/// Canonical CI/CD pipeline for Thingfactory — builds, tests, packages,
+/// and publishes the entire project.
 ///
-/// This is the canonical root-level pipeline file for building and testing
-/// the Thingfactory project. Run it with the Thingfactory CLI:
+/// Run with the Thingfactory CLI:
 ///
 ///   thingfactory run -f src/thingfactory/build.gleam build
 ///
-/// The pipeline runs in parallel where possible:
+/// DAG structure (parallel where possible):
 ///
-///   gleam_check (no deps) ──────┐
-///   gleam_format (no deps) ─────┼─→ gleam_build_erl (check + format)
-///   web_install (no deps) ──────┼─→ web_build (web_install)
-///                               └─→ verify (gleam_build_erl + web_build)
+///   ┌─ gleam_check ─────┐
+///   ├─ gleam_format ─────┤
+///   │                    ├─ gleam_test ─┬─ gleam_build_erl ─┬─ cli_shipment ─┬─ docker_build_cli ─┐
+///   │                    │              └─ gleam_build_js ──┤                │                    │
+///   │                    │                                  │                │                    │
+///   └─ web_install ──────┴─ web_lint ── web_build ──────────┴─ docker_build_web ─┐               │
+///                                                                               │               │
+///                                          hex_publish (erl+js) ────────────────┤               │
+///                                                                               │               │
+///                                                                   semantic_release ───────────┘
 ///
 /// Fulfills scenario 60: "The project SHALL host a pipeline file in the root
 /// such that a deployed instance of the project can build itself."
@@ -19,14 +25,17 @@ import thingfactory/command_runner
 import thingfactory/parallel_executor
 import thingfactory/pipeline
 import thingfactory/types
+import thingfactory/webhook_trigger
 
-/// Self-build pipeline — checks, formats, compiles, and verifies the project.
+/// Full CI/CD pipeline — validate, test, build, package, and publish.
 ///
 /// Run with:
 ///   thingfactory run -f src/thingfactory/build.gleam build
 pub fn build() -> pipeline.Pipeline(Dynamic) {
   pipeline.new("thingfactory-build", "1.0.0")
-  |> pipeline.with_timeout(300_000)
+  |> pipeline.with_timeout(600_000)
+  |> pipeline.with_trigger(webhook_trigger.on_branch_update("main"))
+  // ── Tier 0: Validate (no deps, all parallel) ──────────────────────
   |> pipeline.add_step_with_deps(
     "gleam_check",
     command_runner.step("gleam", ["check"]),
@@ -38,31 +47,70 @@ pub fn build() -> pipeline.Pipeline(Dynamic) {
     [],
   )
   |> pipeline.add_step_with_deps(
-    "gleam_build_erl",
-    command_runner.step("gleam", ["build", "--target", "erlang"]),
+    "web_install",
+    command_runner.step("npm", ["--prefix", "web", "ci"]),
+    [],
+  )
+  // ── Tier 1: Test ──────────────────────────────────────────────────
+  |> pipeline.add_step_with_deps(
+    "gleam_test",
+    command_runner.step("gleam", ["test"]),
     [pipeline.step_ref("gleam_check"), pipeline.step_ref("gleam_format")],
   )
   |> pipeline.add_step_with_deps(
-    "web_install",
-    command_runner.step("npm", [
-      "--prefix",
-      "web",
-      "install",
-      "--prefer-offline",
-    ]),
-    [],
+    "web_lint",
+    command_runner.step("npm", ["--prefix", "web", "run", "lint"]),
+    [pipeline.step_ref("web_install")],
+  )
+  // ── Tier 2: Build ─────────────────────────────────────────────────
+  |> pipeline.add_step_with_deps(
+    "gleam_build_erl",
+    command_runner.step("gleam", ["build", "--target", "erlang"]),
+    [pipeline.step_ref("gleam_test")],
+  )
+  |> pipeline.add_step_with_deps(
+    "gleam_build_js",
+    command_runner.step("gleam", ["build", "--target", "javascript"]),
+    [pipeline.step_ref("gleam_test")],
   )
   |> pipeline.add_step_with_deps(
     "web_build",
     command_runner.step("npm", ["--prefix", "web", "run", "build"]),
-    [pipeline.step_ref("web_install")],
+    [pipeline.step_ref("web_lint")],
+  )
+  // ── Tier 3: Package ───────────────────────────────────────────────
+  |> pipeline.add_step_with_deps(
+    "cli_shipment",
+    command_runner.step("gleam", ["export", "erlang-shipment"]),
+    [pipeline.step_ref("gleam_build_erl")],
   )
   |> pipeline.add_step_with_deps(
-    "verify",
-    fn(_ctx, _input) { Ok(dynamic.string("build=ok")) },
+    "docker_build_cli",
+    command_runner.sh("docker build -t thingfactory-cli -f Dockerfile ."),
+    [pipeline.step_ref("cli_shipment")],
+  )
+  |> pipeline.add_step_with_deps(
+    "docker_build_web",
+    command_runner.sh("docker build -t thingfactory-web -f web/Dockerfile web"),
+    [pipeline.step_ref("web_build")],
+  )
+  // ── Tier 4: Publish ───────────────────────────────────────────────
+  |> pipeline.add_step_with_deps(
+    "hex_publish",
+    command_runner.sh("gleam hex publish --yes"),
     [
       pipeline.step_ref("gleam_build_erl"),
-      pipeline.step_ref("web_build"),
+      pipeline.step_ref("gleam_build_js"),
+    ],
+  )
+  // ── Tier 5: Release ───────────────────────────────────────────────
+  |> pipeline.add_step_with_deps(
+    "semantic_release",
+    command_runner.sh("npx semantic-release --no-ci"),
+    [
+      pipeline.step_ref("docker_build_cli"),
+      pipeline.step_ref("docker_build_web"),
+      pipeline.step_ref("hex_publish"),
     ],
   )
 }
