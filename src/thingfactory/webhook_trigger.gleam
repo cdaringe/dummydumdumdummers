@@ -19,6 +19,8 @@ pub type WebhookEvent {
     source: Option(String),
     event_id: Option(String),
     timestamp_ms: Int,
+    /// The branch associated with the event (for push/update events).
+    branch: Option(String),
   )
 }
 
@@ -26,6 +28,7 @@ pub type WebhookEvent {
 pub type WebhookMatcher {
   TopicMatcher(topic: String)
   SourceMatcher(source: String)
+  BranchMatcher(branch: String)
   AnyMatcher(matchers: List(WebhookMatcher))
   AllMatcher(matchers: List(WebhookMatcher))
   CustomMatcher(fn(WebhookEvent) -> Bool)
@@ -36,6 +39,9 @@ pub type Trigger {
   NoTrigger
   WebhookTrigger(matcher: WebhookMatcher)
   ManualTrigger
+  /// Trigger on any push/update to the named branch (GitHub, Gitea, etc.).
+  /// Example: `BranchUpdate("main")` fires whenever "main" receives a push.
+  BranchUpdate(branch: String)
 }
 
 /// Check if a webhook event matches a trigger configuration.
@@ -44,6 +50,7 @@ pub fn trigger_matches(trigger: Trigger, event: WebhookEvent) -> Bool {
     NoTrigger -> False
     WebhookTrigger(matcher) -> matcher_matches(matcher, event)
     ManualTrigger -> False
+    BranchUpdate(branch) -> matcher_matches(BranchMatcher(branch), event)
   }
 }
 
@@ -54,6 +61,12 @@ pub fn matcher_matches(matcher: WebhookMatcher, event: WebhookEvent) -> Bool {
     SourceMatcher(source) -> {
       case event.source {
         Some(src) -> src == source
+        None -> False
+      }
+    }
+    BranchMatcher(branch) -> {
+      case event.branch {
+        Some(b) -> b == branch
         None -> False
       }
     }
@@ -80,6 +93,7 @@ pub fn github_push_event(
     source: Some("github"),
     event_id: Some(commit_sha),
     timestamp_ms: timestamp_ms,
+    branch: Some(branch),
   )
 }
 
@@ -96,6 +110,7 @@ pub fn github_pr_event(
     source: Some("github"),
     event_id: Some("pr_" <> int.to_string(pr_number)),
     timestamp_ms: timestamp_ms,
+    branch: None,
   )
 }
 
@@ -111,6 +126,7 @@ pub fn custom_event(
     source: None,
     event_id: None,
     timestamp_ms: timestamp_ms,
+    branch: None,
   )
 }
 
@@ -127,6 +143,24 @@ pub fn gitlab_push_event(
     source: Some("gitlab"),
     event_id: Some(commit_sha),
     timestamp_ms: timestamp_ms,
+    branch: Some(branch),
+  )
+}
+
+/// Create a Gitea push event webhook.
+pub fn gitea_push_event(
+  repo: String,
+  branch: String,
+  commit_sha: String,
+  timestamp_ms: Int,
+) -> WebhookEvent {
+  WebhookEvent(
+    topic: "gitea.push",
+    payload: dynamic.string(repo <> ":" <> branch),
+    source: Some("gitea"),
+    event_id: Some(commit_sha),
+    timestamp_ms: timestamp_ms,
+    branch: Some(branch),
   )
 }
 
@@ -158,6 +192,18 @@ pub fn on_source(source: String) -> Trigger {
 /// Create a webhook trigger with custom matching logic.
 pub fn on_custom(predicate: fn(WebhookEvent) -> Bool) -> Trigger {
   WebhookTrigger(CustomMatcher(predicate))
+}
+
+/// Create a trigger that fires when the named branch receives a push.
+/// Works with GitHub, Gitea, and GitLab push events that carry a branch field.
+/// Example: `on_branch_update("main")` fires whenever "main" is pushed to.
+pub fn on_branch_update(branch: String) -> Trigger {
+  BranchUpdate(branch)
+}
+
+/// Create a webhook trigger for any Gitea push event.
+pub fn on_gitea_push() -> Trigger {
+  WebhookTrigger(TopicMatcher("gitea.push"))
 }
 
 /// Deduplication state for webhook events.

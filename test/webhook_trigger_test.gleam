@@ -242,3 +242,84 @@ pub fn event_description_no_source_test() {
   let desc = webhook_trigger.event_description(event)
   desc |> should.equal("custom.topic")
 }
+
+pub fn github_push_event_has_branch_test() {
+  let event =
+    webhook_trigger.github_push_event("user/repo", "main", "abc123", 1000)
+  event.branch |> should.equal(option.Some("main"))
+}
+
+pub fn github_pr_event_has_no_branch_test() {
+  let event = webhook_trigger.github_pr_event("user/repo", 42, "opened", 2000)
+  event.branch |> should.equal(option.None)
+}
+
+pub fn custom_event_has_no_branch_test() {
+  let event =
+    webhook_trigger.custom_event("topic", dynamic.string("data"), 1000)
+  event.branch |> should.equal(option.None)
+}
+
+pub fn gitlab_push_event_has_branch_test() {
+  let event =
+    webhook_trigger.gitlab_push_event("group/proj", "develop", "sha", 1000)
+  event.branch |> should.equal(option.Some("develop"))
+}
+
+pub fn gitea_push_event_creation_test() {
+  let event =
+    webhook_trigger.gitea_push_event("org/repo", "feature", "sha456", 5000)
+  event.topic |> should.equal("gitea.push")
+  event.source |> should.equal(option.Some("gitea"))
+  event.event_id |> should.equal(option.Some("sha456"))
+  event.branch |> should.equal(option.Some("feature"))
+}
+
+pub fn branch_matcher_matches_test() {
+  let event = webhook_trigger.github_push_event("repo", "main", "abc", 1000)
+  let matcher = webhook_trigger.BranchMatcher("main")
+  webhook_trigger.matcher_matches(matcher, event) |> should.equal(True)
+}
+
+pub fn branch_matcher_no_match_test() {
+  let event = webhook_trigger.github_push_event("repo", "main", "abc", 1000)
+  let matcher = webhook_trigger.BranchMatcher("develop")
+  webhook_trigger.matcher_matches(matcher, event) |> should.equal(False)
+}
+
+pub fn branch_matcher_no_branch_field_test() {
+  let event =
+    webhook_trigger.custom_event("topic", dynamic.string("data"), 1000)
+  let matcher = webhook_trigger.BranchMatcher("main")
+  webhook_trigger.matcher_matches(matcher, event) |> should.equal(False)
+}
+
+pub fn branch_update_trigger_matches_test() {
+  let event = webhook_trigger.github_push_event("repo", "main", "abc", 1000)
+  let trigger = webhook_trigger.BranchUpdate("main")
+  webhook_trigger.trigger_matches(trigger, event) |> should.equal(True)
+}
+
+pub fn branch_update_trigger_wrong_branch_test() {
+  let event = webhook_trigger.github_push_event("repo", "main", "abc", 1000)
+  let trigger = webhook_trigger.BranchUpdate("develop")
+  webhook_trigger.trigger_matches(trigger, event) |> should.equal(False)
+}
+
+pub fn on_branch_update_matches_github_push_test() {
+  let event = webhook_trigger.github_push_event("repo", "main", "abc", 1000)
+  let trigger = webhook_trigger.on_branch_update("main")
+  webhook_trigger.trigger_matches(trigger, event) |> should.equal(True)
+}
+
+pub fn on_branch_update_matches_gitea_push_test() {
+  let event = webhook_trigger.gitea_push_event("org/repo", "main", "sha", 2000)
+  let trigger = webhook_trigger.on_branch_update("main")
+  webhook_trigger.trigger_matches(trigger, event) |> should.equal(True)
+}
+
+pub fn on_gitea_push_test() {
+  let event = webhook_trigger.gitea_push_event("org/repo", "main", "sha", 2000)
+  let trigger = webhook_trigger.on_gitea_push()
+  webhook_trigger.trigger_matches(trigger, event) |> should.equal(True)
+}
