@@ -65,8 +65,6 @@ test.describe("Statistics Page", () => {
 
   test("displays seeded pipeline data in statistics table", async ({ page }) => {
     await page.goto("/stats");
-    // Wait for data to load (client-side fetch)
-    await page.waitForLoadState("networkidle");
     const rows = page.locator("table tbody tr");
     await expect(rows.first()).toBeVisible();
   });
@@ -77,8 +75,7 @@ test.describe("Statistics Page", () => {
     const pipelineLink = page.locator("table tbody tr a").first();
     await expect(pipelineLink).toBeVisible();
     await pipelineLink.click();
-    await page.waitForLoadState("networkidle");
-    await expect(page.url()).toContain("/pipelines/");
+    await expect(page).toHaveURL(/\/pipelines\//);
   });
 
   test("has navigation sidebar with Statistics link active", async ({ page }) => {

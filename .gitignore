@@ -3,3 +3,4 @@ build
 erl_crash.dump
 .ralph
 .last-run.json
+.next

@@ -1,12 +1,12 @@
 #!/usr/bin/env -S deno run --allow-run --allow-read --allow-write --allow-env
-
 /**
  * Sample usage:
  * deno run -A ralph.mts --iterations 10 --agent codex
  * deno run -A ralph.mts --iterations 10 --agent claude
  */
-
 import { parseArgs } from "jsr:@std/cli@1/parse-args";
+
+const RALPH_RECEIPTS_DIRNAME = ".ralph/receipts";
 
 type Agent = (typeof VALID_AGENTS)[number];
 type LogLevel = "info" | "error" | "debug";
@@ -20,11 +20,14 @@ const err = <E,>(error: E): Result<never, E> => ({ ok: false, error });
 
 type ValidationResult =
   | { status: "passed" }
+  | { status: "skip" }
   | { status: "failed"; outputPath: string };
+
+type ToolMode = "fast" | "general" | "strong";
 
 type ModelSelection = {
   readonly model: string;
-  readonly useStrongModel: boolean;
+  readonly mode: ToolMode;
   readonly targetScenario: number | undefined;
 };
 
@@ -37,6 +40,11 @@ type IterationResult =
 type CommandSpec = {
   readonly command: string;
   readonly args: string[];
+};
+
+type LoopState = {
+  readonly validationFailurePath: string | undefined;
+  readonly task: "build" | "produce_receipts";
 };
 
 // --- Constants ---
@@ -76,7 +84,7 @@ file CRITIQUE if the INTENT of the scenario is ACTUALLY COMPLETED. Run code, use
   6.2 Every referenced document or module should be verified existing and up-to-date.
   6.3 Update status to VERIFIED or NEEDS_REWORK with rework notes as needed.
 
-Once all claims are VERIFIED, output <promise>COMPLETE</promise>.`;
+Once all claims are VERIFIED, output ${COMPLETION_MARKER}.`;
 
 // --- Logger ---
 
@@ -133,16 +141,20 @@ const detectScenarioFromProgress = (
     : ok(scenario);
 };
 
-const getModelDefaults = (agent: Agent): { fast: string; strong: string } =>
-  agent === "claude"
+const getModel = (
+  { agent, mode }: { agent: Agent; mode: "fast" | "general" | "strong" },
+): string =>
+  (agent === "claude"
     ? {
-      fast: Deno.env.get("CLAUDE_FAST_MODEL") ?? "sonnet",
-      strong: Deno.env.get("CLAUDE_STRONG_MODEL") ?? "opus",
-    }
+      fast: "haiku",
+      general: "sonnet",
+      strong: "opus",
+    } as const
     : {
-      fast: Deno.env.get("CODEX_FAST_MODEL") ?? "gpt-5.1-codex-max",
-      strong: Deno.env.get("CODEX_STRONG_MODEL") ?? "gpt-5.3-codex",
-    };
+      fast: "gpt-5.1-codex",
+      general: "gpt-5.1-codex-max",
+      strong: "gpt-5.3-codex",
+    } as const)[mode];
 
 const computeModelSelection = (
   content: string,
@@ -153,24 +165,26 @@ const computeModelSelection = (
 
   if (!scenarioResult.ok) return scenarioResult;
 
-  const useStrongModel = reworkCount > REWORK_THRESHOLD;
-  const models = getModelDefaults(agent);
+  const mode = reworkCount > REWORK_THRESHOLD
+    ? "strong" as const
+    : "general" as const;
+  const model = getModel({ agent, mode });
 
   return ok({
-    model: useStrongModel ? models.strong : models.fast,
-    useStrongModel,
+    model,
+    mode,
     targetScenario: scenarioResult.value,
   });
 };
 
 const buildPrompt = (
-  { targetScenario, useStrongModel, validationFailurePath }: {
+  { targetScenario, mode, validationFailurePath }: {
     targetScenario: number | undefined;
-    useStrongModel: boolean;
+    mode: ToolMode;
     validationFailurePath: string | undefined;
   },
 ): string => {
-  const base = !useStrongModel || targetScenario === undefined
+  const base = mode === "general" || targetScenario === undefined
     ? BASE_PROMPT
     : `${BASE_PROMPT}
 
@@ -237,9 +251,10 @@ const resolveModelSelection = async (
   agent: Agent,
   log: Logger,
 ): Promise<ModelSelection> => {
+  const defaultMode = "general" as const;
   const defaults: ModelSelection = {
-    model: getModelDefaults(agent).fast,
-    useStrongModel: false,
+    model: getModel({ agent, mode: defaultMode }),
+    mode: defaultMode,
     targetScenario: undefined,
   };
 
@@ -252,14 +267,14 @@ const resolveModelSelection = async (
     return defaults;
   }
 
-  const { model, useStrongModel, targetScenario } = result.value;
+  const { model, mode, targetScenario } = result.value;
   const reworkCount = (content.match(/NEEDS_REWORK/g) ?? []).length;
   log({
     tags: ["info", "model"],
     message: `${reworkCount} NEEDS_REWORK entries → using ${model}`,
   });
 
-  if (useStrongModel && targetScenario !== undefined) {
+  if (mode === "strong" && targetScenario !== undefined) {
     log({
       tags: ["info", "scenario"],
       message: `strong-model pass scoped to scenario ${targetScenario}`,
@@ -333,20 +348,20 @@ const runIteration = async (
     validationFailurePath: string | undefined;
   },
 ): Promise<IterationResult> => {
-  const { model, useStrongModel, targetScenario } = await resolveModelSelection(
+  const { model, mode, targetScenario } = await resolveModelSelection(
     agent,
     log,
   );
   const prompt = buildPrompt({
     targetScenario,
-    useStrongModel,
+    mode,
     validationFailurePath,
   });
   const spec = buildCommandSpec({ agent, model, prompt });
 
   log({
-    tags: ["info"],
-    message: `Starting iteration ${iterationNum} (${model})...`,
+    tags: ["info", "iteration"],
+    message: `Starting ${iterationNum} (${model})...`,
   });
 
   const combinedSignal = AbortSignal.any([
@@ -363,7 +378,7 @@ const runIteration = async (
       signal: combinedSignal,
     }).spawn();
 
-    const [status, foundComplete] = await Promise.all([
+    const [status, foundAllCompleteSigil] = await Promise.all([
       child.status,
       pipeStream({
         stream: child.stdout,
@@ -380,7 +395,7 @@ const runIteration = async (
           `iteration ${iterationNum} failed with exit code ${status.code}`,
       }),
         { status: "failed", code: status.code })
-      : foundComplete
+      : foundAllCompleteSigil
       ? (log({
         tags: ["info"],
         message: `specification complete after ${iterationNum} iterations.`,
@@ -404,15 +419,80 @@ const runIteration = async (
   }
 };
 
-// --- Main ---
+const updateReceipts = async (
+  { agent }: { agent: Agent },
+): Promise<Result<undefined, string>> => {
+  const prompt = `
+Update ${RALPH_RECEIPTS_DIRNAME}/{index.html,assets} with videos &/or markdown notes
+evidencing completion of every scenario.
 
-const main = async (): Promise<void> => {
+1. For user scenarios with e2e tests a receipt SHALL include a video of the playwright test passing and a description of how the test evidences completion.
+2. For requirements that do not have an e2e test a receipt SHALL include a markdown write-up with snippets of code evidence on how the requirement is met.
+3. A status SHALL be placed at the top of each receipt indicating if the scenario is VERIFIED or NEEDS_REWORK based on the validation results and your review of the evidence.
+`.trim();
+  const spec = buildCommandSpec({
+    agent,
+    model: getModel({ agent, mode: "fast" }),
+    prompt,
+  });
+  const output = await new Deno.Command(spec.command, {
+    args: spec.args,
+    stdout: "piped",
+    stderr: "piped",
+  }).output();
+  return output.code
+    ? ok(undefined)
+    : err(`Failed to update receipts with exit code ${output.code}`);
+};
+
+const runLoopIteration = async (
+  { state, iterationNum, agent, signal, log }: {
+    state: LoopState;
+    iterationNum: number;
+    agent: Agent;
+    signal: AbortSignal;
+    log: Logger;
+  },
+): Promise<LoopState> => {
+  const result = state.task === "build"
+    ? await runIteration({
+      iterationNum,
+      agent,
+      signal,
+      log,
+      validationFailurePath: state.validationFailurePath,
+    })
+    : { status: "continue" } as IterationResult;
+
+  const validation = state.task === "build"
+    ? await runValidation({ iterationNum, log })
+    : { status: "skip" } as ValidationResult;
+
+  const validationFailurePath = validation.status === "failed"
+    ? validation.outputPath
+    : undefined;
+
+  const isPriorWorkOk = validation.status === "passed" &&
+    result.status === "complete";
+
+  if (!isPriorWorkOk) {
+    return { validationFailurePath, task: state.task };
+  }
+
+  const receiptsResult = await updateReceipts({ agent });
+  return receiptsResult.ok
+    ? { validationFailurePath, task: "build" }
+    : (log({ tags: ["error"], message: receiptsResult.error }),
+      { validationFailurePath, task: "produce_receipts" });
+};
+
+const main = async (): Promise<number> => {
   const log = createLogger();
   const parsed = parseCliArgs(Deno.args);
 
   if (!parsed.ok) {
     log({ tags: ["error"], message: parsed.error });
-    Deno.exit(1);
+    return 1;
   }
 
   const { agent, iterations } = parsed.value;
@@ -423,54 +503,39 @@ const main = async (): Promise<void> => {
   });
 
   const shutdownController = new AbortController();
-  let interrupted = false;
-  Deno.addSignalListener("SIGINT", () => {
-    if (interrupted) Deno.exit(130);
-    interrupted = true;
+  const onSigint = () => {
     log({
       tags: ["error"],
       message: "Interrupted (ctrl+c again to force exit)",
     });
     shutdownController.abort();
-    setTimeout(() => Deno.exit(130), 3_000);
-  });
+    Deno.removeSignalListener("SIGINT", onSigint);
+  };
+  Deno.addSignalListener("SIGINT", onSigint);
 
   const hookResult = await ensureValidationHook(log);
   if (!hookResult.ok) {
     log({ tags: ["error"], message: hookResult.error });
-    Deno.exit(1);
+    return 1;
   }
 
-  let validationFailurePath: string | undefined;
+  let state: LoopState = {
+    validationFailurePath: undefined,
+    task: "build",
+  };
 
   for (let i = 1; i <= iterations; i++) {
     if (shutdownController.signal.aborted) {
       log({ tags: ["error"], message: "Exiting due to signal" });
-      Deno.exit(130);
+      return 130;
     }
-
-    const result = await runIteration({
+    state = await runLoopIteration({
+      state,
       iterationNum: i,
       agent,
       signal: shutdownController.signal,
       log,
-      validationFailurePath,
     });
-
-    // On error/timeout, clear validation state and continue
-    if (result.status === "failed" || result.status === "timeout") {
-      validationFailurePath = undefined;
-      continue;
-    }
-
-    // Run validation after successful agent iteration
-    const validation = await runValidation({ iterationNum: i, log });
-    validationFailurePath = validation.status === "failed"
-      ? validation.outputPath
-      : undefined;
-
-    // Only accept completion if validation also passes
-    if (result.status === "complete" && validation.status === "passed") return;
   }
 
   log({
@@ -478,10 +543,16 @@ const main = async (): Promise<void> => {
     message:
       `All ${iterations} iterations completed without completion marker.`,
   });
+  return 0;
 };
 
-main().catch((error) => {
-  const log = createLogger();
-  log({ tags: ["error"], message: `Fatal error: ${error}` });
-  Deno.exit(1);
-});
+main().then(
+  (code) => {
+    Deno.exitCode = code;
+  },
+  (error) => {
+    const log = createLogger();
+    log({ tags: ["error"], message: `Fatal error: ${error}` });
+    Deno.exit(1);
+  },
+);
