@@ -9,6 +9,7 @@ const navItems = [
   { href: "/pipelines", label: "Pipelines", icon: "|>" },
   { href: "/runs", label: "Runs", icon: ">>" },
   { href: "/stats", label: "Statistics", icon: "#=" },
+  { href: "/integrations", label: "Integrations", icon: "<>" },
 ];
 
 export function Sidebar() {
