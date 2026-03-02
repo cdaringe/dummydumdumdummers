@@ -55,12 +55,23 @@ interface GitHubConnectionsTable {
   created_at: Generated<string>;
 }
 
+interface GiteaConnectionsTable {
+  id: string;
+  url: string;
+  token: string;
+  repo: string;
+  branch: string;
+  pipeline_id: string | null;
+  created_at: Generated<string>;
+}
+
 interface ThingfactoryDB {
   pipeline_definitions: PipelineDefinitionsTable;
   pipeline_runs: PipelineRunsTable;
   step_traces: StepTracesTable;
   artifacts: ArtifactsTable;
   github_connections: GitHubConnectionsTable;
+  gitea_connections: GiteaConnectionsTable;
 }
 
 let _rawDb: DatabaseConstructor.Database | undefined;
@@ -130,6 +141,15 @@ function initRawDb(): DatabaseConstructor.Database {
       id          TEXT PRIMARY KEY,
       token       TEXT NOT NULL,
       org         TEXT NOT NULL,
+      repo        TEXT NOT NULL,
+      branch      TEXT NOT NULL,
+      pipeline_id TEXT,
+      created_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+    );
+    CREATE TABLE IF NOT EXISTS gitea_connections (
+      id          TEXT PRIMARY KEY,
+      url         TEXT NOT NULL,
+      token       TEXT NOT NULL,
       repo        TEXT NOT NULL,
       branch      TEXT NOT NULL,
       pipeline_id TEXT,

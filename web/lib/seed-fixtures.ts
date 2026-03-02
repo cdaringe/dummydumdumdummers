@@ -1,6 +1,7 @@
 import type Database from "better-sqlite3";
 
 export function clearAllData(db: Database.Database) {
+  db.exec("DELETE FROM gitea_connections");
   db.exec("DELETE FROM github_connections");
   db.exec("DELETE FROM artifacts");
   db.exec("DELETE FROM step_traces");

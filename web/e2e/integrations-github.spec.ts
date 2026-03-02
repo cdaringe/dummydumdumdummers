@@ -6,8 +6,18 @@ const MOCK_ORGS = [
 ];
 
 const MOCK_REPOS = [
-  { name: "my-app", full_name: "testuser/my-app", default_branch: "main", private: false },
-  { name: "my-lib", full_name: "testuser/my-lib", default_branch: "main", private: true },
+  {
+    name: "my-app",
+    full_name: "testuser/my-app",
+    default_branch: "main",
+    private: false,
+  },
+  {
+    name: "my-lib",
+    full_name: "testuser/my-lib",
+    default_branch: "main",
+    private: true,
+  },
 ];
 
 const MOCK_BRANCHES = [
@@ -19,19 +29,22 @@ const MOCK_BRANCHES = [
 test.describe("GitHub Integrations Page", () => {
   test("loads and shows the integrations page", async ({ page }) => {
     await page.goto("/integrations");
-    await expect(page.getByRole("heading", { name: "Integrations" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Integrations" }))
+      .toBeVisible();
     await expect(page.getByTestId("gh-token-input")).toBeVisible();
     await expect(page.getByTestId("fetch-orgs-btn")).toBeVisible();
   });
 
   test("shows empty connections list initially", async ({ page }) => {
     await page.goto("/integrations");
-    await expect(page.getByText("No connections registered yet.")).toBeVisible();
+    await expect(page.getByText("No GitHub connections registered yet."))
+      .toBeVisible();
   });
 
   test("sidebar shows Integrations link", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("link", { name: /Integrations/ })).toBeVisible();
+    await expect(page.getByRole("link", { name: /Integrations/ }))
+      .toBeVisible();
   });
 
   test("cascading dropdowns: org -> repo -> branch selection", async ({ page }) => {
@@ -73,7 +86,9 @@ test.describe("GitHub Integrations Page", () => {
     await expect(page.getByTestId("gh-branch-select")).toHaveValue("main");
 
     // All branches should be listed
-    const branchOptions = page.getByTestId("gh-branch-select").locator("option");
+    const branchOptions = page.getByTestId("gh-branch-select").locator(
+      "option",
+    );
     await expect(branchOptions).toHaveCount(MOCK_BRANCHES.length + 1); // +1 for "— select —"
   });
 
@@ -173,6 +188,7 @@ test.describe("GitHub Integrations Page", () => {
     await page.getByRole("button", { name: "Remove" }).first().click();
 
     // Connection should be gone
-    await expect(page.getByText("No connections registered yet.")).toBeVisible();
+    await expect(page.getByText("No GitHub connections registered yet."))
+      .toBeVisible();
   });
 });
