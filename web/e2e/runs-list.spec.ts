@@ -78,8 +78,7 @@ test.describe("Runs List", () => {
     const firstDetailLink = page.locator("text=Details →").first();
     await expect(firstDetailLink).toBeVisible();
     await firstDetailLink.click();
-    await page.waitForLoadState("networkidle");
-    await expect(page.url()).toContain("/runs/");
+    await expect(page).toHaveURL(/\/runs\//);
   });
 
   test("shows pipeline name link in runs table", async ({ page }) => {
@@ -93,9 +92,8 @@ test.describe("Runs List", () => {
 
   test("can clear filters", async ({ page }) => {
     await page.goto("/runs?status=success");
-    await page.waitForLoadState("networkidle");
     // Page should load with status filter in URL
-    await expect(page.url()).toContain("status=success");
+    await expect(page).toHaveURL(/status=success/);
 
     // Check if clear link exists (it should when filters are applied)
     const clearLink = page.locator("a", { hasText: "Clear filters" });
@@ -107,9 +105,7 @@ test.describe("Runs List", () => {
     if (isVisible) {
       // Try to click and verify filter is cleared
       await clearLink.click();
-      await page.waitForLoadState("networkidle");
-      // Give page time to navigate away from filtered state
-      await page.waitForTimeout(500);
+      await expect(page).toHaveURL(/\/runs/);
       const newUrl = page.url();
       // Either URL changed or we're still on the page with filters cleared
       expect(newUrl).toMatch(/\/runs/) || !newUrl.includes("status=");
