@@ -13,6 +13,7 @@ import thingfactory/executor
 import thingfactory/kubernetes_runner
 import thingfactory/parallel_executor
 import thingfactory/pipeline
+import thingfactory/step_library
 import thingfactory/test_helpers
 import thingfactory/types
 
@@ -1207,9 +1208,40 @@ pub fn run_queue_worker() -> types.ExecutionResult(Dynamic) {
 }
 
 // ---------------------------------------------------------------------------
+// Example: Library Import - Mixing Imported and Local Steps
+// ---------------------------------------------------------------------------
+
+/// Demonstrates importing step factories from a library module and composing
+/// them with locally-defined steps in a single pipeline.
+///
+/// Steps from `step_library` (validate_non_empty, to_uppercase, prefix) are
+/// interleaved with an inline local step, showing that library steps and
+/// local steps are fully interchangeable in the pipeline builder.
+pub fn library_import_pipeline() -> pipeline.Pipeline(String, Dynamic) {
+  pipeline.new("library_import", "1.0.0")
+  |> pipeline.add_step("validate", step_library.validate_non_empty())
+  |> pipeline.add_step("local_enrich", fn(_ctx, input) {
+    // Local step: annotate input with a tag, decoded from Dynamic
+    case decode.run(input, decode.string) {
+      Ok(s) -> Ok(dynamic.string("[enriched] " <> s))
+      Error(_) -> Error(types.StepFailure(message: "Expected string input"))
+    }
+  })
+  |> pipeline.add_step("uppercase", step_library.to_uppercase())
+  |> pipeline.add_step("prefix", step_library.prefix("RESULT: "))
+}
+
+/// Execute the library import pipeline with a sample input
+pub fn run_library_import() -> types.ExecutionResult(Dynamic) {
+  let config = types.default_config()
+  executor.execute(library_import_pipeline(), dynamic.string("hello"), config)
+}
+
+// ---------------------------------------------------------------------------
 // Internal imports for examples
 // ---------------------------------------------------------------------------
 
+import gleam/dynamic/decode
 import gleam/int
 import gleam/list
 import gleam/string

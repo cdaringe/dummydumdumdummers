@@ -217,6 +217,19 @@ pub fn queue_worker_example_test() {
   list.length(result.trace) |> should.equal(3)
 }
 
+pub fn library_import_pipeline_test() {
+  // Verify that steps imported from a library module compose correctly with
+  // locally-defined steps in the same pipeline.
+  let p = examples.library_import_pipeline()
+  pipeline.id(p) |> should.equal(types.PipelineId("library_import", "1.0.0"))
+  list.length(pipeline.steps(p)) |> should.equal(4)
+
+  let result = examples.run_library_import()
+  result.result |> should.be_ok()
+  // 4 traces: validate, local_enrich, uppercase, prefix
+  list.length(result.trace) |> should.equal(4)
+}
+
 pub fn dogfood_pipeline_test() {
   // Structure-only test: the dogfood pipeline uses real command_runner.step()
   // calls (gleam check, gleam build, npm install/build), so executing it here
