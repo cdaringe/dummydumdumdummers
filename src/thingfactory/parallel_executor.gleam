@@ -29,14 +29,15 @@ import thingfactory/types.{
 /// Steps with dependencies will wait for their dependencies to complete.
 /// Steps without dependencies (or whose dependencies have completed) can run concurrently.
 pub fn execute_parallel(
-  p: Pipeline(Dynamic),
+  p: Pipeline(id, Dynamic),
   initial_input: Dynamic,
   config: ExecutionConfig,
 ) -> ExecutionResult(Dynamic) {
+  let compiled = pipeline.compile(p)
   let deps = dependency_injector.build(config.dependency_bindings)
   let store = artifact_store.new()
   let msg_store = message_store.new()
-  let secrets = pipeline.secrets(p)
+  let secrets = pipeline.secrets(compiled)
   let ctx =
     Context(
       artifact_store: store,
@@ -45,7 +46,7 @@ pub fn execute_parallel(
       secret_store: secrets,
     )
 
-  let steps = pipeline.steps(p)
+  let steps = pipeline.steps(compiled)
 
   // Validate the dependency graph
   case validate_dependencies(steps) {
@@ -65,15 +66,16 @@ pub fn execute_parallel(
 
 /// Execute a parallel pipeline with real-time progress callbacks.
 pub fn execute_parallel_with_progress(
-  p: Pipeline(Dynamic),
+  p: Pipeline(id, Dynamic),
   initial_input: Dynamic,
   config: ExecutionConfig,
   on_progress: fn(StepEvent) -> Nil,
 ) -> ExecutionResult(Dynamic) {
+  let compiled = pipeline.compile(p)
   let deps = dependency_injector.build(config.dependency_bindings)
   let store = artifact_store.new()
   let msg_store = message_store.new()
-  let secrets = pipeline.secrets(p)
+  let secrets = pipeline.secrets(compiled)
   let ctx =
     Context(
       artifact_store: store,
@@ -82,7 +84,7 @@ pub fn execute_parallel_with_progress(
       secret_store: secrets,
     )
 
-  let steps = pipeline.steps(p)
+  let steps = pipeline.steps(compiled)
   let total = list.length(steps)
 
   case validate_dependencies(steps) {
@@ -116,7 +118,7 @@ type StepStatus {
 }
 
 fn execute_with_deps(
-  steps: List(Step),
+  steps: List(Step(String)),
   initial_input: Dynamic,
   ctx: Context,
   step_status: Dict(String, StepStatus),
@@ -196,8 +198,7 @@ fn execute_with_deps(
           // Check if dependencies failed
           let has_failed_dep =
             list.any(step.depends_on, fn(dep) {
-              let pipeline.StepRef(dep_name) = dep
-              case dict.get(step_status, dep_name) {
+              case dict.get(step_status, dep) {
                 Ok(Failed(_, _)) -> True
                 _ -> False
               }
@@ -249,7 +250,7 @@ fn execute_with_deps(
 }
 
 fn execute_with_deps_progress(
-  steps: List(Step),
+  steps: List(Step(String)),
   initial_input: Dynamic,
   ctx: Context,
   step_status: Dict(String, StepStatus),
@@ -327,8 +328,7 @@ fn execute_with_deps_progress(
         Ok(step) -> {
           let has_failed_dep =
             list.any(step.depends_on, fn(dep) {
-              let pipeline.StepRef(dep_name) = dep
-              case dict.get(step_status, dep_name) {
+              case dict.get(step_status, dep) {
                 Ok(Failed(_, _)) -> True
                 _ -> False
               }
@@ -434,16 +434,15 @@ fn format_step_output(output: Dynamic) -> String {
 /// - Not already completed or failed
 /// - All dependencies have resolved (completed or failed)
 fn find_ready_step(
-  steps: List(Step),
+  steps: List(Step(String)),
   status: Dict(String, StepStatus),
-) -> Result(Step, Nil) {
+) -> Result(Step(String), Nil) {
   list.find(steps, fn(step) {
     case dict.get(status, step.name) {
       Ok(Completed(_, _)) | Ok(Failed(_, _)) -> False
       _ ->
         list.all(step.depends_on, fn(dep) {
-          let pipeline.StepRef(dep_name) = dep
-          case dict.get(status, dep_name) {
+          case dict.get(status, dep) {
             Ok(Completed(_, _)) | Ok(Failed(_, _)) -> True
             _ -> False
           }
@@ -457,16 +456,13 @@ fn find_ready_step(
 // ---------------------------------------------------------------------------
 
 /// Validate that the dependency graph has no cycles and all references are valid
-fn validate_dependencies(steps: List(Step)) -> Result(Nil, String) {
+fn validate_dependencies(steps: List(Step(String))) -> Result(Nil, String) {
   let step_names = list.map(steps, fn(s) { s.name })
 
   // Check that all dependencies reference valid steps
   let has_invalid_refs =
     list.any(steps, fn(step) {
-      list.any(step.depends_on, fn(dep) {
-        let pipeline.StepRef(dep_name) = dep
-        !list.contains(step_names, dep_name)
-      })
+      list.any(step.depends_on, fn(dep) { !list.contains(step_names, dep) })
     })
 
   case has_invalid_refs {

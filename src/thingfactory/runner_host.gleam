@@ -49,7 +49,7 @@ pub type RunnerBackend {
 pub type PipelineSubmission {
   PipelineSubmission(
     id: String,
-    pipeline: Pipeline(Dynamic),
+    pipeline: Pipeline(String, Dynamic),
     input: Dynamic,
     config: ExecutionConfig,
     parallel: Bool,
@@ -150,7 +150,7 @@ pub fn get_backend(host: RunnerHost) -> RunnerBackend {
 /// Returns the updated host and the assigned submission ID.
 pub fn submit(
   host: RunnerHost,
-  p: Pipeline(Dynamic),
+  p: Pipeline(String, Dynamic),
   input: Dynamic,
   config: ExecutionConfig,
 ) -> #(RunnerHost, String) {
@@ -177,7 +177,7 @@ pub fn submit(
 /// Returns the updated host and the assigned submission ID.
 pub fn submit_parallel(
   host: RunnerHost,
-  p: Pipeline(Dynamic),
+  p: Pipeline(String, Dynamic),
   input: Dynamic,
   config: ExecutionConfig,
 ) -> #(RunnerHost, String) {

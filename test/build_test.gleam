@@ -46,39 +46,39 @@ pub fn build_pipeline_tier1_test_deps_test() {
   let steps = pipeline.steps(build.build())
   deps_for(steps, "gleam_test")
   |> should.equal([
-    pipeline.StepRef("gleam_check"),
-    pipeline.StepRef("gleam_format"),
+    "gleam_check",
+    "gleam_format",
   ])
   deps_for(steps, "web_lint")
-  |> should.equal([pipeline.StepRef("web_install")])
+  |> should.equal(["web_install"])
 }
 
 pub fn build_pipeline_tier2_build_deps_test() {
   let steps = pipeline.steps(build.build())
   deps_for(steps, "gleam_build_erl")
-  |> should.equal([pipeline.StepRef("gleam_test")])
+  |> should.equal(["gleam_test"])
   deps_for(steps, "gleam_build_js")
-  |> should.equal([pipeline.StepRef("gleam_test")])
+  |> should.equal(["gleam_test"])
   deps_for(steps, "web_build")
-  |> should.equal([pipeline.StepRef("web_lint")])
+  |> should.equal(["web_lint"])
 }
 
 pub fn build_pipeline_tier3_package_deps_test() {
   let steps = pipeline.steps(build.build())
   deps_for(steps, "cli_shipment")
-  |> should.equal([pipeline.StepRef("gleam_build_erl")])
+  |> should.equal(["gleam_build_erl"])
   deps_for(steps, "docker_build_cli")
-  |> should.equal([pipeline.StepRef("cli_shipment")])
+  |> should.equal(["cli_shipment"])
   deps_for(steps, "docker_build_web")
-  |> should.equal([pipeline.StepRef("web_build")])
+  |> should.equal(["web_build"])
 }
 
 pub fn build_pipeline_tier4_publish_deps_test() {
   let steps = pipeline.steps(build.build())
   deps_for(steps, "hex_publish")
   |> should.equal([
-    pipeline.StepRef("gleam_build_erl"),
-    pipeline.StepRef("gleam_build_js"),
+    "gleam_build_erl",
+    "gleam_build_js",
   ])
 }
 
@@ -86,16 +86,13 @@ pub fn build_pipeline_tier5_release_deps_test() {
   let steps = pipeline.steps(build.build())
   deps_for(steps, "semantic_release")
   |> should.equal([
-    pipeline.StepRef("docker_build_cli"),
-    pipeline.StepRef("docker_build_web"),
-    pipeline.StepRef("hex_publish"),
+    "docker_build_cli",
+    "docker_build_web",
+    "hex_publish",
   ])
 }
 
-fn deps_for(
-  steps: List(pipeline.Step),
-  target: String,
-) -> List(pipeline.StepRef) {
+fn deps_for(steps: List(pipeline.Step(String)), target: String) -> List(String) {
   case
     list.find(steps, fn(step) {
       let pipeline.Step(name, _, _, _, _) = step

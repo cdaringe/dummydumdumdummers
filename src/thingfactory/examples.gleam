@@ -21,7 +21,7 @@ import thingfactory/types
 // ---------------------------------------------------------------------------
 
 /// A simple 3-step pipeline that demonstrates basic flow
-pub fn basic_pipeline() -> pipeline.Pipeline(Dynamic) {
+pub fn basic_pipeline() -> pipeline.Pipeline(String, Dynamic) {
   pipeline.new("basic_example", "1.0.0")
   |> pipeline.add_step("fetch", fn(_ctx, _input) {
     Ok(dynamic.string("fetched_data"))
@@ -38,7 +38,7 @@ pub fn basic_pipeline() -> pipeline.Pipeline(Dynamic) {
 // ---------------------------------------------------------------------------
 
 /// Pipeline demonstrating how errors stop execution and subsequent steps are skipped
-pub fn error_handling_pipeline() -> pipeline.Pipeline(Dynamic) {
+pub fn error_handling_pipeline() -> pipeline.Pipeline(String, Dynamic) {
   pipeline.new("error_example", "1.0.0")
   |> pipeline.add_step("step1", fn(_ctx, _input) { Ok(dynamic.int(42)) })
   |> pipeline.add_step("step2_fails", fn(_ctx, _input) {
@@ -54,7 +54,7 @@ pub fn error_handling_pipeline() -> pipeline.Pipeline(Dynamic) {
 // ---------------------------------------------------------------------------
 
 /// Pipeline that can be tested with mocked steps
-pub fn mockable_pipeline() -> pipeline.Pipeline(Dynamic) {
+pub fn mockable_pipeline() -> pipeline.Pipeline(String, Dynamic) {
   pipeline.new("mockable_example", "1.0.0")
   |> pipeline.add_step("fetch_from_db", fn(_ctx, _input) {
     // In production, this would query a database
@@ -68,7 +68,7 @@ pub fn mockable_pipeline() -> pipeline.Pipeline(Dynamic) {
 // ---------------------------------------------------------------------------
 
 /// Pipeline that uses injected dependencies
-pub fn dependency_injection_pipeline() -> pipeline.Pipeline(Dynamic) {
+pub fn dependency_injection_pipeline() -> pipeline.Pipeline(String, Dynamic) {
   pipeline.new("dependency_example", "1.0.0")
   |> pipeline.add_step("use_config", fn(ctx, _input) {
     // Retrieve an injected configuration
@@ -140,7 +140,7 @@ pub fn run_error_example() -> types.ExecutionResult(Dynamic) {
 /// 3. Run tests
 /// 4. Build artifacts
 /// 5. Package for distribution
-pub fn typescript_build_pipeline() -> pipeline.Pipeline(Dynamic) {
+pub fn typescript_build_pipeline() -> pipeline.Pipeline(String, Dynamic) {
   let ts_dir = "examples/typescript-lib"
   pipeline.new("typescript_build", "1.0.0")
   |> pipeline.with_timeout(120_000)
@@ -172,7 +172,7 @@ pub fn typescript_build_pipeline() -> pipeline.Pipeline(Dynamic) {
 /// 3. Build release binary
 /// 4. Generate documentation
 /// 5. Publish artifacts
-pub fn rust_build_pipeline() -> pipeline.Pipeline(Dynamic) {
+pub fn rust_build_pipeline() -> pipeline.Pipeline(String, Dynamic) {
   pipeline.new("rust_build", "1.0.0")
   |> pipeline.with_timeout(180_000)
   |> pipeline.add_step("validate_source", fn(_ctx, _input) {
@@ -208,7 +208,7 @@ pub fn rust_build_pipeline() -> pipeline.Pipeline(Dynamic) {
 /// 4. Run end-to-end tests
 /// 5. Deploy to staging
 /// Shows artifact sharing and multi-component coordination
-pub fn full_stack_pipeline() -> pipeline.Pipeline(Dynamic) {
+pub fn full_stack_pipeline() -> pipeline.Pipeline(String, Dynamic) {
   pipeline.new("full_stack_deployment", "1.0.0")
   |> pipeline.with_timeout(300_000)
   |> pipeline.add_step("build_api", fn(_ctx, _input) {
@@ -243,7 +243,7 @@ pub fn full_stack_pipeline() -> pipeline.Pipeline(Dynamic) {
 /// 3. Check code quality
 /// 4. Build for both JS and Erlang targets
 /// 5. Generate documentation
-pub fn gleam_build_pipeline() -> pipeline.Pipeline(Dynamic) {
+pub fn gleam_build_pipeline() -> pipeline.Pipeline(String, Dynamic) {
   pipeline.new("gleam_build", "1.0.0")
   |> pipeline.with_timeout(150_000)
   |> pipeline.add_step("validate", command_runner.step("gleam", ["check"]))
@@ -272,7 +272,7 @@ pub fn gleam_build_pipeline() -> pipeline.Pipeline(Dynamic) {
 
 /// Pipeline demonstrating artifact sharing across multiple steps
 /// Shows how to write and read artifacts through the pipeline lifecycle
-pub fn artifact_sharing_pipeline() -> pipeline.Pipeline(Dynamic) {
+pub fn artifact_sharing_pipeline() -> pipeline.Pipeline(String, Dynamic) {
   pipeline.new("artifact_sharing", "1.0.0")
   |> pipeline.add_step("generate_config", fn(_ctx, _input) {
     let config =
@@ -337,7 +337,7 @@ pub fn run_artifact_sharing() -> types.ExecutionResult(Dynamic) {
 /// 3. Build binaries for multiple architectures
 /// 4. Run linters and code quality checks
 /// 5. Publish artifacts
-pub fn go_build_pipeline() -> pipeline.Pipeline(Dynamic) {
+pub fn go_build_pipeline() -> pipeline.Pipeline(String, Dynamic) {
   let go_dir = "examples/go-lib"
   pipeline.new("go_build", "1.0.0")
   |> pipeline.with_timeout(120_000)
@@ -407,7 +407,7 @@ pub fn custom_command_step(
 /// Shows how to build a pipeline using a reusable factory function.
 /// Users can create their own factories for different kinds of tasks
 /// (database migrations, API calls, file operations, custom language runners, etc.)
-pub fn custom_runner_pipeline() -> pipeline.Pipeline(Dynamic) {
+pub fn custom_runner_pipeline() -> pipeline.Pipeline(String, Dynamic) {
   let lint_step =
     custom_command_step(
       CommandStep(
@@ -481,7 +481,7 @@ pub fn run_custom_runner() -> types.ExecutionResult(Dynamic) {
 /// 2. lint and test can run in parallel (both depend only on clone)
 /// 3. build waits for both lint and test
 /// 4. package waits for build
-pub fn parallel_build_pipeline() -> pipeline.Pipeline(Dynamic) {
+pub fn parallel_build_pipeline() -> pipeline.Pipeline(String, Dynamic) {
   pipeline.new("parallel_build", "1.0.0")
   |> pipeline.with_timeout(600_000)
   |> pipeline.add_step_with_deps(
@@ -492,22 +492,22 @@ pub fn parallel_build_pipeline() -> pipeline.Pipeline(Dynamic) {
   |> pipeline.add_step_with_deps(
     "lint",
     fn(_ctx, _input) { Ok(dynamic.string("lint passed")) },
-    [pipeline.step_ref("clone")],
+    ["clone"],
   )
   |> pipeline.add_step_with_deps(
     "test",
     fn(_ctx, _input) { Ok(dynamic.string("tests passed")) },
-    [pipeline.step_ref("clone")],
+    ["clone"],
   )
   |> pipeline.add_step_with_deps(
     "build",
     fn(_ctx, _input) { Ok(dynamic.string("build succeeded")) },
-    [pipeline.step_ref("lint"), pipeline.step_ref("test")],
+    ["lint", "test"],
   )
   |> pipeline.add_step_with_deps(
     "package",
     fn(_ctx, _input) { Ok(dynamic.string("package created")) },
-    [pipeline.step_ref("build")],
+    ["build"],
   )
 }
 
@@ -531,7 +531,7 @@ pub fn run_parallel_build() -> types.ExecutionResult(Dynamic) {
 /// - test_b (depends on compile_b, parallel with test_a)
 /// - integration (depends on both test_a and test_b)
 /// - deploy (depends on integration)
-pub fn parallel_multi_target_pipeline() -> pipeline.Pipeline(Dynamic) {
+pub fn parallel_multi_target_pipeline() -> pipeline.Pipeline(String, Dynamic) {
   pipeline.new("parallel_multi_target", "1.0.0")
   |> pipeline.with_timeout(900_000)
   |> pipeline.add_step_with_deps(
@@ -542,32 +542,32 @@ pub fn parallel_multi_target_pipeline() -> pipeline.Pipeline(Dynamic) {
   |> pipeline.add_step_with_deps(
     "compile_a",
     fn(_ctx, _input) { Ok(dynamic.string("target_a compiled")) },
-    [pipeline.step_ref("setup")],
+    ["setup"],
   )
   |> pipeline.add_step_with_deps(
     "compile_b",
     fn(_ctx, _input) { Ok(dynamic.string("target_b compiled")) },
-    [pipeline.step_ref("setup")],
+    ["setup"],
   )
   |> pipeline.add_step_with_deps(
     "test_a",
     fn(_ctx, _input) { Ok(dynamic.string("target_a tests passed")) },
-    [pipeline.step_ref("compile_a")],
+    ["compile_a"],
   )
   |> pipeline.add_step_with_deps(
     "test_b",
     fn(_ctx, _input) { Ok(dynamic.string("target_b tests passed")) },
-    [pipeline.step_ref("compile_b")],
+    ["compile_b"],
   )
   |> pipeline.add_step_with_deps(
     "integration",
     fn(_ctx, _input) { Ok(dynamic.string("integration tests passed")) },
-    [pipeline.step_ref("test_a"), pipeline.step_ref("test_b")],
+    ["test_a", "test_b"],
   )
   |> pipeline.add_step_with_deps(
     "deploy",
     fn(_ctx, _input) { Ok(dynamic.string("deployment successful")) },
-    [pipeline.step_ref("integration")],
+    ["integration"],
   )
 }
 
@@ -584,7 +584,7 @@ pub fn run_parallel_multi_target() -> types.ExecutionResult(Dynamic) {
 /// Distributed pipeline example for scenario 41:
 /// - asynchronous/parallel fan-out (`async_left`, `async_right`)
 /// - every step runs as a distinct Kubernetes Job (different node/pod)
-pub fn distributed_parallel_pipeline() -> pipeline.Pipeline(Dynamic) {
+pub fn distributed_parallel_pipeline() -> pipeline.Pipeline(String, Dynamic) {
   let k8s_config =
     kubernetes_runner.default_config("alpine:3.20")
     |> kubernetes_runner.with_namespace("ci")
@@ -607,7 +607,7 @@ pub fn distributed_parallel_pipeline() -> pipeline.Pipeline(Dynamic) {
       "-lc",
       "echo left",
     ]),
-    [pipeline.step_ref("seed")],
+    ["seed"],
   )
   |> pipeline.add_step_with_deps(
     "async_right",
@@ -616,7 +616,7 @@ pub fn distributed_parallel_pipeline() -> pipeline.Pipeline(Dynamic) {
       "-lc",
       "echo right",
     ]),
-    [pipeline.step_ref("seed")],
+    ["seed"],
   )
   |> pipeline.add_step_with_deps(
     "merge",
@@ -625,7 +625,7 @@ pub fn distributed_parallel_pipeline() -> pipeline.Pipeline(Dynamic) {
       "-lc",
       "echo merged",
     ]),
-    [pipeline.step_ref("async_left"), pipeline.step_ref("async_right")],
+    ["async_left", "async_right"],
   )
 }
 
@@ -642,7 +642,7 @@ pub fn run_distributed_parallel() -> types.ExecutionResult(Dynamic) {
 /// Distributed accumulation pipeline for scenario 41:
 /// each step runs in a different Kubernetes Job, and accumulated output is
 /// passed through subsequent steps.
-pub fn distributed_accumulation_pipeline() -> pipeline.Pipeline(Dynamic) {
+pub fn distributed_accumulation_pipeline() -> pipeline.Pipeline(String, Dynamic) {
   let k8s_config =
     kubernetes_runner.default_config("alpine:3.20")
     |> kubernetes_runner.with_namespace("ci")
@@ -709,7 +709,7 @@ pub fn run_distributed_accumulation() -> types.ExecutionResult(Dynamic) {
 
 /// Pipeline demonstrating retry pattern with loop support.
 /// The unreliable_operation step will fail initially but succeed on retry.
-pub fn retry_pipeline() -> pipeline.Pipeline(Dynamic) {
+pub fn retry_pipeline() -> pipeline.Pipeline(String, Dynamic) {
   pipeline.new("retry_example", "1.0.0")
   |> pipeline.add_step("setup", fn(_ctx, _input) { Ok(dynamic.int(0)) })
   |> pipeline.add_step_with_loop(
@@ -734,7 +734,7 @@ pub fn run_retry_example() -> types.ExecutionResult(Dynamic) {
 
 /// Pipeline demonstrating fixed repetition (run N times).
 /// The harvest_data step repeats 3 times, accumulating data.
-pub fn repeat_pipeline() -> pipeline.Pipeline(Dynamic) {
+pub fn repeat_pipeline() -> pipeline.Pipeline(String, Dynamic) {
   pipeline.new("repeat_example", "1.0.0")
   |> pipeline.add_step("initialize", fn(_ctx, _input) { Ok(dynamic.string("")) })
   |> pipeline.add_step_with_loop(
@@ -756,7 +756,7 @@ pub fn run_repeat_example() -> types.ExecutionResult(Dynamic) {
 
 /// Pipeline demonstrating keep-trying-until-success pattern.
 /// The validate_connection step keeps trying until it succeeds.
-pub fn until_success_pipeline() -> pipeline.Pipeline(Dynamic) {
+pub fn until_success_pipeline() -> pipeline.Pipeline(String, Dynamic) {
   pipeline.new("until_success_example", "1.0.0")
   |> pipeline.add_step("start", fn(_ctx, _input) { Ok(dynamic.int(0)) })
   |> pipeline.add_step_with_loop(
@@ -778,7 +778,7 @@ pub fn run_until_success_example() -> types.ExecutionResult(Dynamic) {
 
 /// Pipeline demonstrating simple message publishing and subscription.
 /// The publisher step broadcasts a message that the subscriber step retrieves.
-pub fn simple_messaging_pipeline() -> pipeline.Pipeline(Dynamic) {
+pub fn simple_messaging_pipeline() -> pipeline.Pipeline(String, Dynamic) {
   pipeline.new("simple_messaging_example", "1.0.0")
   |> pipeline.add_step_with_ctx("publisher", fn(ctx, _input) {
     let updated_ctx =
@@ -806,7 +806,7 @@ pub fn run_simple_messaging() -> types.ExecutionResult(Dynamic) {
 
 /// Pipeline demonstrating multi-topic message coordination.
 /// Multiple steps publish to different topics and coordinate via messages.
-pub fn multi_topic_messaging_pipeline() -> pipeline.Pipeline(Dynamic) {
+pub fn multi_topic_messaging_pipeline() -> pipeline.Pipeline(String, Dynamic) {
   pipeline.new("multi_topic_messaging_example", "1.0.0")
   |> pipeline.add_step_with_ctx("task_a", fn(ctx, _input) {
     let updated_ctx =
@@ -859,7 +859,7 @@ pub fn run_multi_topic_messaging() -> types.ExecutionResult(Dynamic) {
 
 /// Pipeline demonstrating event-driven workflow with messaging.
 /// Steps emit events that trigger conditional behavior in downstream steps.
-pub fn event_driven_pipeline() -> pipeline.Pipeline(Dynamic) {
+pub fn event_driven_pipeline() -> pipeline.Pipeline(String, Dynamic) {
   pipeline.new("event_driven_example", "1.0.0")
   |> pipeline.add_step_with_ctx("event_producer", fn(ctx, _input) {
     let updated_ctx =
@@ -931,7 +931,7 @@ pub fn run_event_driven() -> types.ExecutionResult(Dynamic) {
 ///                               └─→ verify (depends on gleam_build_js, gleam_build_erl, web_build)
 ///
 /// Fulfills: "The system SHALL be built & tested, dogfooding itself."
-pub fn dogfood_pipeline() -> pipeline.Pipeline(Dynamic) {
+pub fn dogfood_pipeline() -> pipeline.Pipeline(String, Dynamic) {
   pipeline.new("dogfood", "1.0.0")
   |> pipeline.with_timeout(300_000)
   // Gleam validation steps (parallel with each other and web_install)
@@ -955,12 +955,12 @@ pub fn dogfood_pipeline() -> pipeline.Pipeline(Dynamic) {
         input,
       )
     },
-    [pipeline.step_ref("gleam_check"), pipeline.step_ref("gleam_format")],
+    ["gleam_check", "gleam_format"],
   )
   |> pipeline.add_step_with_deps(
     "gleam_build_erl",
     command_runner.step("gleam", ["build", "--target", "erlang"]),
-    [pipeline.step_ref("gleam_check"), pipeline.step_ref("gleam_format")],
+    ["gleam_check", "gleam_format"],
   )
   // Web GUI build (independent from gleam until verify)
   |> pipeline.add_step_with_deps(
@@ -976,16 +976,16 @@ pub fn dogfood_pipeline() -> pipeline.Pipeline(Dynamic) {
   |> pipeline.add_step_with_deps(
     "web_build",
     command_runner.step("npm", ["--prefix", "web", "run", "build"]),
-    [pipeline.step_ref("web_install")],
+    ["web_install"],
   )
   // Final verification: all components built
   |> pipeline.add_step_with_deps(
     "verify",
     fn(_ctx, _input) { Ok(dynamic.string("dogfood_verified=true")) },
     [
-      pipeline.step_ref("gleam_build_js"),
-      pipeline.step_ref("gleam_build_erl"),
-      pipeline.step_ref("web_build"),
+      "gleam_build_js",
+      "gleam_build_erl",
+      "web_build",
     ],
   )
 }
@@ -1009,7 +1009,7 @@ pub fn run_dogfood() -> types.ExecutionResult(Dynamic) {
 /// Requires a configured Kubernetes cluster with kubectl access.
 ///
 /// Fulfills: "The runner host SHALL allow kubernetes as a runner backend."
-pub fn kubernetes_build_pipeline() -> pipeline.Pipeline(Dynamic) {
+pub fn kubernetes_build_pipeline() -> pipeline.Pipeline(String, Dynamic) {
   let k8s_config =
     kubernetes_runner.default_config("node:20-alpine")
     |> kubernetes_runner.with_namespace("ci")
@@ -1026,17 +1026,17 @@ pub fn kubernetes_build_pipeline() -> pipeline.Pipeline(Dynamic) {
   |> pipeline.add_step_with_deps(
     "lint",
     kubernetes_runner.step(k8s_config, "tf-lint", ["npm", "run", "lint"]),
-    [pipeline.step_ref("install")],
+    ["install"],
   )
   |> pipeline.add_step_with_deps(
     "test",
     kubernetes_runner.step(k8s_config, "tf-test", ["npm", "test"]),
-    [pipeline.step_ref("install")],
+    ["install"],
   )
   |> pipeline.add_step_with_deps(
     "build",
     kubernetes_runner.step(k8s_config, "tf-build", ["npm", "run", "build"]),
-    [pipeline.step_ref("lint"), pipeline.step_ref("test")],
+    ["lint", "test"],
   )
 }
 
@@ -1055,7 +1055,7 @@ pub fn run_kubernetes_build() -> types.ExecutionResult(Dynamic) {
 // ---------------------------------------------------------------------------
 
 /// Daily health check pipeline (runs every day at 9:00 AM UTC)
-pub fn daily_health_check_pipeline() -> pipeline.Pipeline(Dynamic) {
+pub fn daily_health_check_pipeline() -> pipeline.Pipeline(String, Dynamic) {
   pipeline.new("daily_health_check", "1.0.0")
   |> pipeline.with_schedule(types.Daily(9, 0))
   |> pipeline.add_step("check_api", fn(_ctx, _input) {
@@ -1076,7 +1076,7 @@ pub fn run_daily_health_check() -> types.ExecutionResult(Dynamic) {
 }
 
 /// Weekly backup pipeline (runs every Friday at 2:00 AM UTC)
-pub fn weekly_backup_pipeline() -> pipeline.Pipeline(Dynamic) {
+pub fn weekly_backup_pipeline() -> pipeline.Pipeline(String, Dynamic) {
   pipeline.new("weekly_backup", "1.0.0")
   |> pipeline.with_schedule(types.Weekly(4, 2, 0))
   |> pipeline.add_step("prepare_snapshot", fn(_ctx, _input) {
@@ -1097,7 +1097,7 @@ pub fn run_weekly_backup() -> types.ExecutionResult(Dynamic) {
 }
 
 /// Monthly reporting pipeline (runs on the 1st and 15th at 8:00 AM UTC)
-pub fn monthly_reporting_pipeline() -> pipeline.Pipeline(Dynamic) {
+pub fn monthly_reporting_pipeline() -> pipeline.Pipeline(String, Dynamic) {
   pipeline.new("monthly_reporting", "1.0.0")
   |> pipeline.with_schedule(types.Monthly([1, 15], 8, 0))
   |> pipeline.add_step("collect_metrics", fn(_ctx, _input) {
@@ -1118,7 +1118,7 @@ pub fn run_monthly_reporting() -> types.ExecutionResult(Dynamic) {
 }
 
 /// Frequent health check pipeline with interval-based scheduling (every 5 minutes)
-pub fn frequent_health_check_pipeline() -> pipeline.Pipeline(Dynamic) {
+pub fn frequent_health_check_pipeline() -> pipeline.Pipeline(String, Dynamic) {
   pipeline.new("frequent_health_check", "1.0.0")
   |> pipeline.with_schedule(types.Interval(300_000))
   |> pipeline.add_step("ping_service", fn(_ctx, _input) {
@@ -1136,7 +1136,7 @@ pub fn run_frequent_health_check() -> types.ExecutionResult(Dynamic) {
 }
 
 /// Cron-based cleanup pipeline (weekdays at 11:00 PM UTC)
-pub fn cron_cleanup_pipeline() -> pipeline.Pipeline(Dynamic) {
+pub fn cron_cleanup_pipeline() -> pipeline.Pipeline(String, Dynamic) {
   pipeline.new("cron_cleanup", "1.0.0")
   |> pipeline.with_schedule(types.Cron("0 23 * * 1-5"))
   |> pipeline.add_step("cleanup_temp_files", fn(_ctx, _input) {
@@ -1175,7 +1175,7 @@ pub fn run_cron_cleanup() -> types.ExecutionResult(Dynamic) {
 /// Fulfills: "Pipelines SHALL be easy to express work in both an imperative
 /// (PUSH model) as well as workers in the pipeline PULLing work from a
 /// queue (PULL model)."
-pub fn queue_worker_pipeline() -> pipeline.Pipeline(Dynamic) {
+pub fn queue_worker_pipeline() -> pipeline.Pipeline(String, Dynamic) {
   pipeline.new("queue_worker", "1.0.0")
   |> pipeline.add_step_with_ctx("produce_work", fn(ctx, _input) {
     let ctx =

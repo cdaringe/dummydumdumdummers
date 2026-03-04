@@ -107,13 +107,13 @@ pub fn distributed_parallel_pipeline_structure_test() {
   list.length(steps) |> should.equal(4)
   deps_for_step(steps, "seed") |> should.equal([])
   deps_for_step(steps, "async_left")
-  |> should.equal([pipeline.StepRef("seed")])
+  |> should.equal(["seed"])
   deps_for_step(steps, "async_right")
-  |> should.equal([pipeline.StepRef("seed")])
+  |> should.equal(["seed"])
   deps_for_step(steps, "merge")
   |> should.equal([
-    pipeline.StepRef("async_left"),
-    pipeline.StepRef("async_right"),
+    "async_left",
+    "async_right",
   ])
 }
 
@@ -230,9 +230,9 @@ pub fn dogfood_pipeline_test() {
 }
 
 fn deps_for_step(
-  steps: List(pipeline.Step),
+  steps: List(pipeline.Step(String)),
   target: String,
-) -> List(pipeline.StepRef) {
+) -> List(String) {
   case
     list.find(steps, fn(step) {
       let pipeline.Step(name, _, _, _, _) = step

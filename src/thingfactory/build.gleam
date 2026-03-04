@@ -31,7 +31,7 @@ import thingfactory/webhook_trigger
 ///
 /// Run with:
 ///   thingfactory run -f src/thingfactory/build.gleam build
-pub fn build() -> pipeline.Pipeline(Dynamic) {
+pub fn build() -> pipeline.Pipeline(String, Dynamic) {
   pipeline.new("thingfactory-build", "1.0.0")
   |> pipeline.with_timeout(600_000)
   |> pipeline.with_trigger(webhook_trigger.on_branch_update("main"))
@@ -55,52 +55,52 @@ pub fn build() -> pipeline.Pipeline(Dynamic) {
   |> pipeline.add_step_with_deps(
     "gleam_test",
     command_runner.step("gleam", ["test"]),
-    [pipeline.step_ref("gleam_check"), pipeline.step_ref("gleam_format")],
+    ["gleam_check", "gleam_format"],
   )
   |> pipeline.add_step_with_deps(
     "web_lint",
     command_runner.step("npm", ["--prefix", "web", "run", "lint"]),
-    [pipeline.step_ref("web_install")],
+    ["web_install"],
   )
   // ── Tier 2: Build ─────────────────────────────────────────────────
   |> pipeline.add_step_with_deps(
     "gleam_build_erl",
     command_runner.step("gleam", ["build", "--target", "erlang"]),
-    [pipeline.step_ref("gleam_test")],
+    ["gleam_test"],
   )
   |> pipeline.add_step_with_deps(
     "gleam_build_js",
     command_runner.step("gleam", ["build", "--target", "javascript"]),
-    [pipeline.step_ref("gleam_test")],
+    ["gleam_test"],
   )
   |> pipeline.add_step_with_deps(
     "web_build",
     command_runner.step("npm", ["--prefix", "web", "run", "build"]),
-    [pipeline.step_ref("web_lint")],
+    ["web_lint"],
   )
   // ── Tier 3: Package ───────────────────────────────────────────────
   |> pipeline.add_step_with_deps(
     "cli_shipment",
     command_runner.step("gleam", ["export", "erlang-shipment"]),
-    [pipeline.step_ref("gleam_build_erl")],
+    ["gleam_build_erl"],
   )
   |> pipeline.add_step_with_deps(
     "docker_build_cli",
     command_runner.sh("docker build -t thingfactory-cli -f Dockerfile ."),
-    [pipeline.step_ref("cli_shipment")],
+    ["cli_shipment"],
   )
   |> pipeline.add_step_with_deps(
     "docker_build_web",
     command_runner.sh("docker build -t thingfactory-web -f web/Dockerfile web"),
-    [pipeline.step_ref("web_build")],
+    ["web_build"],
   )
   // ── Tier 4: Publish ───────────────────────────────────────────────
   |> pipeline.add_step_with_deps(
     "hex_publish",
     command_runner.sh("gleam hex publish --yes"),
     [
-      pipeline.step_ref("gleam_build_erl"),
-      pipeline.step_ref("gleam_build_js"),
+      "gleam_build_erl",
+      "gleam_build_js",
     ],
   )
   // ── Tier 5: Release ───────────────────────────────────────────────
@@ -108,9 +108,9 @@ pub fn build() -> pipeline.Pipeline(Dynamic) {
     "semantic_release",
     command_runner.sh("npx semantic-release --no-ci"),
     [
-      pipeline.step_ref("docker_build_cli"),
-      pipeline.step_ref("docker_build_web"),
-      pipeline.step_ref("hex_publish"),
+      "docker_build_cli",
+      "docker_build_web",
+      "hex_publish",
     ],
   )
 }

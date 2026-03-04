@@ -334,7 +334,7 @@ fn parse_pipeline_ref(pipeline_ref: String) -> Result(#(String, String), String)
 }
 
 fn execute_loaded_pipeline(
-  loaded_pipeline: pipeline.Pipeline(Dynamic),
+  loaded_pipeline: pipeline.Pipeline(String, Dynamic),
   mode: OutputMode,
 ) -> ExecutionResult(Dynamic) {
   case pipeline_has_dependencies(loaded_pipeline) {
@@ -355,7 +355,7 @@ fn execute_loaded_pipeline(
   }
 }
 
-fn pipeline_has_dependencies(p: pipeline.Pipeline(Dynamic)) -> Bool {
+fn pipeline_has_dependencies(p: pipeline.Pipeline(String, Dynamic)) -> Bool {
   list.any(pipeline.steps(p), fn(step) {
     let pipeline.Step(_, _, _, depends_on, _) = step
     case depends_on {
@@ -727,8 +727,8 @@ fn module_to_file_path(module_name: String) -> String {
 }
 
 /// Extract zero-arity public function names that return a Pipeline type.
-/// Matches lines like `pub fn name() -> pipeline.Pipeline(Dynamic) {`
-/// or `pub fn name() -> Pipeline(Dynamic) {`.
+/// Matches lines like `pub fn name() -> pipeline.Pipeline(String, Dynamic) {`
+/// or `pub fn name() -> Pipeline(String, Dynamic) {`.
 fn extract_pipeline_fn_names(source: String) -> List(String) {
   source
   |> string.split("\n")
@@ -1071,14 +1071,14 @@ fn run_interactive_loop(state: interactive_cli.InteractiveState) -> Nil {
 fn load_pipeline(
   module_name: String,
   function_name: String,
-) -> Result(pipeline.Pipeline(Dynamic), String)
+) -> Result(pipeline.Pipeline(String, Dynamic), String)
 
 @external(erlang, "thingfactory_erlang_cli", "load_pipeline_from_file")
 @external(javascript, "./cli_ffi.mjs", "load_pipeline_from_file")
 fn load_pipeline_from_file(
   file_path: String,
   function_name: String,
-) -> Result(pipeline.Pipeline(Dynamic), String)
+) -> Result(pipeline.Pipeline(String, Dynamic), String)
 
 @external(erlang, "thingfactory_erlang_cli", "read_line_sync")
 @external(javascript, "./cli_ffi.mjs", "read_line_sync")

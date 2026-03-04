@@ -1,7 +1,8 @@
 /// Pipeline DSL — builder API for defining linear step sequences.
 ///
 /// Design ([q1] resolution):
-///   - Pipeline(output) is parameterised on the final output type only.
+///   - Pipeline(id, output) is parameterised on the step-identifier type
+///     and the final output type.
 ///   - Steps are stored internally as fn(Context) -> Result(Dynamic, StepError)
 ///     (type-erased). The public add_step wraps typed fns at the boundary.
 ///   - Type safety: the Gleam compiler enforces that each step's fn argument
@@ -9,11 +10,18 @@
 ///     erased at runtime (documented trade-off in s1-decisions.md).
 ///   - Linear execution only — no branching or loops (QR-4).
 ///
-/// Usage:
+/// Usage (string IDs — simplest):
 ///   pipeline.new("my_pipeline", "1.0.0")
 ///   |> pipeline.add_step("fetch", fn(ctx) { ... })
 ///   |> pipeline.add_step("transform", fn(ctx) { ... })
+///
+/// Usage (typed IDs — compile-time safety):
+///   type StepId { Fetch Transform }
+///   pipeline.typed("my_pipeline", "1.0.0", step_id_to_string)
+///   |> pipeline.add_step(Fetch, fn(ctx) { ... })
+///   |> pipeline.add_step(Transform, fn(ctx) { ... })
 import gleam/dynamic.{type Dynamic}
+import gleam/list
 import gleam/option.{type Option, None, Some}
 import thingfactory/secret_manager.{type SecretStore}
 import thingfactory/types.{
@@ -22,18 +30,6 @@ import thingfactory/types.{
 }
 import thingfactory/webhook_trigger.{type Trigger, NoTrigger}
 
-/// An opaque reference to a named step within a pipeline.
-/// Obtain via `step_ref/1`. Used as typed dependency handle in `add_step_with_deps`.
-pub type StepRef {
-  StepRef(name: String)
-}
-
-/// Create a typed reference to a step by name.
-/// Pass these to `add_step_with_deps` instead of plain strings.
-pub fn step_ref(name: String) -> StepRef {
-  StepRef(name)
-}
-
 // ---------------------------------------------------------------------------
 // Internal step representation
 // ---------------------------------------------------------------------------
@@ -41,12 +37,12 @@ pub fn step_ref(name: String) -> StepRef {
 /// A step as stored inside the pipeline — name + type-erased function.
 /// The run function returns both the output and an (optionally updated) Context,
 /// enabling inter-step artifact and message sharing.
-pub type Step {
+pub type Step(id) {
   Step(
-    name: String,
+    name: id,
     run: fn(Context, Dynamic) -> Result(#(Dynamic, Context), StepError),
     timeout_ms: Int,
-    depends_on: List(StepRef),
+    depends_on: List(id),
     loop: Option(Loop),
   )
 }
@@ -56,15 +52,17 @@ pub type Step {
 // ---------------------------------------------------------------------------
 
 /// A pipeline definition: an ordered list of steps.
+/// The `id` type parameter controls step identifier types (String or custom enum).
 /// The `output` phantom type represents the final output type.
-pub type Pipeline(output) {
+pub type Pipeline(id, output) {
   Pipeline(
     id: PipelineId,
-    steps: List(Step),
+    steps: List(Step(id)),
     default_timeout_ms: Int,
     schedule: Schedule,
     trigger: Trigger,
     secrets: SecretStore,
+    id_to_string: fn(id) -> String,
   )
 }
 
@@ -72,12 +70,12 @@ pub type Pipeline(output) {
 // Builder API
 // ---------------------------------------------------------------------------
 
-/// Create a new empty pipeline with the given name and version.
+/// Create a new empty pipeline with String step IDs.
 /// Default per-step timeout is 30 minutes (1_800_000 ms).
 /// Default schedule is NoSchedule (on-demand only).
 /// Default trigger is NoTrigger (manual triggering only).
 /// Default secrets store is empty.
-pub fn new(name: String, version: String) -> Pipeline(Nil) {
+pub fn new(name: String, version: String) -> Pipeline(String, Nil) {
   Pipeline(
     id: PipelineId(name: name, version: version),
     steps: [],
@@ -85,39 +83,95 @@ pub fn new(name: String, version: String) -> Pipeline(Nil) {
     schedule: NoSchedule,
     trigger: NoTrigger,
     secrets: secret_manager.new(),
+    id_to_string: fn(s) { s },
+  )
+}
+
+/// Create a new empty pipeline with typed step IDs.
+/// Provide a `to_string` function to convert your custom ID type to strings
+/// (used at the execution boundary for traces and error messages).
+pub fn typed(
+  name: String,
+  version: String,
+  to_string: fn(id) -> String,
+) -> Pipeline(id, Nil) {
+  Pipeline(
+    id: PipelineId(name: name, version: version),
+    steps: [],
+    default_timeout_ms: 1_800_000,
+    schedule: NoSchedule,
+    trigger: NoTrigger,
+    secrets: secret_manager.new(),
+    id_to_string: to_string,
+  )
+}
+
+/// Compile a typed pipeline into a String-based pipeline for execution.
+/// Converts all step IDs using the pipeline's `id_to_string` function.
+/// Executors call this internally — users typically don't need to.
+pub fn compile(p: Pipeline(id, output)) -> Pipeline(String, output) {
+  let to_s = p.id_to_string
+  Pipeline(
+    id: p.id,
+    steps: list.map(p.steps, fn(step) {
+      Step(
+        name: to_s(step.name),
+        run: step.run,
+        timeout_ms: step.timeout_ms,
+        depends_on: list.map(step.depends_on, to_s),
+        loop: step.loop,
+      )
+    }),
+    default_timeout_ms: p.default_timeout_ms,
+    schedule: p.schedule,
+    trigger: p.trigger,
+    secrets: p.secrets,
+    id_to_string: fn(s) { s },
   )
 }
 
 /// Set the default per-step timeout for this pipeline (in milliseconds).
-pub fn with_timeout(pipeline: Pipeline(a), timeout_ms: Int) -> Pipeline(a) {
+pub fn with_timeout(
+  pipeline: Pipeline(id, a),
+  timeout_ms: Int,
+) -> Pipeline(id, a) {
   Pipeline(..pipeline, default_timeout_ms: timeout_ms)
 }
 
 /// Set the schedule for this pipeline.
 /// The schedule determines when the pipeline should be automatically triggered.
-pub fn with_schedule(pipeline: Pipeline(a), schedule: Schedule) -> Pipeline(a) {
+pub fn with_schedule(
+  pipeline: Pipeline(id, a),
+  schedule: Schedule,
+) -> Pipeline(id, a) {
   Pipeline(..pipeline, schedule: schedule)
 }
 
 /// Set the webhook trigger for this pipeline.
 /// The trigger determines if and when the pipeline should be triggered by webhooks.
-pub fn with_trigger(pipeline: Pipeline(a), trigger: Trigger) -> Pipeline(a) {
+pub fn with_trigger(
+  pipeline: Pipeline(id, a),
+  trigger: Trigger,
+) -> Pipeline(id, a) {
   Pipeline(..pipeline, trigger: trigger)
 }
 
 /// Set the secrets store for this pipeline.
 /// Secrets can be accessed by steps during execution through the Context.
-pub fn with_secrets(pipeline: Pipeline(a), secrets: SecretStore) -> Pipeline(a) {
+pub fn with_secrets(
+  pipeline: Pipeline(id, a),
+  secrets: SecretStore,
+) -> Pipeline(id, a) {
   Pipeline(..pipeline, secrets: secrets)
 }
 
 /// Add a secret to the pipeline's secret store.
 /// Returns an updated pipeline with the secret added.
 pub fn add_secret(
-  pipeline: Pipeline(a),
+  pipeline: Pipeline(id, a),
   name: String,
   value: String,
-) -> Pipeline(a) {
+) -> Pipeline(id, a) {
   let updated_secrets = secret_manager.set(pipeline.secrets, name, value)
   Pipeline(..pipeline, secrets: updated_secrets)
 }
@@ -134,10 +188,10 @@ pub fn add_secret(
 /// call site. Intermediate types are erased to Dynamic between steps
 /// (see s1-decisions.md [q1]).
 pub fn add_step(
-  pipeline: Pipeline(a),
-  name: String,
+  pipeline: Pipeline(id, a),
+  name: id,
   run: fn(Context, Dynamic) -> Result(Dynamic, StepError),
-) -> Pipeline(Dynamic) {
+) -> Pipeline(id, Dynamic) {
   let step =
     Step(
       name: name,
@@ -153,16 +207,17 @@ pub fn add_step(
     schedule: pipeline.schedule,
     trigger: pipeline.trigger,
     secrets: pipeline.secrets,
+    id_to_string: pipeline.id_to_string,
   )
 }
 
 /// Add a step that returns an updated Context alongside its output.
 /// Use this for steps that write artifacts or publish messages.
 pub fn add_step_with_ctx(
-  pipeline: Pipeline(a),
-  name: String,
+  pipeline: Pipeline(id, a),
+  name: id,
   run: fn(Context, Dynamic) -> Result(#(Dynamic, Context), StepError),
-) -> Pipeline(Dynamic) {
+) -> Pipeline(id, Dynamic) {
   let step =
     Step(
       name: name,
@@ -178,16 +233,17 @@ pub fn add_step_with_ctx(
     schedule: pipeline.schedule,
     trigger: pipeline.trigger,
     secrets: pipeline.secrets,
+    id_to_string: pipeline.id_to_string,
   )
 }
 
 /// Add a step with a custom per-step timeout override (in milliseconds).
 pub fn add_step_with_timeout(
-  pipeline: Pipeline(a),
-  name: String,
+  pipeline: Pipeline(id, a),
+  name: id,
   run: fn(Context, Dynamic) -> Result(Dynamic, StepError),
   timeout_ms: Int,
-) -> Pipeline(Dynamic) {
+) -> Pipeline(id, Dynamic) {
   let step =
     Step(
       name: name,
@@ -203,6 +259,7 @@ pub fn add_step_with_timeout(
     schedule: pipeline.schedule,
     trigger: pipeline.trigger,
     secrets: pipeline.secrets,
+    id_to_string: pipeline.id_to_string,
   )
 }
 
@@ -212,11 +269,11 @@ pub fn add_step_with_timeout(
 ///
 /// This enables parallel execution where multiple independent steps can run concurrently.
 pub fn add_step_with_deps(
-  pipeline: Pipeline(a),
-  name: String,
+  pipeline: Pipeline(id, a),
+  name: id,
   run: fn(Context, Dynamic) -> Result(Dynamic, StepError),
-  depends_on: List(StepRef),
-) -> Pipeline(Dynamic) {
+  depends_on: List(id),
+) -> Pipeline(id, Dynamic) {
   let step =
     Step(
       name: name,
@@ -232,17 +289,18 @@ pub fn add_step_with_deps(
     schedule: pipeline.schedule,
     trigger: pipeline.trigger,
     secrets: pipeline.secrets,
+    id_to_string: pipeline.id_to_string,
   )
 }
 
 /// Add a step with loop configuration.
 /// The step will be executed multiple times according to the loop strategy.
 pub fn add_step_with_loop(
-  pipeline: Pipeline(a),
-  name: String,
+  pipeline: Pipeline(id, a),
+  name: id,
   run: fn(Context, Dynamic) -> Result(Dynamic, StepError),
   loop: Loop,
-) -> Pipeline(Dynamic) {
+) -> Pipeline(id, Dynamic) {
   let step =
     Step(
       name: name,
@@ -258,6 +316,7 @@ pub fn add_step_with_loop(
     schedule: pipeline.schedule,
     trigger: pipeline.trigger,
     secrets: pipeline.secrets,
+    id_to_string: pipeline.id_to_string,
   )
 }
 
@@ -266,33 +325,38 @@ pub fn add_step_with_loop(
 // ---------------------------------------------------------------------------
 
 /// Return the PipelineId for this pipeline.
-pub fn id(pipeline: Pipeline(a)) -> PipelineId {
+pub fn id(pipeline: Pipeline(id, a)) -> PipelineId {
   pipeline.id
 }
 
 /// Return the ordered list of steps.
-pub fn steps(pipeline: Pipeline(a)) -> List(Step) {
+pub fn steps(pipeline: Pipeline(id, a)) -> List(Step(id)) {
   pipeline.steps
 }
 
 /// Return the default timeout for this pipeline.
-pub fn default_timeout(pipeline: Pipeline(a)) -> Int {
+pub fn default_timeout(pipeline: Pipeline(id, a)) -> Int {
   pipeline.default_timeout_ms
 }
 
 /// Return the schedule for this pipeline.
-pub fn schedule(pipeline: Pipeline(a)) -> Schedule {
+pub fn schedule(pipeline: Pipeline(id, a)) -> Schedule {
   pipeline.schedule
 }
 
 /// Return the trigger for this pipeline.
-pub fn trigger(pipeline: Pipeline(a)) -> Trigger {
+pub fn trigger(pipeline: Pipeline(id, a)) -> Trigger {
   pipeline.trigger
 }
 
 /// Return the secrets store for this pipeline.
-pub fn secrets(pipeline: Pipeline(a)) -> SecretStore {
+pub fn secrets(pipeline: Pipeline(id, a)) -> SecretStore {
   pipeline.secrets
+}
+
+/// Return the id_to_string converter for this pipeline.
+pub fn get_id_to_string(pipeline: Pipeline(id, a)) -> fn(id) -> String {
+  pipeline.id_to_string
 }
 
 // ---------------------------------------------------------------------------

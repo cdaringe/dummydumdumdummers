@@ -27,14 +27,15 @@ import thingfactory/types.{
 /// Execute a pipeline with the given initial input and config.
 /// Returns an ExecutionResult containing the pipeline result and step traces.
 pub fn execute(
-  p: Pipeline(Dynamic),
+  p: Pipeline(id, Dynamic),
   initial_input: Dynamic,
   config: ExecutionConfig,
 ) -> ExecutionResult(Dynamic) {
+  let compiled = pipeline.compile(p)
   let deps = dependency_injector.build(config.dependency_bindings)
   let store = artifact_store.new()
   let msg_store = message_store.new()
-  let secrets = pipeline.secrets(p)
+  let secrets = pipeline.secrets(compiled)
   let ctx =
     Context(
       artifact_store: store,
@@ -42,31 +43,33 @@ pub fn execute(
       deps: deps,
       secret_store: secrets,
     )
-  run_steps(pipeline.steps(p), initial_input, ctx, [])
+  run_steps(pipeline.steps(compiled), initial_input, ctx, [])
 }
 
 /// Execute a pipeline with a pre-built context (used by test_helpers).
 pub fn execute_with_context(
-  p: Pipeline(Dynamic),
+  p: Pipeline(id, Dynamic),
   initial_input: Dynamic,
   ctx: Context,
 ) -> ExecutionResult(Dynamic) {
-  run_steps(pipeline.steps(p), initial_input, ctx, [])
+  let compiled = pipeline.compile(p)
+  run_steps(pipeline.steps(compiled), initial_input, ctx, [])
 }
 
 /// Execute a pipeline with real-time progress callbacks.
 /// The on_progress function is called before and after each step executes,
 /// enabling compact/verbose CLI output during execution.
 pub fn execute_with_progress(
-  p: Pipeline(Dynamic),
+  p: Pipeline(id, Dynamic),
   initial_input: Dynamic,
   config: ExecutionConfig,
   on_progress: fn(StepEvent) -> Nil,
 ) -> ExecutionResult(Dynamic) {
+  let compiled = pipeline.compile(p)
   let deps = dependency_injector.build(config.dependency_bindings)
   let store = artifact_store.new()
   let msg_store = message_store.new()
-  let secrets = pipeline.secrets(p)
+  let secrets = pipeline.secrets(compiled)
   let ctx =
     Context(
       artifact_store: store,
@@ -74,9 +77,9 @@ pub fn execute_with_progress(
       deps: deps,
       secret_store: secrets,
     )
-  let total = list.length(pipeline.steps(p))
+  let total = list.length(pipeline.steps(compiled))
   run_steps_with_progress(
-    pipeline.steps(p),
+    pipeline.steps(compiled),
     initial_input,
     ctx,
     [],
@@ -91,7 +94,7 @@ pub fn execute_with_progress(
 // ---------------------------------------------------------------------------
 
 fn run_steps_with_progress(
-  steps: List(Step),
+  steps: List(Step(String)),
   current_input: Dynamic,
   ctx: Context,
   traces: List(StepTrace),
@@ -244,7 +247,7 @@ fn format_step_output(output: Dynamic) -> String {
 }
 
 fn run_steps(
-  steps: List(Step),
+  steps: List(Step(String)),
   current_input: Dynamic,
   ctx: Context,
   traces: List(StepTrace),
@@ -331,7 +334,7 @@ fn run_steps(
 }
 
 fn run_loop(
-  step: Step,
+  step: Step(String),
   loop_config: Loop,
   input: Dynamic,
   ctx: Context,
@@ -349,7 +352,7 @@ fn run_loop(
 }
 
 fn run_fixed_count(
-  step: Step,
+  step: Step(String),
   count: Int,
   attempt: Int,
   input: Dynamic,
@@ -391,7 +394,7 @@ fn run_fixed_count(
 }
 
 fn run_retry_on_failure(
-  step: Step,
+  step: Step(String),
   max_attempts: Int,
   attempt: Int,
   input: Dynamic,
@@ -433,7 +436,7 @@ fn run_retry_on_failure(
 }
 
 fn run_until_success(
-  step: Step,
+  step: Step(String),
   max_attempts: Int,
   attempt: Int,
   input: Dynamic,
@@ -478,7 +481,7 @@ fn int_to_string(n: Int) -> String {
   int.to_string(n)
 }
 
-fn mark_skipped(steps: List(Step)) -> List(StepTrace) {
+fn mark_skipped(steps: List(Step(String))) -> List(StepTrace) {
   list.map(steps, fn(s) {
     StepTrace(step_name: s.name, status: StepSkipped, duration_ms: 0)
   })
