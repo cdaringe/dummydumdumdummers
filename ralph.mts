@@ -446,8 +446,8 @@ Requirements:
     stderr: "piped",
   }).output();
   return output.code
-    ? ok(undefined)
-    : err(`Failed to update receipts with exit code ${output.code}`);
+    ? err(`Failed to update receipts with exit code ${output.code}`)
+    : ok(undefined);
 };
 
 const runLoopIteration = async (
