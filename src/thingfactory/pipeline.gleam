@@ -1,6 +1,6 @@
 /// Pipeline DSL — builder API for defining linear step sequences.
 ///
-/// Design ([q1] resolution):
+/// Design:
 ///   - Pipeline(id, output) is parameterised on the step-identifier type
 ///     and the final output type.
 ///   - Steps are stored internally as fn(Context) -> Result(Dynamic, StepError)
@@ -10,19 +10,20 @@
 ///     erased at runtime (documented trade-off in s1-decisions.md).
 ///   - Linear execution only — no branching or loops (QR-4).
 ///
+/// Usage (typed IDs — compile-time safety, no to_string needed):
+///   type StepId { Fetch Transform }
+///   pipeline.new("my_pipeline", "1.0.0")
+///   |> pipeline.add_step(Fetch, fn(ctx) { ... })
+///   |> pipeline.add_step(Transform, fn(ctx) { ... })
+///
 /// Usage (string IDs — simplest):
 ///   pipeline.new("my_pipeline", "1.0.0")
 ///   |> pipeline.add_step("fetch", fn(ctx) { ... })
 ///   |> pipeline.add_step("transform", fn(ctx) { ... })
-///
-/// Usage (typed IDs — compile-time safety):
-///   type StepId { Fetch Transform }
-///   pipeline.typed("my_pipeline", "1.0.0", step_id_to_string)
-///   |> pipeline.add_step(Fetch, fn(ctx) { ... })
-///   |> pipeline.add_step(Transform, fn(ctx) { ... })
 import gleam/dynamic.{type Dynamic}
 import gleam/list
 import gleam/option.{type Option, None, Some}
+import gleam/string
 import thingfactory/secret_manager.{type SecretStore}
 import thingfactory/types.{
   type Context, type Loop, type PipelineId, type Schedule, type StepError,
@@ -52,7 +53,7 @@ pub type Step(id) {
 // ---------------------------------------------------------------------------
 
 /// A pipeline definition: an ordered list of steps.
-/// The `id` type parameter controls step identifier types (String or custom enum).
+/// The `id` type parameter controls step identifier types (enum or String).
 /// The `output` phantom type represents the final output type.
 pub type Pipeline(id, output) {
   Pipeline(
@@ -70,12 +71,17 @@ pub type Pipeline(id, output) {
 // Builder API
 // ---------------------------------------------------------------------------
 
-/// Create a new empty pipeline with String step IDs.
+/// Create a new empty pipeline. Step IDs can be any type — use a typed enum
+/// for compile-time safety, or plain String for convenience.
+///
+/// When compiled for execution, step IDs are serialised via `step_id_to_string`:
+/// String IDs are used verbatim; all other types are formatted with string.inspect.
+///
 /// Default per-step timeout is 30 minutes (1_800_000 ms).
 /// Default schedule is NoSchedule (on-demand only).
 /// Default trigger is NoTrigger (manual triggering only).
 /// Default secrets store is empty.
-pub fn new(name: String, version: String) -> Pipeline(String, Nil) {
+pub fn new(name: String, version: String) -> Pipeline(id, Nil) {
   Pipeline(
     id: PipelineId(name: name, version: version),
     steps: [],
@@ -83,27 +89,25 @@ pub fn new(name: String, version: String) -> Pipeline(String, Nil) {
     schedule: NoSchedule,
     trigger: NoTrigger,
     secrets: secret_manager.new(),
-    id_to_string: fn(s) { s },
+    id_to_string: step_id_to_string,
   )
 }
 
-/// Create a new empty pipeline with typed step IDs.
-/// Provide a `to_string` function to convert your custom ID type to strings
-/// (used at the execution boundary for traces and error messages).
-pub fn typed(
-  name: String,
-  version: String,
-  to_string: fn(id) -> String,
-) -> Pipeline(id, Nil) {
-  Pipeline(
-    id: PipelineId(name: name, version: version),
-    steps: [],
-    default_timeout_ms: 1_800_000,
-    schedule: NoSchedule,
-    trigger: NoTrigger,
-    secrets: secret_manager.new(),
-    id_to_string: to_string,
-  )
+/// Convert any step ID to a String for traces, logs, and execution.
+///
+/// - If `id` is a `String`, it is returned as-is. `string.inspect` wraps
+///   strings in surrounding double-quotes, so this function strips them.
+/// - Otherwise, `string.inspect` is used:
+///     GleamCheck  → "GleamCheck"
+///     Worker(3)   → "Worker(3)"
+///
+/// This allows typed enum IDs without requiring a manual to_string converter.
+pub fn step_id_to_string(id: a) -> String {
+  let inspected = string.inspect(id)
+  case string.starts_with(inspected, "\""), string.ends_with(inspected, "\"") {
+    True, True -> string.slice(inspected, 1, string.length(inspected) - 2)
+    _, _ -> inspected
+  }
 }
 
 /// Compile a typed pipeline into a String-based pipeline for execution.
@@ -352,11 +356,6 @@ pub fn trigger(pipeline: Pipeline(id, a)) -> Trigger {
 /// Return the secrets store for this pipeline.
 pub fn secrets(pipeline: Pipeline(id, a)) -> SecretStore {
   pipeline.secrets
-}
-
-/// Return the id_to_string converter for this pipeline.
-pub fn get_id_to_string(pipeline: Pipeline(id, a)) -> fn(id) -> String {
-  pipeline.id_to_string
 }
 
 // ---------------------------------------------------------------------------

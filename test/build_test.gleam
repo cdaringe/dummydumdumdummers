@@ -83,12 +83,6 @@ pub fn build_pipeline_tier5_release_deps_test() {
   |> should.equal([DockerBuildCli, DockerBuildWeb, HexPublish])
 }
 
-pub fn build_step_to_string_test() {
-  build.build_step_to_string(GleamCheck) |> should.equal("gleam_check")
-  build.build_step_to_string(SemanticRelease)
-  |> should.equal("semantic_release")
-}
-
 fn deps_for(
   steps: List(pipeline.Step(BuildStep)),
   target: BuildStep,

@@ -54,24 +54,6 @@ pub type BuildStep {
   SemanticRelease
 }
 
-pub fn build_step_to_string(step: BuildStep) -> String {
-  case step {
-    GleamCheck -> "gleam_check"
-    GleamFormat -> "gleam_format"
-    WebInstall -> "web_install"
-    GleamTest -> "gleam_test"
-    WebLint -> "web_lint"
-    GleamBuildErl -> "gleam_build_erl"
-    GleamBuildJs -> "gleam_build_js"
-    WebBuild -> "web_build"
-    CliShipment -> "cli_shipment"
-    DockerBuildCli -> "docker_build_cli"
-    DockerBuildWeb -> "docker_build_web"
-    HexPublish -> "hex_publish"
-    SemanticRelease -> "semantic_release"
-  }
-}
-
 // ---------------------------------------------------------------------------
 // Pipeline definition
 // ---------------------------------------------------------------------------
@@ -81,7 +63,7 @@ pub fn build_step_to_string(step: BuildStep) -> String {
 /// Run with:
 ///   thingfactory run -f src/thingfactory/build.gleam build
 pub fn build() -> pipeline.Pipeline(BuildStep, Dynamic) {
-  pipeline.typed("thingfactory-build", "1.0.0", build_step_to_string)
+  pipeline.new("thingfactory-build", "1.0.0")
   |> pipeline.with_timeout(600_000)
   |> pipeline.with_trigger(webhook_trigger.on_branch_update("main"))
   // ── Tier 0: Validate (no deps, all parallel) ──────────────────────

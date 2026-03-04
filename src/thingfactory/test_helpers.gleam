@@ -1,7 +1,7 @@
 /// Test Helpers — mock creation and pipeline execution with mocks.
 ///
 /// Implements FR-7 (Testing with Mocks).
-/// String-keyed mock registration per [q1] decision (documented trade-off).
+/// Mock IDs are serialised via pipeline.step_id_to_string (same as compile).
 import gleam/dict.{type Dict}
 import gleam/dynamic.{type Dynamic}
 import gleam/list
@@ -45,8 +45,8 @@ pub fn run_with_mocks(
   initial_input: Dynamic,
 ) -> ExecutionResult(Dynamic) {
   let compiled = pipeline.compile(p)
-  let to_s = pipeline.get_id_to_string(p)
-  let string_mocks = list.map(mocks, fn(mock) { #(to_s(mock.0), mock.1) })
+  let string_mocks =
+    list.map(mocks, fn(mock) { #(pipeline.step_id_to_string(mock.0), mock.1) })
   let mock_dict = dict.from_list(string_mocks)
   let wrapped_pipeline = wrap_pipeline_with_mocks(compiled, mock_dict)
   let ctx =

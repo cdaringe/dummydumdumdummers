@@ -1,4 +1,7 @@
 /// Tests for typed step identifiers
+///
+/// pipeline.new() works with any type as step ID.
+/// String IDs are used verbatim; enum IDs are serialised via string.inspect.
 import gleam/dynamic
 import gleam/list
 import gleeunit/should
@@ -9,7 +12,7 @@ import thingfactory/test_helpers
 import thingfactory/types
 
 // ---------------------------------------------------------------------------
-// Static typed IDs
+// Static typed IDs (enum variants with no data)
 // ---------------------------------------------------------------------------
 
 type BuildStep {
@@ -20,19 +23,9 @@ type BuildStep {
   Package
 }
 
-fn build_step_to_string(step: BuildStep) -> String {
-  case step {
-    Checkout -> "checkout"
-    Lint -> "lint"
-    Test -> "test"
-    Build -> "build"
-    Package -> "package"
-  }
-}
-
 pub fn typed_static_pipeline_test() {
   let p =
-    pipeline.typed("typed_build", "1.0.0", build_step_to_string)
+    pipeline.new("typed_build", "1.0.0")
     |> pipeline.add_step(Checkout, fn(_ctx, _input) {
       Ok(dynamic.string("checked out"))
     })
@@ -51,7 +44,7 @@ pub fn typed_static_pipeline_test() {
 
 pub fn typed_static_deps_test() {
   let p =
-    pipeline.typed("typed_deps", "1.0.0", build_step_to_string)
+    pipeline.new("typed_deps", "1.0.0")
     |> pipeline.add_step_with_deps(
       Checkout,
       fn(_ctx, _input) { Ok(dynamic.string("checked out")) },
@@ -85,31 +78,25 @@ pub fn typed_static_deps_test() {
 }
 
 // ---------------------------------------------------------------------------
-// Dynamic IDs
+// Typed IDs with data — constructors that carry payload
 // ---------------------------------------------------------------------------
 
-type DynamicStep {
-  Named(String)
-  Indexed(String, Int)
-}
-
-fn dynamic_step_to_string(step: DynamicStep) -> String {
-  case step {
-    Named(name) -> name
-    Indexed(name, idx) -> name <> "_" <> int_to_string(idx)
-  }
+type WorkerStep {
+  SetupNode
+  Worker(Int)
 }
 
 pub fn typed_dynamic_ids_test() {
+  // SetupNode → "SetupNode", Worker(1) → "Worker(1)", Worker(2) → "Worker(2)"
   let p =
-    pipeline.typed("dynamic_ids", "1.0.0", dynamic_step_to_string)
-    |> pipeline.add_step(Named("setup"), fn(_ctx, _input) {
+    pipeline.new("dynamic_ids", "1.0.0")
+    |> pipeline.add_step(SetupNode, fn(_ctx, _input) {
       Ok(dynamic.string("setup"))
     })
-    |> pipeline.add_step(Indexed("task", 1), fn(_ctx, _input) {
+    |> pipeline.add_step(Worker(1), fn(_ctx, _input) {
       Ok(dynamic.string("task_1"))
     })
-    |> pipeline.add_step(Indexed("task", 2), fn(_ctx, _input) {
+    |> pipeline.add_step(Worker(2), fn(_ctx, _input) {
       Ok(dynamic.string("task_2"))
     })
 
@@ -117,34 +104,34 @@ pub fn typed_dynamic_ids_test() {
   let result = executor.execute(p, dynamic.nil(), config)
   result.result |> should.be_ok()
   list.length(result.trace) |> should.equal(3)
-  // Verify compiled step names
+  // Verify compiled step names use string.inspect format
   let names = list.map(result.trace, fn(t) { t.step_name })
-  names |> should.equal(["setup", "task_1", "task_2"])
+  names |> should.equal(["SetupNode", "Worker(1)", "Worker(2)"])
 }
 
 pub fn typed_dynamic_unique_instances_test() {
-  // Custom("a") != Custom("b"), Indexed("task", 1) != Indexed("task", 2)
+  // Worker(1) != Worker(2) — each carries distinct data
   let p =
-    pipeline.typed("unique_dynamic", "1.0.0", dynamic_step_to_string)
+    pipeline.new("unique_dynamic", "1.0.0")
     |> pipeline.add_step_with_deps(
-      Named("init"),
+      SetupNode,
       fn(_ctx, _input) { Ok(dynamic.string("init")) },
       [],
     )
     |> pipeline.add_step_with_deps(
-      Indexed("worker", 1),
+      Worker(1),
       fn(_ctx, _input) { Ok(dynamic.string("w1")) },
-      [Named("init")],
+      [SetupNode],
     )
     |> pipeline.add_step_with_deps(
-      Indexed("worker", 2),
+      Worker(2),
       fn(_ctx, _input) { Ok(dynamic.string("w2")) },
-      [Named("init")],
+      [SetupNode],
     )
     |> pipeline.add_step_with_deps(
-      Named("merge"),
+      Worker(3),
       fn(_ctx, _input) { Ok(dynamic.string("merged")) },
-      [Indexed("worker", 1), Indexed("worker", 2)],
+      [Worker(1), Worker(2)],
     )
 
   let config = types.default_config()
@@ -154,45 +141,38 @@ pub fn typed_dynamic_unique_instances_test() {
 }
 
 // ---------------------------------------------------------------------------
-// Mixed static + dynamic
+// Mixed static + data-carrying constructors
 // ---------------------------------------------------------------------------
 
 type MixedStep {
   StaticSetup
   StaticBuild
-  Custom(String)
-}
-
-fn mixed_to_string(step: MixedStep) -> String {
-  case step {
-    StaticSetup -> "setup"
-    StaticBuild -> "build"
-    Custom(name) -> "custom_" <> name
-  }
+  LintStep
+  TestStep
 }
 
 pub fn typed_mixed_static_dynamic_test() {
   let p =
-    pipeline.typed("mixed", "1.0.0", mixed_to_string)
+    pipeline.new("mixed", "1.0.0")
     |> pipeline.add_step_with_deps(
       StaticSetup,
       fn(_ctx, _input) { Ok(dynamic.string("setup done")) },
       [],
     )
     |> pipeline.add_step_with_deps(
-      Custom("lint"),
+      LintStep,
       fn(_ctx, _input) { Ok(dynamic.string("lint done")) },
       [StaticSetup],
     )
     |> pipeline.add_step_with_deps(
-      Custom("test"),
+      TestStep,
       fn(_ctx, _input) { Ok(dynamic.string("test done")) },
       [StaticSetup],
     )
     |> pipeline.add_step_with_deps(
       StaticBuild,
       fn(_ctx, _input) { Ok(dynamic.string("build done")) },
-      [Custom("lint"), Custom("test")],
+      [LintStep, TestStep],
     )
 
   let config = types.default_config()
@@ -200,19 +180,19 @@ pub fn typed_mixed_static_dynamic_test() {
   result.result |> should.be_ok()
   list.length(result.trace) |> should.equal(4)
   let names = list.map(result.trace, fn(t) { t.step_name })
-  list.contains(names, "setup") |> should.be_true()
-  list.contains(names, "custom_lint") |> should.be_true()
-  list.contains(names, "custom_test") |> should.be_true()
-  list.contains(names, "build") |> should.be_true()
+  list.contains(names, "StaticSetup") |> should.be_true()
+  list.contains(names, "LintStep") |> should.be_true()
+  list.contains(names, "TestStep") |> should.be_true()
+  list.contains(names, "StaticBuild") |> should.be_true()
 }
 
 // ---------------------------------------------------------------------------
-// Compile correctness
+// Compile correctness — enum IDs produce inspect-format names
 // ---------------------------------------------------------------------------
 
 pub fn compile_produces_correct_names_test() {
   let p =
-    pipeline.typed("compile_test", "1.0.0", build_step_to_string)
+    pipeline.new("compile_test", "1.0.0")
     |> pipeline.add_step_with_deps(
       Checkout,
       fn(_ctx, _input) { Ok(dynamic.string("ok")) },
@@ -230,7 +210,7 @@ pub fn compile_produces_correct_names_test() {
   first |> should.be_ok()
   case first {
     Ok(step) -> {
-      step.name |> should.equal("checkout")
+      step.name |> should.equal("Checkout")
       step.depends_on |> should.equal([])
     }
     Error(_) -> Nil
@@ -239,8 +219,8 @@ pub fn compile_produces_correct_names_test() {
   second |> should.be_ok()
   case second {
     Ok(step) -> {
-      step.name |> should.equal("build")
-      step.depends_on |> should.equal(["checkout"])
+      step.name |> should.equal("Build")
+      step.depends_on |> should.equal(["Checkout"])
     }
     Error(_) -> Nil
   }
@@ -252,7 +232,7 @@ pub fn compile_produces_correct_names_test() {
 
 pub fn typed_with_loop_test() {
   let p =
-    pipeline.typed("loop_typed", "1.0.0", build_step_to_string)
+    pipeline.new("loop_typed", "1.0.0")
     |> pipeline.add_step(Checkout, fn(_ctx, _input) {
       Ok(dynamic.string("checked out"))
     })
@@ -275,7 +255,7 @@ pub fn typed_with_loop_test() {
 
 pub fn typed_with_mocks_test() {
   let p =
-    pipeline.typed("mock_typed", "1.0.0", build_step_to_string)
+    pipeline.new("mock_typed", "1.0.0")
     |> pipeline.add_step(Checkout, fn(_ctx, _input) {
       Ok(dynamic.string("real checkout"))
     })
@@ -297,7 +277,7 @@ pub fn typed_with_mocks_test() {
 
 pub fn typed_with_context_test() {
   let p =
-    pipeline.typed("ctx_typed", "1.0.0", build_step_to_string)
+    pipeline.new("ctx_typed", "1.0.0")
     |> pipeline.add_step_with_ctx(Checkout, fn(ctx, _input) {
       let updated =
         types.publish_message(ctx, "status", dynamic.string("checked out"))
@@ -317,7 +297,7 @@ pub fn typed_with_context_test() {
 }
 
 // ---------------------------------------------------------------------------
-// String-based pipelines still work (backwards compatibility)
+// String-based pipelines still work (string IDs used verbatim)
 // ---------------------------------------------------------------------------
 
 pub fn string_pipeline_still_works_test() {
@@ -358,7 +338,7 @@ pub fn string_deps_still_work_test() {
 
 pub fn typed_invalid_dep_detected_test() {
   let p =
-    pipeline.typed("invalid_dep", "1.0.0", build_step_to_string)
+    pipeline.new("invalid_dep", "1.0.0")
     |> pipeline.add_step_with_deps(
       Checkout,
       fn(_ctx, _input) { Ok(dynamic.string("ok")) },
@@ -378,7 +358,7 @@ pub fn typed_invalid_dep_detected_test() {
 
 pub fn typed_error_propagation_test() {
   let p =
-    pipeline.typed("error_typed", "1.0.0", build_step_to_string)
+    pipeline.new("error_typed", "1.0.0")
     |> pipeline.add_step(Checkout, fn(_ctx, _input) {
       Error(types.StepFailure(message: "checkout failed"))
     })
@@ -390,20 +370,10 @@ pub fn typed_error_propagation_test() {
   let result = executor.execute(p, dynamic.nil(), config)
   result.result |> should.be_error()
   list.length(result.trace) |> should.equal(2)
-  // First step failed, second skipped
+  // First step failed — name serialised via string.inspect
   let first_trace = list.first(result.trace)
   case first_trace {
-    Ok(t) -> t.step_name |> should.equal("checkout")
+    Ok(t) -> t.step_name |> should.equal("Checkout")
     Error(_) -> Nil
   }
-}
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-import gleam/int
-
-fn int_to_string(n: Int) -> String {
-  int.to_string(n)
 }
