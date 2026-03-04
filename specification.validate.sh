@@ -7,8 +7,9 @@ set -euo pipefail
 # Exit 0 on success, non-zero on failure.
 # stdout/stderr will be captured and provided to the agent on failure.
 rm -rf build
-gleam build --target erlang --warnings-as-errors
-gleam test
 deno fmt .
-npm --prefix web run test:e2e
 npm --prefix web run lint
+gleam test
+gleam build --target erlang --warnings-as-errors
+docker build -t thingfactory .
+npm --prefix web run test:e2e
