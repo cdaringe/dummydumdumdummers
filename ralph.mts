@@ -122,14 +122,7 @@ const detectScenarioFromProgress = (
   content: string,
 ): Result<number | undefined, string> => {
   const lines = content.split("\n");
-  const endDemoIndex = lines.findIndex((line) => line.includes("END_DEMO"));
-
-  if (endDemoIndex === -1) {
-    return err("END_DEMO sigil not found in progress.md");
-  }
-
   const reworkLine = lines
-    .slice(endDemoIndex + 1)
     .find((line) => /^\|\s*\d+\s*\|\s*NEEDS_REWORK\s*\|/.test(line));
 
   if (!reworkLine) return ok(undefined);
@@ -258,8 +251,11 @@ const resolveModelSelection = async (
     targetScenario: undefined,
   };
 
-  const content = await Deno.readTextFile("progress.md").catch(() => undefined);
-  if (!content) return defaults;
+  const rawContent = await Deno.readTextFile("./progress.md");
+  if (!rawContent) throw new Error("progress.md not found or unreadable");
+
+  const content = rawContent.split("END_DEMO")[1];
+  if (!content) throw new Error("END_DEMO sigil not found in progress.md");
 
   const result = computeModelSelection(content, agent);
   if (!result.ok) {

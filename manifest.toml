@@ -19,5 +19,5 @@ argv = { version = ">= 1.0.0 and < 2.0.0" }
 clip = { version = ">= 1.2.0 and < 2.0.0" }
 gleam_community_ansi = { version = ">= 1.4.4 and < 2.0.0" }
 gleam_stdlib = { version = ">= 0.44.0 and < 0.68.0" }
-gleeunit = { version = ">= 1.0.0 and < 2.0.0" }
+gleeunit = { version = ">= 1.9.0 and < 2.0.0" }
 simplifile = { version = ">= 2.3.2 and < 3.0.0" }
