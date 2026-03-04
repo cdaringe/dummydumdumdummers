@@ -231,7 +231,7 @@ pub fn resolve_isolation_mode_defaults_to_docker_test() {
   let result = cli.resolve_isolation_mode(Error(Nil), Error(Nil), False)
   should.equal(
     result,
-    Ok(cli.DockerIsolation(image: "ghcr.io/gleam-lang/gleam:v1.13.0-erlang")),
+    Ok(cli.DockerIsolation(image: "ghcr.io/gleam-lang/gleam:v1.14.0-erlang")),
   )
 }
 
@@ -239,7 +239,7 @@ pub fn resolve_isolation_mode_docker_explicit_test() {
   let result = cli.resolve_isolation_mode(Ok("docker"), Error(Nil), False)
   should.equal(
     result,
-    Ok(cli.DockerIsolation(image: "ghcr.io/gleam-lang/gleam:v1.13.0-erlang")),
+    Ok(cli.DockerIsolation(image: "ghcr.io/gleam-lang/gleam:v1.14.0-erlang")),
   )
 }
 

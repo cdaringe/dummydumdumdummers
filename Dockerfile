@@ -1,5 +1,5 @@
 # Build stage: use Gleam's official Erlang/OTP image
-FROM ghcr.io/gleam-lang/gleam:v1.13.0-erlang-alpine AS builder
+FROM ghcr.io/gleam-lang/gleam:v1.14.0-erlang-alpine AS builder
 
 WORKDIR /app
 

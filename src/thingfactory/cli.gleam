@@ -949,7 +949,7 @@ pub fn resolve_isolation_mode(
       }
       let image = case docker_image {
         Ok(value) -> string.trim(value)
-        Error(Nil) -> "ghcr.io/gleam-lang/gleam:v1.13.0-erlang"
+        Error(Nil) -> "ghcr.io/gleam-lang/gleam:v1.14.0-erlang"
       }
       case selected {
         "docker" -> Ok(DockerIsolation(image: image))

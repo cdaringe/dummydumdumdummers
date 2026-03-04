@@ -36,7 +36,7 @@ pub fn isolation_defaults_to_docker_test() {
   let assert Ok(mode) =
     cli.resolve_isolation_mode(Error(Nil), Error(Nil), False)
   mode
-  |> should.equal(cli.DockerIsolation("ghcr.io/gleam-lang/gleam:v1.13.0-erlang"))
+  |> should.equal(cli.DockerIsolation("ghcr.io/gleam-lang/gleam:v1.14.0-erlang"))
 }
 
 pub fn isolation_explicit_local_test() {
@@ -145,7 +145,7 @@ pub fn subprocess_docker_isolation_invoked_test() {
   let assert Ok(out) =
     run_cli([
       "run", "--isolator", "docker", "--docker-image",
-      "ghcr.io/gleam-lang/gleam:v1.13.0-erlang",
+      "ghcr.io/gleam-lang/gleam:v1.14.0-erlang",
       "thingfactory@examples:basic_pipeline",
     ])
   // Absence of these strings confirms the CLI reached the docker execution
@@ -172,7 +172,7 @@ pub fn subprocess_docker_isolation_executes_pipeline_test() {
       let assert Ok(out) =
         run_cli([
           "run", "--isolator", "docker", "--docker-image",
-          "ghcr.io/gleam-lang/gleam:v1.13.0-erlang",
+          "ghcr.io/gleam-lang/gleam:v1.14.0-erlang",
           "thingfactory@examples:basic_pipeline",
         ])
       should.be_true(string.contains(out.stdout, "Result:"))
