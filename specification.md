@@ -142,6 +142,7 @@ each.
     instance of the project can build itself.
 61. The project SHALL host docker deployment documentation and instructions on
     how to get builds into jobs into the system.
+62. A user SHALL be able to import pipeline steps into a pipeline from another library and use them in conjunction with the local pipeline steps.
 
 ## Requirements
 

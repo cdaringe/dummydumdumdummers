@@ -44,7 +44,7 @@ type CommandSpec = {
 
 type LoopState = {
   readonly validationFailurePath: string | undefined;
-  readonly task: "build" | "produce_receipts";
+  readonly task: "build" | "produce_receipts" | "complete";
 };
 
 // --- Constants ---
@@ -482,7 +482,7 @@ const runLoopIteration = async (
 
   const receiptsResult = await updateReceipts({ agent });
   return receiptsResult.ok
-    ? { validationFailurePath, task: "build" }
+    ? { validationFailurePath, task: "complete" }
     : (log({ tags: ["error"], message: receiptsResult.error }),
       { validationFailurePath, task: "produce_receipts" });
 };
@@ -537,6 +537,7 @@ const main = async (): Promise<number> => {
       signal: shutdownController.signal,
       log,
     });
+    if (state.task === "complete") break;
   }
 
   log({
