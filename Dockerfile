@@ -20,6 +20,6 @@ RUN apk add --no-cache docker-cli
 WORKDIR /app
 
 # Copy the self-contained Erlang release
-COPY --from=builder /app/erlang-shipment .
+COPY --from=builder /app/build/erlang-shipment .
 
 ENTRYPOINT ["./entrypoint.sh", "run", "thingfactory", "main"]
