@@ -153,3 +153,29 @@ pub fn subprocess_docker_isolation_invoked_test() {
   should.be_false(string.contains(out.stdout, "Invalid pipeline reference"))
   should.be_false(string.contains(out.stdout, "Invalid isolator"))
 }
+
+/// Docker isolation end-to-end: when Docker is reachable, actually execute
+/// a pipeline inside a container and assert the pipeline completes successfully.
+/// When Docker is NOT available the test passes immediately (graceful skip).
+pub fn subprocess_docker_isolation_executes_pipeline_test() {
+  let docker_available = case command_runner.run("docker", ["info"]) {
+    Ok(result) -> result.exit_code == 0
+    Error(_) -> False
+  }
+  case docker_available {
+    False -> {
+      // Docker daemon not reachable – skip gracefully.
+      True |> should.be_true
+    }
+    True -> {
+      // Docker is running – verify real end-to-end container execution.
+      let assert Ok(out) =
+        run_cli([
+          "run", "--isolator", "docker", "--docker-image",
+          "ghcr.io/gleam-lang/gleam:v1.13.0-erlang",
+          "thingfactory@examples:basic_pipeline",
+        ])
+      should.be_true(string.contains(out.stdout, "Result:"))
+    }
+  }
+}
