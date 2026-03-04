@@ -227,6 +227,43 @@ pub fn run_pipeline_unknown_error_message_test() {
   should.be_true(string.contains(err, "Invalid pipeline reference"))
 }
 
+pub fn resolve_isolation_mode_defaults_to_docker_test() {
+  let result = cli.resolve_isolation_mode(Error(Nil), Error(Nil), False)
+  should.equal(
+    result,
+    Ok(cli.DockerIsolation(image: "ghcr.io/gleam-lang/gleam:v1.13.0-erlang")),
+  )
+}
+
+pub fn resolve_isolation_mode_docker_explicit_test() {
+  let result = cli.resolve_isolation_mode(Ok("docker"), Error(Nil), False)
+  should.equal(
+    result,
+    Ok(cli.DockerIsolation(image: "ghcr.io/gleam-lang/gleam:v1.13.0-erlang")),
+  )
+}
+
+pub fn resolve_isolation_mode_local_test() {
+  let result = cli.resolve_isolation_mode(Ok("local"), Error(Nil), False)
+  should.equal(result, Ok(cli.LocalIsolation))
+}
+
+pub fn resolve_isolation_mode_interactive_forces_local_test() {
+  let result = cli.resolve_isolation_mode(Error(Nil), Error(Nil), True)
+  should.equal(result, Ok(cli.LocalIsolation))
+}
+
+pub fn resolve_isolation_mode_custom_docker_image_test() {
+  let result =
+    cli.resolve_isolation_mode(Ok("docker"), Ok("my-custom:image"), False)
+  should.equal(result, Ok(cli.DockerIsolation(image: "my-custom:image")))
+}
+
+pub fn resolve_isolation_mode_invalid_test() {
+  let result = cli.resolve_isolation_mode(Ok("kubernetes"), Error(Nil), False)
+  should.be_error(result)
+}
+
 pub fn execute_pipeline_returns_traces_test() {
   let assert Ok(result) =
     cli.execute_pipeline("thingfactory@examples:basic_pipeline", cli.Compact)
