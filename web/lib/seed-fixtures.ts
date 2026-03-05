@@ -47,6 +47,10 @@ interface StepFixture {
   timeout_ms: number;
   depends_on: string[];
   loop?: unknown;
+  command?: string;
+  working_dir?: string;
+  wait_for_idle?: boolean;
+  only_if_env?: string;
 }
 
 interface PipelineFixture {
@@ -56,6 +60,7 @@ interface PipelineFixture {
   steps: StepFixture[];
   schedule?: unknown;
   trigger?: unknown;
+  executor?: unknown;
   runs: Array<{
     status: string;
     trigger_type: string;
@@ -908,6 +913,47 @@ const pipelines: PipelineFixture[] = [
       },
     ],
   },
+
+  // Self-deploy pipeline — triggered by Gitea webhook on push
+  {
+    name: "thingfactory_deploy",
+    version: "1.0.0",
+    description:
+      "Self-update pipeline: pull, build, wait for idle, restart",
+    steps: [
+      {
+        name: "git_pull",
+        timeout_ms: 120_000,
+        depends_on: [],
+        command: "git fetch origin main && git reset --hard origin/main",
+      },
+      {
+        name: "docker_build",
+        timeout_ms: 600_000,
+        depends_on: ["git_pull"],
+        command: "docker compose build web",
+      },
+      {
+        name: "wait_for_idle",
+        timeout_ms: 300_000,
+        depends_on: ["docker_build"],
+        command: "echo 'Proceeding to restart...'",
+        wait_for_idle: true,
+        only_if_env: "THINGFACTORY_IS_DEPLOY_SERVER",
+      },
+      {
+        name: "restart",
+        timeout_ms: 60_000,
+        depends_on: ["wait_for_idle"],
+        command:
+          "docker run --rm -d -v /var/run/docker.sock:/var/run/docker.sock -v $THINGFACTORY_HOST_SOURCE_DIR:/workspace -w /workspace docker:cli sh -c 'sleep 5 && docker compose up -d --build web'",
+        only_if_env: "THINGFACTORY_IS_DEPLOY_SERVER",
+      },
+    ],
+    executor: { kind: "local" },
+    trigger: { Gitea: { repo: "cdaringe/thingfactory", events: ["push"] } },
+    runs: [],
+  },
 ];
 
 /**
@@ -929,7 +975,7 @@ export function seedFixtures(db: Database.Database) {
   let artifactCounter = 0;
 
   const insertPipeline = db.prepare(
-    `INSERT INTO pipeline_definitions (id, name, version, description, schedule, trigger, steps) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO pipeline_definitions (id, name, version, description, schedule, trigger, steps, executor) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
   );
 
   const insertRun = db.prepare(
@@ -955,6 +1001,7 @@ export function seedFixtures(db: Database.Database) {
       JSON.stringify(p.schedule ?? "NoSchedule"),
       JSON.stringify(p.trigger ?? "NoTrigger"),
       JSON.stringify(p.steps),
+      JSON.stringify(p.executor ?? { kind: "local" }),
     );
 
     for (const run of p.runs) {
@@ -1015,4 +1062,5 @@ export function seedFixtures(db: Database.Database) {
       }
     }
   }
+
 }

@@ -22,7 +22,9 @@ services:
       - "${THINGFACTORY_PORT:-3000}:3000"
     volumes:
       - ${THINGFACTORY_DATA_DIRNAME:-./data}:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - THINGFACTORY_DATA_DIRNAME=/app/data
+      - THINGFACTORY_ALLOWED_EXECUTORS=${THINGFACTORY_ALLOWED_EXECUTORS:-local}
       - NODE_ENV=production
     restart: unless-stopped

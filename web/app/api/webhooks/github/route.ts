@@ -38,16 +38,22 @@ export async function POST(req: Request) {
     .execute();
 
   const runIds: string[] = [];
+  const errors: string[] = [];
   for (const conn of connections) {
     if (conn.pipeline_id) {
-      const runId = await triggerPipeline(conn.pipeline_id, "webhook");
-      if (runId) runIds.push(runId);
+      try {
+        const runId = await triggerPipeline(conn.pipeline_id, "webhook");
+        if (runId) runIds.push(runId);
+      } catch (err) {
+        errors.push(err instanceof Error ? err.message : String(err));
+      }
     }
   }
 
   return NextResponse.json({
-    ok: true,
+    ok: errors.length === 0,
     triggered: runIds.length,
     run_ids: runIds,
+    ...(errors.length > 0 ? { errors } : {}),
   });
 }

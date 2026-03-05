@@ -10,6 +10,7 @@ interface PipelineDefinitionsTable {
   schedule: Generated<string>;
   trigger: Generated<string>;
   steps: string;
+  executor: Generated<string>;
   timeout_ms: Generated<number>;
   created_at: Generated<string>;
 }
@@ -100,6 +101,7 @@ function initRawDb(): DatabaseConstructor.Database {
       schedule    TEXT NOT NULL DEFAULT 'NoSchedule',
       trigger     TEXT NOT NULL DEFAULT 'NoTrigger',
       steps       TEXT NOT NULL,
+      executor    TEXT NOT NULL DEFAULT '{"kind":"local"}',
       timeout_ms  INTEGER NOT NULL DEFAULT 1800000,
       created_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
       UNIQUE(name, version)

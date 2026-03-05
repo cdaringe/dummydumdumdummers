@@ -7,6 +7,7 @@
 
 import { join } from "path";
 import { mkdirSync } from "fs";
+import type { ExecutorKind } from "./types";
 
 export interface ServiceConfig {
   /** Root data directory. Set via THINGFACTORY_DATA_DIRNAME. */
@@ -17,6 +18,8 @@ export interface ServiceConfig {
   port: number;
   /** Node environment. Set via NODE_ENV. */
   nodeEnv: "development" | "production" | "test";
+  /** Allowed executor kinds. Set via THINGFACTORY_ALLOWED_EXECUTORS (comma-separated). Defaults to ["local"]. */
+  allowedExecutors: ExecutorKind[];
 }
 
 export function getConfig(): ServiceConfig {
@@ -33,6 +36,13 @@ export function getConfig(): ServiceConfig {
     }
   }
 
+  const allowedExecutorsRaw = process.env.THINGFACTORY_ALLOWED_EXECUTORS ?? "local";
+  const allowedExecutors = allowedExecutorsRaw
+    .split(",")
+    .map((s) => s.trim())
+    .filter((s): s is ExecutorKind => s === "local" || s === "docker");
+  if (allowedExecutors.length === 0) allowedExecutors.push("local");
+
   return {
     dataDirname,
     databasePath,
@@ -41,6 +51,7 @@ export function getConfig(): ServiceConfig {
       10,
     ),
     nodeEnv,
+    allowedExecutors,
   };
 }
 

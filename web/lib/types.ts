@@ -3,6 +3,14 @@ export interface StepDefinition {
   timeout_ms: number;
   depends_on: string[];
   loop?: LoopConfig;
+  /** Shell command to execute. When absent, the simulation path is used. */
+  command?: string;
+  /** Working directory for the command. Defaults to THINGFACTORY_SOURCE_DIR or /app. */
+  working_dir?: string;
+  /** Poll pipeline_runs until no other runs are "running" before executing. */
+  wait_for_idle?: boolean;
+  /** Skip this step (status "skipped") if this env var is not truthy. */
+  only_if_env?: string;
 }
 
 export type LoopConfig =
@@ -45,3 +53,23 @@ export interface Artifact {
   content: string;
   created_at: string;
 }
+
+// ---------------------------------------------------------------------------
+// Executor configuration — determines how step commands are run
+// ---------------------------------------------------------------------------
+
+export type ExecutorKind = "local" | "docker";
+
+export interface LocalExecutorConfig {
+  kind: "local";
+}
+
+export interface DockerExecutorConfig {
+  kind: "docker";
+  /** Docker image to run commands in. */
+  image: string;
+  /** Extra volume mounts (host:container format). */
+  volumes?: string[];
+}
+
+export type ExecutorConfig = LocalExecutorConfig | DockerExecutorConfig;

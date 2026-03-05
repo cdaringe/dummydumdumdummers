@@ -9,7 +9,13 @@ export async function POST(req: Request, { params }: Params) {
   const { name, version } = await params;
   const pipelineId = `${name}@${version}`;
 
-  const runId = await triggerPipeline(pipelineId, "manual");
+  let runId: string | null;
+  try {
+    runId = await triggerPipeline(pipelineId, "manual");
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: msg }, { status: 403 });
+  }
 
   if (!runId) {
     return NextResponse.json({ error: "Pipeline not found" }, { status: 404 });

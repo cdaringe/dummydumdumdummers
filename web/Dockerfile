@@ -28,6 +28,8 @@ FROM node:22-alpine
 
 WORKDIR /app
 
+RUN apk add --no-cache git docker-cli docker-cli-compose bash
+
 ENV NODE_ENV=production
 
 COPY --from=builder /app/.next/standalone ./

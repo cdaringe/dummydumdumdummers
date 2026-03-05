@@ -145,6 +145,11 @@ each.
 62. A user SHALL be able to import pipeline steps into a pipeline from another
     library and use them in conjunction with the local pipeline steps.
 63. A user deploying the server SHALL be able to specify a THINGFACTORY_DATA_DIRNAME=/some/path and all writes shall be made to that directory, including the SQLite database and any produced artifacts.
+64. The system SHALL support a graceful teardown and restart. Specifically, the system SHALL support blocking starting new pipelines, allowing in-flight pipelines to complete, and then shutting down. It should also be able to restart without loss of data or state, and SHALL RESUME pipelines that were previously blocked on next boot.
+65. The system SHALL support various executor models. By default, the local docker execution model should be used to run pipelines. However, the system should be designed to support other execution models such as kubernetes, remote execution, or even serverless functions. The execution model should be pluggable and configurable by the user.
+66. The system SHALL support pipelines defining their execution model (e.g. please run this pipeline on a docker agent X).
+67. The system SHALL support pipelines opting in to run on executors with certain labels or capabilities (e.g. please run this pipeline on an agent with GPU capabilities), much like Jenkins or GitHub Actions support execution environment selection. This allows pipeline authors to specify only minimum requirements they have for their pipeline, and the system can then schedule the pipeline on any available executor that meets those requirements.
+68. The system SHALL support allow listing of permissible execution models.
 
 ## Requirements
 
@@ -164,3 +169,6 @@ each.
 11. Features SHALL NOT be duplicated--DRY code is a must.
 12. Gleam code compilation SHALL NOT have any errors or warnings.
 13. FFI code SHALL NOT be written for gleam to erlang or javascript.
+14. Never care about backwards compatibility or versioning. The project is in
+    early stages and can be iterated on rapidly without concern for breaking
+    changes.
