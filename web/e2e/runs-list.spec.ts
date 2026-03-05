@@ -114,7 +114,7 @@ test.describe("Runs List", () => {
 
   test("has navigation sidebar with correct links", async ({ page }) => {
     await page.goto("/runs");
-    await expect(page.getByText("Thingfactory")).toBeVisible();
+    await expect(page.locator("nav").getByText("thingfactory", { exact: true })).toBeVisible();
     await expect(page.getByRole("link", { name: /Pipelines/ })).toBeVisible();
     await expect(page.getByRole("link", { name: /Runs/ })).toBeVisible();
   });

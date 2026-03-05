@@ -130,7 +130,7 @@ test.describe("Run Detail", () => {
     const firstDetailLink = page.locator("text=Details →").first();
     await firstDetailLink.click();
 
-    await expect(page.getByText("Thingfactory")).toBeVisible();
+    await expect(page.locator("nav").getByText("thingfactory", { exact: true })).toBeVisible();
     await expect(page.getByRole("link", { name: /Pipelines/ })).toBeVisible();
     await expect(page.getByRole("link", { name: /Runs/ })).toBeVisible();
   });
