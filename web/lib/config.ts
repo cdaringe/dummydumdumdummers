@@ -5,8 +5,13 @@
  * Standard platform variables (NODE_ENV, PORT) are read directly.
  */
 
+import { join } from "path";
+import { mkdirSync } from "fs";
+
 export interface ServiceConfig {
-  /** SQLite database file path. Set via THINGFACTORY_DATABASE_PATH. */
+  /** Root data directory. Set via THINGFACTORY_DATA_DIRNAME. */
+  dataDirname: string;
+  /** SQLite database file path. Derived from dataDirname or overridden via THINGFACTORY_DATABASE_PATH. */
   databasePath: string;
   /** Web server port. Set via THINGFACTORY_PORT or PORT. Defaults to 3000. */
   port: number;
@@ -15,16 +20,27 @@ export interface ServiceConfig {
 }
 
 export function getConfig(): ServiceConfig {
+  const dataDirname = process.env.THINGFACTORY_DATA_DIRNAME ?? "./data";
+  const databasePath = process.env.THINGFACTORY_DATABASE_PATH ??
+    join(dataDirname, "db", "thingfactory.db");
+  const nodeEnv =
+    (process.env.NODE_ENV ?? "development") as ServiceConfig["nodeEnv"];
+
+  // ensure data subdirectories exist (skip for in-memory test dbs)
+  if (databasePath !== ":memory:") {
+    for (const sub of ["db", "logs", "backups"]) {
+      mkdirSync(join(dataDirname, sub), { recursive: true });
+    }
+  }
+
   return {
-    databasePath: process.env.THINGFACTORY_DATABASE_PATH ??
-      process.env.DATABASE_PATH ??
-      "./db/thingfactory.db",
+    dataDirname,
+    databasePath,
     port: parseInt(
       process.env.THINGFACTORY_PORT ?? process.env.PORT ?? "3000",
       10,
     ),
-    nodeEnv:
-      (process.env.NODE_ENV ?? "development") as ServiceConfig["nodeEnv"],
+    nodeEnv,
   };
 }
 

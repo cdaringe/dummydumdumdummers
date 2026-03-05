@@ -144,6 +144,7 @@ each.
     how to get builds into jobs into the system.
 62. A user SHALL be able to import pipeline steps into a pipeline from another
     library and use them in conjunction with the local pipeline steps.
+63. A user deploying the server SHALL be able to specify a THINGFACTORY_DATA_DIRNAME=/some/path and all writes shall be made to that directory, including the SQLite database and any produced artifacts.
 
 ## Requirements
 
