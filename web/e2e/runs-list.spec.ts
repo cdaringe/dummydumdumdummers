@@ -9,16 +9,21 @@ test.describe("Runs List", () => {
 
   test("shows runs with proper columns", async ({ page }) => {
     await page.goto("/runs");
-    await expect(page.getByRole("columnheader", { name: "Run ID" }))
-      .toBeVisible();
-    await expect(page.getByRole("columnheader", { name: "Pipeline" }))
-      .toBeVisible();
-    await expect(page.getByRole("columnheader", { name: "Status" }))
-      .toBeVisible();
-    await expect(page.getByRole("columnheader", { name: "Duration" }))
-      .toBeVisible();
-    await expect(page.getByRole("columnheader", { name: "Started" }))
-      .toBeVisible();
+    await expect(
+      page.getByRole("columnheader", { name: "Run ID" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("columnheader", { name: "Pipeline" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("columnheader", { name: "Status" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("columnheader", { name: "Duration" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("columnheader", { name: "Started" }),
+    ).toBeVisible();
   });
 
   test("displays seeded runs in the table", async ({ page }) => {
@@ -97,9 +102,9 @@ test.describe("Runs List", () => {
 
     // Check if clear link exists (it should when filters are applied)
     const clearLink = page.locator("a", { hasText: "Clear filters" });
-    const isVisible = await clearLink.isVisible({ timeout: 2000 }).catch(() =>
-      false
-    );
+    const isVisible = await clearLink
+      .isVisible({ timeout: 2000 })
+      .catch(() => false);
 
     // Test passes if clear link is present (feature is implemented)
     if (isVisible) {
@@ -114,7 +119,9 @@ test.describe("Runs List", () => {
 
   test("has navigation sidebar with correct links", async ({ page }) => {
     await page.goto("/runs");
-    await expect(page.locator("nav").getByText("thingfactory", { exact: true })).toBeVisible();
+    await expect(
+      page.locator("nav").getByText("thingfactory", { exact: true }),
+    ).toBeVisible();
     await expect(page.getByRole("link", { name: /Pipelines/ })).toBeVisible();
     await expect(page.getByRole("link", { name: /Runs/ })).toBeVisible();
   });

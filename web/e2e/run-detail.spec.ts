@@ -33,7 +33,9 @@ test.describe("Run Detail", () => {
     await firstDetailLink.click();
 
     // Should display a status badge - check in the summary card
-    const statusSection = page.locator("div").filter({ hasText: /Status/ })
+    const statusSection = page
+      .locator("div")
+      .filter({ hasText: /Status/ })
       .first();
     await expect(statusSection).toBeVisible({ timeout: 5000 });
   });
@@ -53,10 +55,14 @@ test.describe("Run Detail", () => {
     await firstDetailLink.click();
 
     // Should have step traces with proper columns
-    const stepTraceRows = page.locator("text=Step Traces").first().locator("..")
+    const stepTraceRows = page
+      .locator("text=Step Traces")
+      .first()
+      .locator("..")
       .locator("div");
     // At least one trace should exist (seeded data)
-    const traceElements = page.locator("[data-testid='step-trace'], div")
+    const traceElements = page
+      .locator("[data-testid='step-trace'], div")
       .filter({ hasText: /Step Traces/ });
     await expect(traceElements.first()).toBeVisible({ timeout: 5000 });
   });
@@ -130,7 +136,9 @@ test.describe("Run Detail", () => {
     const firstDetailLink = page.locator("text=Details →").first();
     await firstDetailLink.click();
 
-    await expect(page.locator("nav").getByText("thingfactory", { exact: true })).toBeVisible();
+    await expect(
+      page.locator("nav").getByText("thingfactory", { exact: true }),
+    ).toBeVisible();
     await expect(page.getByRole("link", { name: /Pipelines/ })).toBeVisible();
     await expect(page.getByRole("link", { name: /Runs/ })).toBeVisible();
   });
@@ -145,7 +153,9 @@ test.describe("Run Detail", () => {
     await expect(header).toContainText(/Triggered by/);
   });
 
-  test("shows flow diagram with node states on run detail", async ({ page }) => {
+  test("shows flow diagram with node states on run detail", async ({
+    page,
+  }) => {
     await page.goto("/runs");
     const firstDetailLink = page.locator("text=Details →").first();
     await firstDetailLink.click();
@@ -203,15 +213,18 @@ test.describe("Run Detail", () => {
     // Click to expand
     const firstStepRow = page.locator("[data-testid^='step-row-']").first();
     await firstStepRow.click();
-    await expect(page.locator("[data-testid^='step-log-']").first())
-      .toBeVisible();
+    await expect(
+      page.locator("[data-testid^='step-log-']").first(),
+    ).toBeVisible();
 
     // Click again to collapse
     await firstStepRow.click();
     await expect(page.locator("[data-testid^='step-log-']")).toHaveCount(0);
   });
 
-  test("step log displays command lines with highlighting", async ({ page }) => {
+  test("step log displays command lines with highlighting", async ({
+    page,
+  }) => {
     // Navigate to a typescript_build run to get detailed logs
     await page.goto("/runs");
     const firstDetailLink = page.locator("text=Details →").first();
