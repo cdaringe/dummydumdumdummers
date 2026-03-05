@@ -5,6 +5,9 @@ node_modules/
 .next/
 out/
 
+# Runtime data directory (DB, logs, backups)
+data/
+
 # Database (runtime, not committed)
 db/thingfactory.db
 db/thingfactory.db-shm
