@@ -1219,6 +1219,12 @@ pub fn run_queue_worker() -> types.ExecutionResult(Dynamic) {
 /// local steps are fully interchangeable in the pipeline builder.
 pub fn library_import_pipeline() -> pipeline.Pipeline(String, Dynamic) {
   pipeline.new("library_import", "1.0.0")
+  |> pipeline.add_step("seed", fn(_ctx, _input) {
+    // Local step: produce the initial string value regardless of pipeline input.
+    // This allows the pipeline to be run from the CLI (which passes nil) as well
+    // as from within tests.
+    Ok(dynamic.string("hello"))
+  })
   |> pipeline.add_step("validate", step_library.validate_non_empty())
   |> pipeline.add_step("local_enrich", fn(_ctx, input) {
     // Local step: annotate input with a tag, decoded from Dynamic
