@@ -7,22 +7,11 @@
 import { initiateGracefulShutdown } from "./shutdown";
 import { resumeBlockedRuns } from "./startup";
 
-export async function nodeStartup(): Promise<void> {
-  const handleShutdown = async () => {
-    console.log(
-      "[process] Shutdown signal received — initiating graceful drain...",
-    );
-    await initiateGracefulShutdown();
-    console.log("[process] All in-flight runs finished. Exiting cleanly.");
-    process.exit(0);
-  };
+const handleShutdown = (): Promise<never> =>
+  initiateGracefulShutdown().then(() => process.exit(0));
 
+export async function nodeStartup(): Promise<void> {
   process.once("SIGTERM", () => void handleShutdown());
   process.once("SIGINT", () => void handleShutdown());
-
-  try {
-    await resumeBlockedRuns();
-  } catch (err) {
-    console.error("[startup] Failed to resume blocked/orphaned runs:", err);
-  }
+  await resumeBlockedRuns().catch(() => {});
 }

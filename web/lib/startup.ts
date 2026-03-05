@@ -14,31 +14,21 @@ import { db } from "./db";
 import { resumeBlockedRun, markOrphanedRunFailed } from "./trigger-pipeline";
 
 export async function resumeBlockedRuns(): Promise<void> {
-  const blocked = await db
-    .selectFrom("pipeline_runs")
-    .select("id")
-    .where("status", "=", "blocked")
-    .execute();
+  const [blocked, orphaned] = await Promise.all([
+    db
+      .selectFrom("pipeline_runs")
+      .select("id")
+      .where("status", "=", "blocked")
+      .execute(),
+    db
+      .selectFrom("pipeline_runs")
+      .select("id")
+      .where("status", "=", "running")
+      .execute(),
+  ]);
 
-  for (const run of blocked) {
-    console.log(`[startup] Resuming blocked run: ${run.id}`);
-    await resumeBlockedRun(run.id);
-  }
-
-  const orphaned = await db
-    .selectFrom("pipeline_runs")
-    .select("id")
-    .where("status", "=", "running")
-    .execute();
-
-  for (const run of orphaned) {
-    console.log(`[startup] Marking orphaned run as failed: ${run.id}`);
-    await markOrphanedRunFailed(run.id);
-  }
-
-  if (blocked.length > 0 || orphaned.length > 0) {
-    console.log(
-      `[startup] Recovery complete: resumed ${blocked.length} blocked run(s), failed ${orphaned.length} orphaned run(s).`,
-    );
-  }
+  await Promise.all([
+    ...blocked.map(({ id }) => resumeBlockedRun(id)),
+    ...orphaned.map(({ id }) => markOrphanedRunFailed(id)),
+  ]);
 }

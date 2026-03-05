@@ -23,21 +23,18 @@ interface ShutdownState {
   drainResolvers: Array<() => void>;
 }
 
-function getState(): ShutdownState {
-  if (!globalThis.__thingfactory_shutdown__) {
-    globalThis.__thingfactory_shutdown__ = {
-      draining: false,
-      activeRunCount: 0,
-      drainResolvers: [],
-    };
-  }
-  return globalThis.__thingfactory_shutdown__;
-}
+const getState = (): ShutdownState =>
+  (globalThis.__thingfactory_shutdown__ ??= {
+    draining: false,
+    activeRunCount: 0,
+    drainResolvers: [],
+  });
 
 /** Returns true when the server is in drain/shutdown mode. */
-export function isShuttingDown(): boolean {
-  return getState().draining;
-}
+export const isShuttingDown = (): boolean => getState().draining;
+
+/** Returns the number of currently executing runs. */
+export const getActiveRunCount = (): number => getState().activeRunCount;
 
 /** Increments active run counter when a background execution starts. */
 export function registerActiveRun(): void {
@@ -52,14 +49,9 @@ export function unregisterActiveRun(): void {
   const state = getState();
   state.activeRunCount = Math.max(0, state.activeRunCount - 1);
   if (state.draining && state.activeRunCount === 0) {
-    for (const resolve of state.drainResolvers) resolve();
+    state.drainResolvers.forEach((resolve) => resolve());
     state.drainResolvers = [];
   }
-}
-
-/** Returns the number of currently executing runs. */
-export function getActiveRunCount(): number {
-  return getState().activeRunCount;
 }
 
 /**
@@ -69,13 +61,11 @@ export function getActiveRunCount(): number {
 export function initiateGracefulShutdown(): Promise<void> {
   const state = getState();
   state.draining = true;
-  console.log(
-    `[shutdown] Drain mode activated. ${state.activeRunCount} active run(s) in flight.`,
-  );
-  if (state.activeRunCount === 0) return Promise.resolve();
-  return new Promise<void>((resolve) => {
-    state.drainResolvers.push(resolve);
-  });
+  return state.activeRunCount === 0
+    ? Promise.resolve()
+    : new Promise<void>((resolve) => {
+        state.drainResolvers.push(resolve);
+      });
 }
 
 /**
