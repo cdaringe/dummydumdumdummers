@@ -39,6 +39,15 @@ function defaultExecutorPool(): ExecutorInstance[] {
   ];
 }
 
+function parseExecutorPool(raw: string | undefined): ExecutorInstance[] {
+  if (!raw) return defaultExecutorPool();
+  try {
+    return JSON.parse(raw) as ExecutorInstance[];
+  } catch {
+    return defaultExecutorPool();
+  }
+}
+
 export function getConfig(): ServiceConfig {
   const dataDirname = process.env.THINGFACTORY_DATA_DIRNAME ?? "./data";
   const databasePath = process.env.THINGFACTORY_DATABASE_PATH ??
@@ -63,17 +72,9 @@ export function getConfig(): ServiceConfig {
     ? ["local"]
     : parsedExecutors;
 
-  const executorPoolRaw = process.env.THINGFACTORY_EXECUTOR_POOL;
-  let executorPool: ExecutorInstance[];
-  if (executorPoolRaw) {
-    try {
-      executorPool = JSON.parse(executorPoolRaw) as ExecutorInstance[];
-    } catch {
-      executorPool = defaultExecutorPool();
-    }
-  } else {
-    executorPool = defaultExecutorPool();
-  }
+  const executorPool = parseExecutorPool(
+    process.env.THINGFACTORY_EXECUTOR_POOL,
+  );
 
   return {
     dataDirname,

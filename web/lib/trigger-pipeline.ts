@@ -424,23 +424,34 @@ async function executeStepsInBackground({
 }
 
 // ---------------------------------------------------------------------------
-// Executor label matching
+// Executor resolution
 // ---------------------------------------------------------------------------
 
 /**
- * Find the first executor in the pool whose labels are a superset of the
- * required labels. Returns null if no match is found.
+ * Resolve a PipelineExecutor to a concrete ExecutorConfig.
+ * For label-based requirements, finds the first pool instance whose labels
+ * are a superset of the required labels; throws if none match.
  */
-function findMatchingExecutor(
-  requirement: LabeledExecutorRequirement,
+function resolveExecutor(
+  pipelineExecutor: PipelineExecutor,
   pool: ExecutorInstance[],
-): ExecutorConfig | null {
-  const match = pool.find((instance) =>
-    requirement.requiredLabels.every((label) =>
-      instance.labels.includes(label)
-    )
-  );
-  return match?.config ?? null;
+): ExecutorConfig {
+  return pipelineExecutor.kind !== "labeled"
+    ? pipelineExecutor
+    : pool.find((instance) =>
+        pipelineExecutor.requiredLabels.every((label) =>
+          instance.labels.includes(label)
+        )
+      )?.config ??
+        (() => {
+          throw new Error(
+            `No executor in the pool satisfies labels: [${
+              pipelineExecutor.requiredLabels.join(", ")
+            }]. Available executors: ${
+              pool.map((e) => `${e.id}[${e.labels.join(",")}]`).join(", ")
+            }`,
+          );
+        })();
 }
 
 // ---------------------------------------------------------------------------
@@ -466,29 +477,10 @@ export async function triggerPipeline(
   if (!pipeline) return null;
 
   const steps = JSON.parse(pipeline.steps) as StepDefinition[];
-  const pipelineExecutor: PipelineExecutor = JSON.parse(
-    pipeline.executor ?? '{"kind":"local"}',
+  const executor = resolveExecutor(
+    JSON.parse(pipeline.executor ?? '{"kind":"local"}') as PipelineExecutor,
+    config.executorPool,
   );
-
-  let executor: ExecutorConfig;
-  if (pipelineExecutor.kind === "labeled") {
-    // Label-based selection: find a matching executor from the pool
-    const resolved = findMatchingExecutor(pipelineExecutor, config.executorPool);
-    if (!resolved) {
-      throw new Error(
-        `No executor in the pool satisfies labels: [${
-          pipelineExecutor.requiredLabels.join(", ")
-        }]. Available executors: ${
-          config.executorPool
-            .map((e) => `${e.id}[${e.labels.join(",")}]`)
-            .join(", ")
-        }`,
-      );
-    }
-    executor = resolved;
-  } else {
-    executor = pipelineExecutor;
-  }
 
   // Enforce allowlist (applies to both direct and label-resolved executors)
   if (!config.allowedExecutors.includes(executor.kind)) {
