@@ -9,6 +9,7 @@ const statusLabel: Record<string, string> = {
   running: "Running",
   skipped: "Skipped",
   pending: "Pending",
+  blocked: "Blocked",
 };
 
 export function StatusBadge({ status }: Props) {

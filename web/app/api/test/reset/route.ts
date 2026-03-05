@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { rawDb } from "@/lib/db";
 import { clearAllData, seedFixtures } from "@/lib/seed-fixtures";
 import { config } from "@/lib/config";
+import { resetShutdownState } from "@/lib/shutdown";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,8 @@ export async function POST() {
 
   clearAllData(rawDb);
   seedFixtures(rawDb);
+  // Also reset drain state so tests start with a clean server state.
+  resetShutdownState();
 
   return NextResponse.json({ ok: true });
 }

@@ -3,6 +3,11 @@ import { db } from "./db";
 import { config } from "./config";
 import { v4 as uuidv4 } from "uuid";
 import { type RunEvent, runEvents } from "./run-events";
+import {
+  isShuttingDown,
+  registerActiveRun,
+  unregisterActiveRun,
+} from "./shutdown";
 import type {
   DockerExecutorConfig,
   ExecutorConfig,
@@ -266,6 +271,7 @@ async function executeStepsInBackground({
   steps: StepDefinition[];
   executor: ExecutorConfig;
 }): Promise<void> {
+  registerActiveRun();
   await new Promise((resolve) => setTimeout(resolve, 500));
 
   const startTime = Date.now();
@@ -420,6 +426,8 @@ async function executeStepsInBackground({
     await finalizeRun({ runId, status: "success", startTime });
   } catch {
     await finalizeRun({ runId, status: "failed", startTime });
+  } finally {
+    unregisterActiveRun();
   }
 }
 
@@ -439,19 +447,19 @@ function resolveExecutor(
   return pipelineExecutor.kind !== "labeled"
     ? pipelineExecutor
     : pool.find((instance) =>
-        pipelineExecutor.requiredLabels.every((label) =>
-          instance.labels.includes(label)
-        )
-      )?.config ??
-        (() => {
-          throw new Error(
-            `No executor in the pool satisfies labels: [${
-              pipelineExecutor.requiredLabels.join(", ")
-            }]. Available executors: ${
-              pool.map((e) => `${e.id}[${e.labels.join(",")}]`).join(", ")
-            }`,
-          );
-        })();
+      pipelineExecutor.requiredLabels.every((label) =>
+        instance.labels.includes(label)
+      )
+    )?.config ??
+      (() => {
+        throw new Error(
+          `No executor in the pool satisfies labels: [${
+            pipelineExecutor.requiredLabels.join(", ")
+          }]. Available executors: ${
+            pool.map((e) => `${e.id}[${e.labels.join(",")}]`).join(", ")
+          }`,
+        );
+      })();
 }
 
 // ---------------------------------------------------------------------------
@@ -493,6 +501,22 @@ export async function triggerPipeline(
 
   const runId = uuidv4();
 
+  // During drain/shutdown: record the run as "blocked" so it can be resumed
+  // on next boot, but do not start execution.
+  if (isShuttingDown()) {
+    await db
+      .insertInto("pipeline_runs")
+      .values({
+        id: runId,
+        pipeline_id: pipelineId,
+        status: "blocked",
+        trigger_type: triggerType,
+        started_at: new Date().toISOString(),
+      })
+      .execute();
+    return runId;
+  }
+
   await db
     .insertInto("pipeline_runs")
     .values({
@@ -507,4 +531,62 @@ export async function triggerPipeline(
   void executeStepsInBackground({ runId, steps, executor });
 
   return runId;
+}
+
+// ---------------------------------------------------------------------------
+// Startup recovery helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Resume a "blocked" run that was queued during a previous drain/shutdown.
+ * Transitions the run to "running" and starts background execution.
+ */
+export async function resumeBlockedRun(runId: string): Promise<void> {
+  const row = await db
+    .selectFrom("pipeline_runs")
+    .innerJoin(
+      "pipeline_definitions",
+      "pipeline_definitions.id",
+      "pipeline_runs.pipeline_id",
+    )
+    .select([
+      "pipeline_definitions.steps",
+      "pipeline_definitions.executor",
+    ])
+    .where("pipeline_runs.id", "=", runId)
+    .where("pipeline_runs.status", "=", "blocked")
+    .executeTakeFirst();
+
+  if (!row) return;
+
+  await db
+    .updateTable("pipeline_runs")
+    .set({ status: "running", started_at: new Date().toISOString() })
+    .where("id", "=", runId)
+    .execute();
+
+  const steps = JSON.parse(row.steps) as StepDefinition[];
+  const executor = resolveExecutor(
+    JSON.parse(row.executor ?? '{"kind":"local"}') as PipelineExecutor,
+    config.executorPool,
+  );
+
+  void executeStepsInBackground({ runId, steps, executor });
+}
+
+/**
+ * Mark a run that was "running" when the previous process died as "failed".
+ * Its executor no longer exists so execution cannot be safely resumed mid-step.
+ */
+export async function markOrphanedRunFailed(runId: string): Promise<void> {
+  await db
+    .updateTable("pipeline_runs")
+    .set({
+      status: "failed",
+      finished_at: new Date().toISOString(),
+      duration_ms: 0,
+    })
+    .where("id", "=", runId)
+    .where("status", "=", "running")
+    .execute();
 }
