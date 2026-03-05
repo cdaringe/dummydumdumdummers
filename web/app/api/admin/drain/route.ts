@@ -18,15 +18,9 @@ import {
 export const dynamic = "force-dynamic";
 
 export async function POST() {
-  if (isShuttingDown()) {
-    return NextResponse.json(
-      { draining: true, activeRuns: getActiveRunCount() },
-      { status: 200 },
-    );
-  }
   // Fire-and-forget: drain resolves when all active runs finish, but we
   // return immediately so the caller is not blocked.
-  void initiateGracefulShutdown();
+  if (!isShuttingDown()) void initiateGracefulShutdown();
   return NextResponse.json(
     { draining: true, activeRuns: getActiveRunCount() },
     { status: 200 },
