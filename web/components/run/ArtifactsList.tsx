@@ -20,9 +20,8 @@ export function ArtifactsList({ runId }: Props) {
         }
         const data = await response.json();
         setArtifacts(data || []);
-      } catch (err) {
+      } catch {
         setError("Failed to load artifacts");
-        console.error(err);
       } finally {
         setLoading(false);
       }

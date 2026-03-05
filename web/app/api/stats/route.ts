@@ -162,8 +162,7 @@ export async function GET() {
       topPerformers,
       bottomPerformers,
     });
-  } catch (error) {
-    console.error("Error fetching statistics:", error);
+  } catch {
     return Response.json(
       { error: "Failed to fetch statistics" },
       { status: 500 },
