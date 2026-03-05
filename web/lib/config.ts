@@ -7,7 +7,7 @@
 
 import { join } from "path";
 import { mkdirSync } from "fs";
-import type { ExecutorKind } from "./types";
+import type { ExecutorInstance, ExecutorKind } from "./types";
 
 export interface ServiceConfig {
   /** Root data directory. Set via THINGFACTORY_DATA_DIRNAME. */
@@ -20,6 +20,23 @@ export interface ServiceConfig {
   nodeEnv: "development" | "production" | "test";
   /** Allowed executor kinds. Set via THINGFACTORY_ALLOWED_EXECUTORS (comma-separated). Defaults to ["local"]. */
   allowedExecutors: ExecutorKind[];
+  /**
+   * Pool of named executor instances the system can schedule pipelines on.
+   * Set via THINGFACTORY_EXECUTOR_POOL as a JSON array of ExecutorInstance objects.
+   * Pipelines with `kind: "labeled"` executor requirements are matched against this pool.
+   * Defaults to a single local executor with labels ["local", "standard"].
+   */
+  executorPool: ExecutorInstance[];
+}
+
+function defaultExecutorPool(): ExecutorInstance[] {
+  return [
+    {
+      id: "default",
+      labels: ["local", "standard"],
+      config: { kind: "local" },
+    },
+  ];
 }
 
 export function getConfig(): ServiceConfig {
@@ -36,12 +53,27 @@ export function getConfig(): ServiceConfig {
     }
   }
 
-  const allowedExecutorsRaw = process.env.THINGFACTORY_ALLOWED_EXECUTORS ?? "local";
+  const allowedExecutorsRaw = process.env.THINGFACTORY_ALLOWED_EXECUTORS ??
+    "local";
   const parsedExecutors = allowedExecutorsRaw
     .split(",")
     .map((s) => s.trim())
     .filter((s): s is ExecutorKind => s === "local" || s === "docker");
-  const allowedExecutors: ExecutorKind[] = parsedExecutors.length === 0 ? ["local"] : parsedExecutors;
+  const allowedExecutors: ExecutorKind[] = parsedExecutors.length === 0
+    ? ["local"]
+    : parsedExecutors;
+
+  const executorPoolRaw = process.env.THINGFACTORY_EXECUTOR_POOL;
+  let executorPool: ExecutorInstance[];
+  if (executorPoolRaw) {
+    try {
+      executorPool = JSON.parse(executorPoolRaw) as ExecutorInstance[];
+    } catch {
+      executorPool = defaultExecutorPool();
+    }
+  } else {
+    executorPool = defaultExecutorPool();
+  }
 
   return {
     dataDirname,
@@ -52,6 +84,7 @@ export function getConfig(): ServiceConfig {
     ),
     nodeEnv,
     allowedExecutors,
+    executorPool,
   };
 }
 

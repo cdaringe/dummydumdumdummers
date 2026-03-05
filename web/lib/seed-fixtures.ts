@@ -914,12 +914,40 @@ const pipelines: PipelineFixture[] = [
     ],
   },
 
+  // Scenario 67: Label-based executor selection — matching labels (standard)
+  {
+    name: "labeled_executor_standard",
+    version: "1.0.0",
+    description:
+      'Pipeline using label-based executor selection (requires "standard" label)',
+    executor: { kind: "labeled", requiredLabels: ["standard"] },
+    steps: seqSteps(["prepare", "run"], 60_000),
+    runs: [
+      {
+        status: "success",
+        trigger_type: "manual",
+        duration_ms: 800,
+        daysAgo: 0,
+      },
+    ],
+  },
+
+  // Scenario 67: Label-based executor selection — unmatched labels (gpu)
+  {
+    name: "labeled_executor_gpu",
+    version: "1.0.0",
+    description:
+      'Pipeline requiring GPU-capable executor (requires "gpu" label, no match in default pool)',
+    executor: { kind: "labeled", requiredLabels: ["gpu"] },
+    steps: seqSteps(["train_model"], 300_000),
+    runs: [],
+  },
+
   // Self-deploy pipeline — triggered by Gitea webhook on push
   {
     name: "thingfactory_deploy",
     version: "1.0.0",
-    description:
-      "Self-update pipeline: pull, build, wait for idle, restart",
+    description: "Self-update pipeline: pull, build, wait for idle, restart",
     steps: [
       {
         name: "git_pull",
@@ -1062,5 +1090,4 @@ export function seedFixtures(db: Database.Database) {
       }
     }
   }
-
 }

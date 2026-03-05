@@ -62,6 +62,8 @@ export type ExecutorKind = "local" | "docker";
 
 export interface LocalExecutorConfig {
   kind: "local";
+  /** Capability labels this executor instance advertises (e.g. ["linux", "standard"]). */
+  labels?: string[];
 }
 
 export interface DockerExecutorConfig {
@@ -70,6 +72,31 @@ export interface DockerExecutorConfig {
   image: string;
   /** Extra volume mounts (host:container format). */
   volumes?: string[];
+  /** Capability labels this executor instance advertises. */
+  labels?: string[];
 }
 
 export type ExecutorConfig = LocalExecutorConfig | DockerExecutorConfig;
+
+/**
+ * Label-based executor requirement — stored in pipeline.executor when the
+ * pipeline author wants the system to select any executor that satisfies all
+ * required labels rather than pinning to a specific executor kind.
+ */
+export interface LabeledExecutorRequirement {
+  kind: "labeled";
+  /** All of these labels must be present on the chosen executor instance. */
+  requiredLabels: string[];
+}
+
+/** What can be stored in the pipeline_definitions.executor column. */
+export type PipelineExecutor = ExecutorConfig | LabeledExecutorRequirement;
+
+/** A named executor instance registered in the service executor pool. */
+export interface ExecutorInstance {
+  id: string;
+  /** Labels advertising this instance's capabilities (e.g. ["docker", "gpu", "linux"]). */
+  labels: string[];
+  /** The concrete executor configuration used when this instance is selected. */
+  config: ExecutorConfig;
+}

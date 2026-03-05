@@ -4,9 +4,12 @@ import { config } from "./config";
 import { v4 as uuidv4 } from "uuid";
 import { type RunEvent, runEvents } from "./run-events";
 import type {
-  StepDefinition,
-  ExecutorConfig,
   DockerExecutorConfig,
+  ExecutorConfig,
+  ExecutorInstance,
+  LabeledExecutorRequirement,
+  PipelineExecutor,
+  StepDefinition,
 } from "./types";
 
 // ---------------------------------------------------------------------------
@@ -58,7 +61,9 @@ interface SpawnInput {
   timeoutMs: number;
 }
 
-function spawnAndCollect({ bin, args, cwd, timeoutMs }: SpawnInput): Promise<CommandResult> {
+function spawnAndCollect(
+  { bin, args, cwd, timeoutMs }: SpawnInput,
+): Promise<CommandResult> {
   return new Promise((resolve) => {
     const start = Date.now();
     let stdout = "";
@@ -125,7 +130,9 @@ interface ExecInput {
   timeoutMs: number;
 }
 
-function executeLocal({ command, workingDir, timeoutMs }: ExecInput): Promise<CommandResult> {
+function executeLocal(
+  { command, workingDir, timeoutMs }: ExecInput,
+): Promise<CommandResult> {
   return spawnAndCollect({
     bin: "sh",
     args: ["-c", command],
@@ -270,7 +277,8 @@ async function executeStepsInBackground({
 
       // Check only_if_env — skip step if env var is not truthy
       if (step.only_if_env && !process.env[step.only_if_env]) {
-        const logOutput = `[SKIPPED] Environment variable ${step.only_if_env} is not set`;
+        const logOutput =
+          `[SKIPPED] Environment variable ${step.only_if_env} is not set`;
         await db
           .insertInto("step_traces")
           .values({
@@ -356,10 +364,9 @@ async function executeStepsInBackground({
             status,
             duration_ms: result.durationMs,
             log_output: logOutput,
-            error_msg:
-              result.exitCode !== 0
-                ? `Exit code ${result.exitCode}`
-                : null,
+            error_msg: result.exitCode !== 0
+              ? `Exit code ${result.exitCode}`
+              : null,
           })
           .where("id", "=", traceId)
           .execute();
@@ -383,7 +390,11 @@ async function executeStepsInBackground({
         const execTime = 1500 + Math.round(Math.random() * 2000);
         await new Promise((resolve) => setTimeout(resolve, execTime));
 
-        const logOutput = generateStepLog({ stepName: step.name, status: "ok", durationMs: execTime });
+        const logOutput = generateStepLog({
+          stepName: step.name,
+          status: "ok",
+          durationMs: execTime,
+        });
         await db
           .updateTable("step_traces")
           .set({
@@ -413,13 +424,34 @@ async function executeStepsInBackground({
 }
 
 // ---------------------------------------------------------------------------
+// Executor label matching
+// ---------------------------------------------------------------------------
+
+/**
+ * Find the first executor in the pool whose labels are a superset of the
+ * required labels. Returns null if no match is found.
+ */
+function findMatchingExecutor(
+  requirement: LabeledExecutorRequirement,
+  pool: ExecutorInstance[],
+): ExecutorConfig | null {
+  const match = pool.find((instance) =>
+    requirement.requiredLabels.every((label) =>
+      instance.labels.includes(label)
+    )
+  );
+  return match?.config ?? null;
+}
+
+// ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
 
 /**
  * Trigger a pipeline by ID. Creates a new run and starts background execution.
  * Returns the new runId, or null if the pipeline was not found.
- * Rejects if the pipeline's executor kind is not in the allowed list.
+ * Rejects if the pipeline's executor kind is not in the allowed list, or if a
+ * label-based requirement cannot be satisfied by the configured executor pool.
  */
 export async function triggerPipeline(
   pipelineId: string,
@@ -434,14 +466,36 @@ export async function triggerPipeline(
   if (!pipeline) return null;
 
   const steps = JSON.parse(pipeline.steps) as StepDefinition[];
-  const executor: ExecutorConfig = JSON.parse(
+  const pipelineExecutor: PipelineExecutor = JSON.parse(
     pipeline.executor ?? '{"kind":"local"}',
   );
 
-  // Enforce allowlist
+  let executor: ExecutorConfig;
+  if (pipelineExecutor.kind === "labeled") {
+    // Label-based selection: find a matching executor from the pool
+    const resolved = findMatchingExecutor(pipelineExecutor, config.executorPool);
+    if (!resolved) {
+      throw new Error(
+        `No executor in the pool satisfies labels: [${
+          pipelineExecutor.requiredLabels.join(", ")
+        }]. Available executors: ${
+          config.executorPool
+            .map((e) => `${e.id}[${e.labels.join(",")}]`)
+            .join(", ")
+        }`,
+      );
+    }
+    executor = resolved;
+  } else {
+    executor = pipelineExecutor;
+  }
+
+  // Enforce allowlist (applies to both direct and label-resolved executors)
   if (!config.allowedExecutors.includes(executor.kind)) {
     throw new Error(
-      `Executor kind "${executor.kind}" is not permitted. Allowed: ${config.allowedExecutors.join(", ")}`,
+      `Executor kind "${executor.kind}" is not permitted. Allowed: ${
+        config.allowedExecutors.join(", ")
+      }`,
     );
   }
 
