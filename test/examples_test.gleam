@@ -230,6 +230,30 @@ pub fn library_import_pipeline_test() {
   list.length(result.trace) |> should.equal(5)
 }
 
+pub fn library_import_typed_pipeline_test() {
+  // Verify that library steps compose correctly with typed (enum) step IDs,
+  // not just plain String identifiers.
+  let p = examples.library_import_typed_pipeline()
+  pipeline.id(p)
+  |> should.equal(types.PipelineId("library_import_typed", "1.0.0"))
+  list.length(pipeline.steps(p)) |> should.equal(5)
+
+  let result = examples.run_library_import_typed()
+  result.result |> should.be_ok()
+  // 5 traces matching the typed IDs
+  list.length(result.trace) |> should.equal(5)
+  // Confirm step names are serialised from enum variants (not strings)
+  let names = list.map(result.trace, fn(t) { t.step_name })
+  names
+  |> should.equal([
+    "LibSeed",
+    "LibValidate",
+    "LibEnrich",
+    "LibUppercase",
+    "LibPrefix",
+  ])
+}
+
 pub fn dogfood_pipeline_test() {
   // Structure-only test: the dogfood pipeline uses real command_runner.step()
   // calls (gleam check, gleam build, npm install/build), so executing it here

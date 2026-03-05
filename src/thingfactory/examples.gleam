@@ -1244,6 +1244,52 @@ pub fn run_library_import() -> types.ExecutionResult(Dynamic) {
 }
 
 // ---------------------------------------------------------------------------
+// Example: Library import with typed (enum) step IDs
+// ---------------------------------------------------------------------------
+
+/// Typed step identifiers for the library import pipeline.
+/// Using an enum instead of String provides compile-time exhaustiveness
+/// checking and prevents typos in step names.
+pub type LibraryStepId {
+  LibSeed
+  LibValidate
+  LibEnrich
+  LibUppercase
+  LibPrefix
+}
+
+/// Identical to library_import_pipeline() but uses a typed enum for step IDs
+/// instead of plain strings.  Demonstrates that step_library functions are
+/// compatible with any `id` type parameter — library steps are not coupled to
+/// String identifiers.
+pub fn library_import_typed_pipeline() -> pipeline.Pipeline(
+  LibraryStepId,
+  Dynamic,
+) {
+  pipeline.new("library_import_typed", "1.0.0")
+  |> pipeline.add_step(LibSeed, fn(_ctx, _input) { Ok(dynamic.string("hello")) })
+  |> pipeline.add_step(LibValidate, step_library.validate_non_empty())
+  |> pipeline.add_step(LibEnrich, fn(_ctx, input) {
+    case decode.run(input, decode.string) {
+      Ok(s) -> Ok(dynamic.string("[enriched] " <> s))
+      Error(_) -> Error(types.StepFailure(message: "Expected string input"))
+    }
+  })
+  |> pipeline.add_step(LibUppercase, step_library.to_uppercase())
+  |> pipeline.add_step(LibPrefix, step_library.prefix("RESULT: "))
+}
+
+/// Execute the typed library import pipeline
+pub fn run_library_import_typed() -> types.ExecutionResult(Dynamic) {
+  let config = types.default_config()
+  executor.execute(
+    library_import_typed_pipeline(),
+    dynamic.string("hello"),
+    config,
+  )
+}
+
+// ---------------------------------------------------------------------------
 // Internal imports for examples
 // ---------------------------------------------------------------------------
 
