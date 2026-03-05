@@ -1,9 +1,7 @@
 import { expect, test } from "./fixtures";
 
 test.describe("Graceful Shutdown / Drain Mode (Scenario 64)", () => {
-  test("new trigger is blocked and recorded as 'blocked' when drain mode is active", async ({
-    page,
-  }) => {
+  test("new trigger is blocked and recorded as 'blocked' when drain mode is active", async ({ page }) => {
     // Enter drain mode via admin API
     const drainResp = await page.request.post("/api/admin/drain");
     expect(drainResp.ok()).toBe(true);
@@ -28,9 +26,7 @@ test.describe("Graceful Shutdown / Drain Mode (Scenario 64)", () => {
     expect(run.status).toBe("blocked");
   });
 
-  test("exits drain mode and allows new triggers after DELETE /api/admin/drain", async ({
-    page,
-  }) => {
+  test("exits drain mode and allows new triggers after DELETE /api/admin/drain", async ({ page }) => {
     // Enter then exit drain mode
     await page.request.post("/api/admin/drain");
     const exitResp = await page.request.delete("/api/admin/drain");
@@ -82,9 +78,7 @@ test.describe("Graceful Shutdown / Drain Mode (Scenario 64)", () => {
     expect(afterRun.status).not.toBe("blocked");
   });
 
-  test("resume-blocked endpoint succeeds with no blocked or running runs", async ({
-    page,
-  }) => {
+  test("resume-blocked endpoint succeeds with no blocked or running runs", async ({ page }) => {
     // Fresh DB (after reset) has no blocked or orphaned running runs.
     // The endpoint should succeed without error.
     const resp = await page.request.post("/api/admin/resume-blocked");

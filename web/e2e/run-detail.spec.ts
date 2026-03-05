@@ -153,9 +153,7 @@ test.describe("Run Detail", () => {
     await expect(header).toContainText(/Triggered by/);
   });
 
-  test("shows flow diagram with node states on run detail", async ({
-    page,
-  }) => {
+  test("shows flow diagram with node states on run detail", async ({ page }) => {
     await page.goto("/runs");
     const firstDetailLink = page.locator("text=Details →").first();
     await firstDetailLink.click();
@@ -222,9 +220,7 @@ test.describe("Run Detail", () => {
     await expect(page.locator("[data-testid^='step-log-']")).toHaveCount(0);
   });
 
-  test("step log displays command lines with highlighting", async ({
-    page,
-  }) => {
+  test("step log displays command lines with highlighting", async ({ page }) => {
     // Navigate to a typescript_build run to get detailed logs
     await page.goto("/runs");
     const firstDetailLink = page.locator("text=Details →").first();

@@ -11,9 +11,7 @@ import { expect, test } from "./fixtures";
  */
 
 test.describe("Executor label-based selection (scenario 67)", () => {
-  test("pipeline with satisfied label requirement triggers successfully", async ({
-    page,
-  }) => {
+  test("pipeline with satisfied label requirement triggers successfully", async ({ page }) => {
     // Trigger a pipeline whose executor is { kind: "labeled", requiredLabels: ["standard"] }
     // The default pool has an instance with labels ["local", "standard"], so it matches.
     const res = await page.request.post(
@@ -25,9 +23,7 @@ test.describe("Executor label-based selection (scenario 67)", () => {
     expect(res.headers()["location"]).toMatch(/\/runs\//);
   });
 
-  test("pipeline with unsatisfied label requirement is rejected with 403", async ({
-    page,
-  }) => {
+  test("pipeline with unsatisfied label requirement is rejected with 403", async ({ page }) => {
     // Trigger a pipeline whose executor is { kind: "labeled", requiredLabels: ["gpu"] }
     // No executor in the default pool has the "gpu" label.
     const res = await page.request.post(

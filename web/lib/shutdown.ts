@@ -23,8 +23,8 @@ interface ShutdownState {
   drainResolvers: Array<() => void>;
 }
 
-const getState = (): ShutdownState =>
-  (globalThis.__thingfactory_shutdown__ ??= {
+const getState =
+  (): ShutdownState => (globalThis.__thingfactory_shutdown__ ??= {
     draining: false,
     activeRunCount: 0,
     drainResolvers: [],
@@ -64,8 +64,8 @@ export function initiateGracefulShutdown(): Promise<void> {
   return state.activeRunCount === 0
     ? Promise.resolve()
     : new Promise<void>((resolve) => {
-        state.drainResolvers.push(resolve);
-      });
+      state.drainResolvers.push(resolve);
+    });
 }
 
 /**

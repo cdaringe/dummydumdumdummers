@@ -11,7 +11,7 @@
  */
 
 import { db } from "./db";
-import { resumeBlockedRun, markOrphanedRunFailed } from "./trigger-pipeline";
+import { markOrphanedRunFailed, resumeBlockedRun } from "./trigger-pipeline";
 
 export async function resumeBlockedRuns(): Promise<void> {
   const [blocked, orphaned] = await Promise.all([

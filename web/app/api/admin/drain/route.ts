@@ -9,10 +9,10 @@
  */
 import { NextResponse } from "next/server";
 import {
+  getActiveRunCount,
   initiateGracefulShutdown,
   isShuttingDown,
   resetShutdownState,
-  getActiveRunCount,
 } from "@/lib/shutdown";
 
 export const dynamic = "force-dynamic";
