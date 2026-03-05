@@ -37,11 +37,11 @@ export function getConfig(): ServiceConfig {
   }
 
   const allowedExecutorsRaw = process.env.THINGFACTORY_ALLOWED_EXECUTORS ?? "local";
-  const allowedExecutors = allowedExecutorsRaw
+  const parsedExecutors = allowedExecutorsRaw
     .split(",")
     .map((s) => s.trim())
     .filter((s): s is ExecutorKind => s === "local" || s === "docker");
-  if (allowedExecutors.length === 0) allowedExecutors.push("local");
+  const allowedExecutors: ExecutorKind[] = parsedExecutors.length === 0 ? ["local"] : parsedExecutors;
 
   return {
     dataDirname,
