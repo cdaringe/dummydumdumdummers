@@ -19,7 +19,7 @@ services:
       context: web
       dockerfile: Dockerfile
     ports:
-      - "${THINGFACTORY_PORT:-3000}:3000"
+      - "${THINGFACTORY_PORT:-2001}:2001"
     volumes:
       - ${THINGFACTORY_DATA_DIRNAME:-./data}:/app/data
       - /var/run/docker.sock:/var/run/docker.sock
